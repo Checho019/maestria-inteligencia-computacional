@@ -13,6 +13,7 @@ import re
 import sys
 
 from docx import Document
+from docx.enum.section import WD_ORIENT
 from docx.enum.table import WD_TABLE_ALIGNMENT
 from docx.enum.text import WD_ALIGN_PARAGRAPH
 from docx.shared import Inches, Pt, RGBColor
@@ -20,7 +21,33 @@ from docx.shared import Inches, Pt, RGBColor
 BASE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 INFORMES = ["Informe_Ecoli", "Informe_Bank"]
 
+# Los tecnicos van apaisados porque sus tablas tienen 5 y 6 columnas de texto
+# largo, y en vertical quedan ilegibles.
+APAISADOS = ("TECNICO_",)
+
 ANCHO_MAX = Inches(6.3)
+
+
+def mermaid_a_texto(lineas):
+    """Mermaid no se renderiza en Word. Se convierte a texto plano legible."""
+    fuera = []
+    for ln in lineas:
+        t = ln.strip()
+        if not t or t.startswith(("flowchart", "graph", "end", "classDef", "class ", "style ")):
+            continue
+        t = t.replace("<br/>", " / ").replace("<br>", " / ")
+        # subgraph P1["titulo"]  ->  [ titulo ]
+        m = re.match(r'^subgraph\s+\w+\["?(.*?)"?\]$', t)
+        if m:
+            fuera.append("[ %s ]" % m.group(1))
+            continue
+        # NODO["texto"], NODO(("texto")), NODO[("texto")]
+        m = re.match(r'^(\w+)\s*[\[\(]{1,2}"?(.*?)"?[\]\)]{1,2}$', t)
+        if m:
+            fuera.append("   %-6s %s" % (m.group(1) + ":", m.group(2)))
+            continue
+        fuera.append("   " + t)
+    return fuera
 
 
 def texto_con_formato(par, texto):
@@ -54,10 +81,26 @@ def convertir(nombre):
     with open(MD, encoding="utf-8") as fh:
         lineas = fh.read().split("\n")
 
+    # si el archivo abre con frontmatter YAML entre --- y ---, se descarta
+    if lineas and lineas[0].strip() == "---":
+        cierre = next((k for k in range(1, len(lineas))
+                       if lineas[k].strip() == "---"), None)
+        if cierre is not None:
+            lineas = lineas[cierre + 1:]
+
     doc = Document()
     normal = doc.styles["Normal"]
     normal.font.name = "Calibri"
     normal.font.size = Pt(10.5)
+
+    ancho_max = ANCHO_MAX
+    if nombre.startswith(APAISADOS):
+        sec = doc.sections[0]
+        sec.orientation = WD_ORIENT.LANDSCAPE
+        sec.page_width, sec.page_height = sec.page_height, sec.page_width
+        sec.left_margin = sec.right_margin = Inches(0.6)
+        sec.top_margin = sec.bottom_margin = Inches(0.6)
+        ancho_max = Inches(9.8)
 
     i = 0
     n_img = 0
@@ -73,12 +116,15 @@ def convertir(nombre):
 
         # --- bloque de codigo
         if s.startswith("```"):
+            es_mermaid = s.lower().startswith("```mermaid")
             i += 1
             buf = []
             while i < len(lineas) and not lineas[i].strip().startswith("```"):
                 buf.append(lineas[i])
                 i += 1
             i += 1
+            if es_mermaid:
+                buf = mermaid_a_texto(buf)
             p = doc.add_paragraph()
             p.paragraph_format.left_indent = Inches(0.25)
             r = p.add_run("\n".join(buf))
@@ -91,7 +137,7 @@ def convertir(nombre):
         if m:
             ruta = os.path.join(BASE, m.group(2).replace("/", os.sep))
             if os.path.exists(ruta):
-                doc.add_picture(ruta, width=ANCHO_MAX)
+                doc.add_picture(ruta, width=ancho_max)
                 doc.paragraphs[-1].alignment = WD_ALIGN_PARAGRAPH.CENTER
                 n_img += 1
             else:
@@ -119,6 +165,7 @@ def convertir(nombre):
             t = doc.add_table(rows=1, cols=len(cab))
             t.style = "Light Grid Accent 1"
             t.alignment = WD_TABLE_ALIGNMENT.CENTER
+            t.autofit = True
             for k, c in enumerate(cab):
                 celda = t.rows[0].cells[k]
                 celda.text = ""
