@@ -1,0 +1,10 @@
+# Normaliza los finales de linea al guardar en el repositorio
+* text=auto eol=lf
+
+# Binarios, para que git no intente convertirlos ni mostrarles diff
+*.png   binary
+*.zip   binary
+*.pdf   binary
+*.xlsx  binary
+*.docx  binary
+*.mat   binary
