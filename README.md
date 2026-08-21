@@ -41,8 +41,10 @@ python codigo/md_a_docx.py
 
 ```
 Primera actividad/
-  Informe_Ecoli.md, Informe_Ecoli.docx      informe completo del primer dataset
-  Informe_Bank.md, Informe_Bank.docx        informe completo del segundo
+  Informe_Ecoli.md, .docx, .pdf             informe completo del primer dataset
+  Informe_Bank.md, .docx, .pdf              informe completo del segundo
+  TECNICO_Ecoli.md, .docx, .pdf             recorrido del codigo paso por paso
+  TECNICO_Bank.md, .docx, .pdf              lo mismo para el segundo dataset
   Resultados_Ecoli.xlsx                     26 hojas, una por prueba estadística
   Resultados_Bank.xlsx                      24 hojas
   bank+marketing.zip, ecoli.zip             los datos originales tal como vienen de UCI
@@ -63,6 +65,8 @@ Primera actividad/
 ```
 
 Los CSV de etapas y los `.mat` intermedios no están versionados porque pesan 22 MB y se regeneran corriendo `run_todo`. Las carpetas de datos descomprimidos tampoco, por lo mismo.
+
+Los dos documentos `TECNICO_` son distintos de los informes. Los informes cuentan qué se hizo con los datos y qué salió. Los técnicos cuentan qué hace el código: el diagrama del pipeline con qué script produce qué archivo, el recorrido bloque por bloque con nombres y dimensiones reales de cada variable, el algoritmo de cada función auxiliar, los puntos donde el código se rompe si se toca, y una tabla de recetas para modificarlo. Van en horizontal porque sus tablas tienen seis columnas.
 
 ### Funciones que hubo que programar
 
