@@ -43,9 +43,10 @@ fprintf('B0: %d filas x %d columnas tras el one-hot\n', size(X0,1), size(X0,2));
 %    Se parte en dos: una bandera binaria y el valor real solo cuando aplica.
 %
 % c) Los atipicos se winsorizan con 1.5*IQR, pero solo en las variables donde
-%    el IQR es distinto de cero (age, balance, duration, campaign). En pdays
-%    y previous mas del 75% de los datos vale lo mismo, el IQR da 0 y la regla
-%    de Tukey las volveria constantes. A esas se les recorta el percentil 99.
+%    el IQR es distinto de cero, que aqui son age, balance y campaign
+%    (duration ya se elimino en el punto a). En pdays y previous mas del 75%
+%    de los datos vale lo mismo, el IQR da 0 y la regla de Tukey las volveria
+%    constantes. A esas se les recorta el percentil 99.
 T1 = T;
 T1.contactado_antes = double(T1.pdays >= 0);
 T1.pdays(T1.pdays < 0) = 0;

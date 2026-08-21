@@ -6,6 +6,11 @@ CLAUDE.md
 .mcp.json
 
 # ---------------------------------------------------------------
+# Notas tecnicas internas, no van al repo publico
+# ---------------------------------------------------------------
+TECNICO_*.md
+
+# ---------------------------------------------------------------
 # Version vieja del informe, reemplazada por los dos separados
 # ---------------------------------------------------------------
 Informe_Actividad1.*

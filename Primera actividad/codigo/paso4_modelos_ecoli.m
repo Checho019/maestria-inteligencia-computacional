@@ -118,7 +118,6 @@ guardar_fig(f, dir_fig, '13_fuga_por_balanceo');
 [~, imej] = max(Res.ExactBalanceada);
 etapa_mej = Res.Etapa{imej};  mod_mej = Res.Modelo{imej};
 ie = find(strcmp({E.nombre}, etapa_mej));
-op = struct('k',5,'semilla',42,'modelos',{{mod_mej}});
 part = cvpartition(E(ie).y, 'KFold', 5);
 yreal = {}; ypred = {};
 for fo = 1:5
