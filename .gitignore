@@ -55,3 +55,23 @@ __pycache__/
 *.pyc
 .venv/
 venv/
+
+# ---------------------------------------------------------------
+# Taller 1. Material del profe (zip, PDFs y mlx de clase) y temporales.
+# Los .mat de particiones se regeneran con T0 y T3.
+# ---------------------------------------------------------------
+Taller 1/taller1.zip
+Taller 1/Adaline.pdf
+Taller 1/Lab 2 - ADALINE.pdf
+Taller 1/Dataset_train_test.docx
+Taller 1/Dataset_train_test.mlx
+Taller 1/codigo_Adaline.mlx
+Taller 1/_tmp/
+Taller 1/*.mat
+Taller 1/informe/*.aux
+Taller 1/informe/*.log
+Taller 1/informe/*.out
+Taller 1/informe/*.blg
+Taller 1/informe/*.fls
+Taller 1/informe/*.fdb_latexmk
+Taller 1/informe/*.synctex.gz

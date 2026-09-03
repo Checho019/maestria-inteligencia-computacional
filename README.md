@@ -87,6 +87,19 @@ MATLAB no trae varias de las pruebas que pide la guía del curso, así que está
 
 Las dos pruebas de normalidad se validaron por simulación dentro de MATLAB, sin comparar contra ninguna otra herramienta. Con 2000 repeticiones sobre datos que sí son normales, `swtest` rechaza entre 5,05 y 5,65 por ciento cuando debería rechazar 5, y `dagostino_k2` entre 5,30 y 6,00 por ciento, indistinguible de `lillietest` y `adtest` que sí son nativas. El detalle está en la primera sección de los dos informes.
 
+## Taller 1. Perceptrón y Adaline
+
+Red de una sola neurona, primero como perceptrón simple con tres reglas de corrección seleccionables y después como Adaline con la regla delta. Se prueba en compuertas AND y OR de 2, 3 y 4 entradas (más la XOR, para ver que no se puede), en Iris y en el dataset de autenticación de billetes, con particiones 60-40, 70-30, 80-20 y 90-10.
+
+La entrega son ocho live scripts en `Taller 1/mlx/`, uno por bloque del taller, ya ejecutados y con las salidas adentro, más el informe en formato IEEE en `Taller 1/informe/main.pdf`. Las funciones de los dos modelos están en `Taller 1/perceptron.m` y `Taller 1/adaline.m`. El detalle de qué hace cada archivo está en `Taller 1/README.md`.
+
+Para regenerar todo desde MATLAB, con `Taller 1` como directorio de trabajo:
+
+```matlab
+correr_todo
+generar_mlx
+```
+
 ## Requisitos
 
 MATLAB R2026a o posterior con Statistics and Machine Learning Toolbox. Para la conversión a Word, Python 3 con `python-docx`, que es opcional porque los informes también están en Markdown.
