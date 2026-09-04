@@ -45,8 +45,10 @@ def imagen(slide, nombre, left, top, w):
     slide.shapes.add_picture(os.path.join(FIG, nombre), Inches(left), Inches(top), width=Inches(w))
 
 
-def tabla(slide, cab, filas, left, top, w, h, size=13):
+def tabla(slide, cab, filas, left, top, w, h, size=13, anchos=None):
     t = slide.shapes.add_table(len(filas) + 1, len(cab), Inches(left), Inches(top), Inches(w), Inches(h)).table
+    for j, a in enumerate(anchos or []):
+        t.columns[j].width = Inches(a)
     for j, c in enumerate(cab):
         cel = t.cell(0, j); cel.text = c
         for p in cel.text_frame.paragraphs:
@@ -189,11 +191,11 @@ tabla(s, ["Variable", "Fuera del rango", "Tratamiento"], [
     ["previous", "IQR cero", "recorte al percentil 99 (9)"],
     ["pdays", "IQR cero", "ya acotada por el umbral"],
     ["education, dia_anio", "sin atípicos", "sin tratamiento"],
-], 8.1, 1.6, 4.9, 2.7, size=13)
+], 8.1, 1.6, 4.9, 2.7, size=12)
 vinetas(s, [
     "Se recorta al borde en vez de borrar filas para no perder varios miles de filas",
     "Los 5 255 registros de la clase sí son escasos y eliminar filas los reduciría todavía más",
-], 8.1, 4.6, 4.9, 2, size=15)
+], 8.1, 5.3, 4.9, 1.8, size=14)
 
 s = nueva("T2. Codificación", "Todo queda numérico para la herramienta de clasificación")
 tabla(s, ["Tipo", "Variables", "Método", "Columnas"], [
@@ -248,12 +250,12 @@ tabla(s, ["Paso", "Filas", "Columnas de entrada", "No", "Sí", "Qué cambió"], 
     ["T2z y T2n", "44 923", "31", "39 668", "5 255", "one hot, binarias en 0 y 1, z score o rango 0 a 1"],
     ["T3_1z y T3_1n", "10 510", "31", "5 255", "5 255", "submuestreo de la clase no"],
     ["T3_2z y T3_2n", "79 336", "31", "39 668", "39 668", "sobremuestreo sintético de la clase sí"],
-], 0.5, 1.5, 12.3, 3.0, size=14)
+], 0.5, 1.5, 12.3, 3.0, size=14, anchos=[1.6, 1.2, 2.0, 1.2, 1.2, 5.1])
 vinetas(s, [
     "Un solo live script, procesar_bank.mlx, genera las cinco versiones y las figuras",
     "Cada tabla lleva la clase y como última columna",
     "Ninguna versión modifica la clase ni elimina positivos reales, salvo las 34 filas con job unknown",
-], 0.7, 4.8, 12, 2.0, size=16)
+], 0.7, 5.2, 12, 1.8, size=16)
 
 s = nueva("Siguiente paso. Herramienta de clasificación", "Qué se va a comparar en Classification Learner")
 vinetas(s, [
