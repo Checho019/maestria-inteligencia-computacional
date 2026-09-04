@@ -75,3 +75,8 @@ Taller 1/informe/*.blg
 Taller 1/informe/*.fls
 Taller 1/informe/*.fdb_latexmk
 Taller 1/informe/*.synctex.gz
+
+# ---------------------------------------------------------------
+# Exposicion Bank. El .mat se regenera con procesar_bank
+# ---------------------------------------------------------------
+Exposicion Bank/*.mat
