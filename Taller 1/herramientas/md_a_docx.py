@@ -135,7 +135,7 @@ def convertir(nombre):
         # --- imagen + pie de foto
         m = re.match(r"^!\[(.*?)\]\((.+?)\)$", s)
         if m:
-            ruta = os.path.join(BASE, m.group(2).replace("/", os.sep))
+            ruta = os.path.join(os.path.dirname(os.path.abspath(MD)), m.group(2).replace("/", os.sep))
             if os.path.exists(ruta):
                 doc.add_picture(ruta, width=ancho_max)
                 doc.paragraphs[-1].alignment = WD_ALIGN_PARAGRAPH.CENTER
