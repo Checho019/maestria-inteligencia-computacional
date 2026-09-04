@@ -79,7 +79,7 @@ subplot(2,4,7); histogram(categorical(T1.education)); title('education')
 subplot(2,4,8); histogram(categorical(T1.contactado_antes)); title('contactado antes')
 size(T1)
 
-%% T2: codificacion, estandarizacion y normalizacion
+%% T2: codificacion y estandarizacion
 T2 = T1;
 for v = {'default','housing','loan'}
     T2.(v{1}) = double(T1.(v{1}) == "yes");
@@ -94,35 +94,33 @@ T2 = movevars(T2, 'y', 'After', width(T2));
 T2.Properties.VariableNames'
 size(T2)
 
-T2z = T2;  T2z{:,num1} = zscore(T2{:,num1});
-T2n = T2;  T2n{:,num1} = normalize(T2{:,num1}, 'range');
 figure
-subplot(1,2,1); boxplot(T2z{:,num1}, 'Labels', num1); title('estandarizado')
-subplot(1,2,2); boxplot(T2n{:,num1}, 'Labels', num1); title('normalizado')
+subplot(1,2,1); boxplot(zscore(T2{:,num1}), 'Labels', num1); title('estandarizado, se usa')
+subplot(1,2,2); boxplot(normalize(T2{:,num1}, 'range'), 'Labels', num1); title('normalizado, solo para comparar')
+T2{:,num1} = zscore(T2{:,num1});
 
 %% T3_1: balanceo por submuestreo de la clase no
 rng(1)
 no = find(T2.y == "no");  si = find(T2.y == "yes");
 sel = [no(randperm(numel(no), numel(si))); si];
-T3_1z = T2z(sel, :);  T3_1n = T2n(sel, :);
+T3_1 = T2(sel, :);
 
 %% T3_2: balanceo por sobremuestreo sintetico de la clase si
 rng(1)
 falta = numel(no) - numel(si);
-vecinos = knnsearch(T2z{si,1:end-1}, T2z{si,1:end-1}, 'K', 6);
+vecinos = knnsearch(T2{si,1:end-1}, T2{si,1:end-1}, 'K', 6);
 a = randi(numel(si), falta, 1);
 b = vecinos(sub2ind(size(vecinos), a, randi(5, falta, 1) + 1));
 lambda = rand(falta, 1);
 entera = ~ismember(T2.Properties.VariableNames(1:end-1), num1);
-T3_2z = sobremuestrear(T2z, si, a, b, lambda, entera);
-T3_2n = sobremuestrear(T2n, si, a, b, lambda, entera);
+T3_2 = sobremuestrear(T2, si, a, b, lambda, entera);
 figure
-subplot(1,3,1); histogram(T2z.y); title('T2')
-subplot(1,3,2); histogram(T3_1z.y); title('T3\_1 submuestreo')
-subplot(1,3,3); histogram(T3_2z.y); title('T3\_2 sobremuestreo')
+subplot(1,3,1); histogram(T2.y); title('T2')
+subplot(1,3,2); histogram(T3_1.y); title('T3\_1 submuestreo')
+subplot(1,3,3); histogram(T3_2.y); title('T3\_2 sobremuestreo')
 
 %% Resumen y guardado
-pasos = {'T0','T1','T2z','T3_1z','T3_2z'};
+pasos = {'T0','T1','T2','T3_1','T3_2'};
 resumen = table();
 for k = 1:5
     T = eval(pasos{k});
@@ -130,7 +128,7 @@ for k = 1:5
                'VariableNames', {'Paso','Filas','Columnas','No','Si'})];
 end
 resumen
-save('bank_pasos.mat', 'T0', 'T1', 'T2', 'T2z', 'T2n', 'T3_1z', 'T3_1n', 'T3_2z', 'T3_2n')
+save('bank_pasos.mat', 'T0', 'T1', 'T2', 'T3_1', 'T3_2')
 
 %% Crea los patrones sinteticos entre cada si y uno de sus vecinos, redondeando las columnas enteras
 function T = sobremuestrear(T, si, a, b, lambda, entera)

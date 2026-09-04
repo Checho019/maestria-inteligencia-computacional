@@ -102,7 +102,7 @@ vinetas(s, [
     "Plan de trabajo en cuatro pasos sobre el dato",
     "  T0 crudo, tal como viene",
     "  T1 arreglo de columnas, filas, faltantes y atípicos",
-    "  T2 codificación, estandarización y normalización",
+    "  T2 codificación y estandarización",
     "  T3 balanceo de clases, por submuestreo y por sobremuestreo",
 ], 0.7, 1.6, 12, 5.3)
 
@@ -212,14 +212,13 @@ vinetas(s, [
     "De 15 columnas de entrada se pasa a 31, todas numéricas",
 ], 0.7, 5.4, 12, 1.4, size=16)
 
-s = nueva("T2. Estandarización y normalización", "Sobre age, balance, campaign, pdays, previous y dia_anio. Las indicadoras, contactado_antes y education se quedan como están")
+s = nueva("T2. Estandarización", "Z score sobre age, balance, campaign, pdays, previous y dia_anio. Las indicadoras, contactado_antes y education se quedan como están")
 imagen(s, "fig06.png", 0.5, 1.45, 8.2)
 vinetas(s, [
-    "T2z con z score, media cero y desviación uno",
-    "T2n con escalado al rango 0 a 1",
+    "Se usa z score, media cero y desviación uno",
+    "El panel derecho muestra el escalado a rango 0 a 1 solo para comparar, no se conserva",
     "pdays se ve concentrada porque el 90 % de las filas vale 240 y el resto queda por debajo",
     "previous sigue concentrada en cero, es la variable con menos información",
-    "Se guardan las dos versiones para comparar en la herramienta",
 ], 8.9, 1.6, 4.1, 5.5, size=15)
 
 s = nueva("T3. Balanceo por dos caminos", "Submuestreo de la clase no (T3_1) y sobremuestreo sintético de la clase sí (T3_2)")
@@ -230,15 +229,15 @@ vinetas(s, [
     "En T3_2 las indicadoras se redondean para que sigan valiendo 0 o 1 y education para que siga en 1, 2 o 3",
     "No se duplican filas porque la copia y su original caen en particiones distintas y la prueba deja de ser independiente",
     "Con los sintéticos el riesgo baja pero no desaparece, la comparación entre T3_1 y T3_2 debe leerse con esa reserva",
-    "Semilla fija en los dos caminos y las mismas filas en la versión z y en la versión n",
+    "Semilla fija en los dos caminos",
 ], 8.1, 1.6, 4.9, 5.5, size=15)
 
 s = nueva("Categóricas y numéricas mezcladas", "Efecto sobre la distancia en KNN y sobre el sobremuestreo")
 vinetas(s, [
-    "Tras T2 todo es numérico, las one hot y las binarias valen 0 o 1, education va de 1 a 3 y las seis numéricas están en z score o en rango 0 a 1",
+    "Tras T2 todo es numérico, las one hot y las binarias valen 0 o 1, education va de 1 a 3 y las seis numéricas están en z score",
     "Dos clientes con distinto oficio difieren en dos columnas one hot, así que la distancia euclídea suma un salto fijo por cada categórica distinta",
-    "Con z score las numéricas pesan más que las indicadoras, con rango 0 a 1 quedan en la misma escala, por eso se comparan las versiones z y n",
-    "KNN sirve, pero conviene la distancia euclídea sobre la versión n, o la distancia de Manhattan, que trata cada columna por igual",
+    "Con z score las numéricas pesan algo más que las indicadoras en la distancia, con rango 0 a 1 quedarían en la misma escala",
+    "KNN sirve, y si se quiere que cada columna pese igual conviene la distancia de Manhattan",
     "Los árboles y los modelos de conjunto no dependen de la escala y manejan las indicadoras sin problema",
     "En T3_2 se redondean las indicadoras y education para no crear clientes con valores intermedios en oficio, estado civil o nivel educativo, que no tienen interpretación",
 ], 0.7, 1.6, 12, 5.5, size=17)
@@ -247,9 +246,9 @@ s = nueva("Resumen de las versiones del dato", "Tablas que quedan en bank_pasos.
 tabla(s, ["Paso", "Filas", "Columnas de entrada", "No", "Sí", "Qué cambió"], [
     ["T0", "45 211", "16", "39 922", "5 289", "dato crudo"],
     ["T1", "44 923", "15", "39 668", "5 255", "sin duration, dia_anio, education ordinal, pdays con umbral, atípicos recortados"],
-    ["T2z y T2n", "44 923", "31", "39 668", "5 255", "one hot, binarias en 0 y 1, z score o rango 0 a 1"],
-    ["T3_1z y T3_1n", "10 510", "31", "5 255", "5 255", "submuestreo de la clase no"],
-    ["T3_2z y T3_2n", "79 336", "31", "39 668", "39 668", "sobremuestreo sintético de la clase sí"],
+    ["T2", "44 923", "31", "39 668", "5 255", "one hot, binarias en 0 y 1, z score en las numéricas"],
+    ["T3_1", "10 510", "31", "5 255", "5 255", "submuestreo de la clase no"],
+    ["T3_2", "79 336", "31", "39 668", "39 668", "sobremuestreo sintético de la clase sí"],
 ], 0.5, 1.5, 12.3, 3.0, size=14, anchos=[1.6, 1.2, 2.0, 1.2, 1.2, 5.1])
 vinetas(s, [
     "Un solo live script, procesar_bank.mlx, genera las cinco versiones y las figuras",
@@ -262,8 +261,7 @@ vinetas(s, [
     "Importar cada tabla desde el workspace con y como respuesta",
     "Validación cruzada de 5 particiones en todas las pruebas",
     "El escalado y el sobremuestreo se hicieron sobre todo el conjunto porque la partición se delega a la herramienta, así que las cifras de T3_2 salen algo optimistas",
-    "Comparar T2z, T3_1z y T3_2z para ver el efecto de cada balanceo sobre la sensibilidad de la clase sí",
-    "Comparar T2z frente a T2n para evaluar la sensibilidad de cada modelo al escalado",
+    "Comparar T2, T3_1 y T3_2 para ver el efecto de cada balanceo sobre la sensibilidad de la clase sí",
     "Mirar la exactitud, pero sobre todo la matriz de confusión, porque con 88 % de la clase no la exactitud resulta poco informativa",
     "Referencias",
     "  Moro, S., Cortez, P. y Rita, P. (2014). A data driven approach to predict the success of bank telemarketing. Decision Support Systems, 62, 22 a 31",
