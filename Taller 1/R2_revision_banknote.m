@@ -1,6 +1,6 @@
 %% Revision del dataset banknote paso a paso
 % Mismo esquema que con Iris: cada seccion deja una tabla en el workspace
-% para Classification Learner, con Response = "clase".
+% y R3 entrena el perceptron y el Adaline sobre cada una.
 clear; close all; clc
 
 %% Paso 0: cargar y mirar el dato crudo
@@ -107,5 +107,8 @@ title('Banknote normalizado');
 guardar_fig('rev_banknote_boxplot_normalizado');
 
 %% Resumen
-disp('Tablas listas para Classification Learner (Response = clase):')
+disp('Tablas listas, una por paso:')
 disp({'T0_crudo'; 'T1_outliers'; 'T2_balanceado'; 'T3_estandarizado'; 'T4_normalizado'})
+
+% se guardan para que R3 las use con el perceptron y el Adaline
+save('banknote_pasos.mat', 'T0_crudo', 'T1_outliers', 'T2_balanceado', 'T3_estandarizado', 'T4_normalizado');

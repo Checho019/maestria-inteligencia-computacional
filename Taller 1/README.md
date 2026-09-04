@@ -15,14 +15,16 @@ Red de una sola neurona en MATLAB, primero como perceptrón simple con las tres 
 | `T6_adaline_iris.m` | 10 | Adaline sobre Iris |
 | `T7_adaline_banknote.m` | 11, 12 | Adaline sobre banknote |
 
-Antes de la red hay dos scripts de revisión de los datos, uno por dataset, que dejan en el workspace una tabla por paso (`T0_crudo`, `T1_outliers`, `T2_balanceado`, `T3_estandarizado`, `T4_normalizado`) para llevarla a Classification Learner con `clase` como Response:
+Antes de la red hay una revisión de los datos. Dos scripts, uno por dataset, dejan en el workspace una tabla por paso (`T0_crudo`, `T1_outliers`, `T2_balanceado`, `T3_estandarizado`, `T4_normalizado`) y un tercero entrena el perceptrón y el Adaline sobre cada una para ver qué paso le sirve a la neurona.
 
 | Archivo | Qué hace |
 |---|---|
-| `R1_revision_iris.m` | histogramas, boxplots, balance y dispersión de Iris; outliers, estandarización y normalización |
+| `R1_revision_iris.m` | histogramas, boxplots, balance y dispersión de Iris, más outliers, estandarización y normalización |
 | `R2_revision_banknote.m` | lo mismo para banknote, que sí necesita balanceo y escalado |
+| `R3_modelos_por_paso.m` | perceptrón y Adaline sobre las cinco versiones de cada dataset, partición 70-30 |
+| `correr_revision.m` | corre los tres y genera sus `.mlx` |
 
-El informe de esa revisión, con las figuras ya puestas y espacios para los pantallazos de Classification Learner, es `Revision_datos.docx`.
+El informe de esa revisión, con las figuras y los resultados, es `Revision_datos.docx`.
 
 Las funciones están aparte para no repetirlas en cada script:
 

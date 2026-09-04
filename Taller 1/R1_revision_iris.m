@@ -1,9 +1,8 @@
 %% Revision del dataset Iris paso a paso
 % Antes de meterle una red al dataset hay que mirarlo. Cada seccion deja
-% una tabla en el workspace lista para Classification Learner:
-% Apps > Classification Learner > New Session > From Workspace, se escoge
-% la tabla y en Response se pone "clase". Se entrenan todos los modelos,
-% pantallazo, y se pasa a la siguiente seccion.
+% una tabla en el workspace: crudo, sin outliers, balanceado, estandarizado
+% y normalizado. Con esas cinco tablas R3 entrena el perceptron y el
+% Adaline del taller para ver que paso le sirve a la neurona.
 clear; close all; clc
 
 %% Paso 0: cargar y mirar el dato crudo
@@ -104,5 +103,8 @@ title('Iris normalizado');
 guardar_fig('rev_iris_boxplot_normalizado');
 
 %% Resumen
-disp('Tablas listas para Classification Learner (Response = clase):')
+disp('Tablas listas, una por paso:')
 disp({'T0_crudo'; 'T1_outliers'; 'T2_balanceado'; 'T3_estandarizado'; 'T4_normalizado'})
+
+% se guardan para que R3 las use con el perceptron y el Adaline
+save('iris_pasos.mat', 'T0_crudo', 'T1_outliers', 'T2_balanceado', 'T3_estandarizado', 'T4_normalizado');
