@@ -17,8 +17,9 @@
 \title{Perceptr\'on simple y Adaline. Implementaci\'on parametrizable en MATLAB y evaluaci\'on sobre compuertas l\'ogicas, Iris y autenticaci\'on de billetes}
 
 \author{\IEEEauthorblockN{Sergio Duarte}
-\IEEEauthorblockA{\textit{Maestr\'ia, Inteligencia Computacional Aplicada}\\
-sergioduartedev@gmail.com}}
+\IEEEauthorblockA{\textit{Maestr\'ia en Ciencias de la Informaci\'on y las Comunicaciones}\\
+Universidad Distrital Francisco Jos\'e de Caldas\\
+ssduarter@udistrital.edu.co}}
 
 \maketitle
 
@@ -78,7 +79,7 @@ baja de un valor permitido, con $Q$ el n\'umero de patrones. Para clasificar, la
 
 \subsection{Implementaci\'on}
 
-Se escribieron dos funciones en MATLAB R2026a \cite{matlab2026}, \texttt{perceptron.m} y \texttt{adaline.m}, con la misma interfaz. Ambas reciben la matriz de patrones $X$ de tama\~no $N \times n$, el vector de salidas deseadas $d$ y una estructura de opciones con el n\'umero de entradas impl\'icito en $X$, la regla de correcci\'on en el caso del perceptr\'on, el factor $\alpha$, el umbral $\theta$, la codificaci\'on de la salida, el tope de \'epocas y la semilla de los pesos iniciales. Cada funci\'on devuelve los pesos, el sesgo y una estructura con el hist\'orico de la ejecuci'on. El sesgo se implementa como el peso $w_0$ de una entrada constante 1, que es el modelo de la figura del taller. Los pesos iniciales se toman de una distribuci\'on uniforme en $[0,1]$ a partir de una semilla, para que cualquier ejecuci'on sea reproducible. Una funci\'on auxiliar \texttt{predecir.m} aplica la suma ponderada y el escal\'on, y sirve igual para los dos modelos.
+Se escribieron dos funciones en MATLAB R2026a \cite{matlab2026}, \texttt{perceptron.m} y \texttt{adaline.m}, con la misma interfaz. Ambas reciben la matriz de patrones $X$ de tama\~no $N \times n$, el vector de salidas deseadas $d$ y los par\'ametros del modelo, que son la regla de correcci\'on en el caso del perceptr\'on, el factor $\alpha$, el umbral $\theta$, la codificaci\'on de la salida, el tope de \'epocas y la semilla de los pesos iniciales, con el n\'umero de entradas impl\'icito en $X$. Cada funci\'on devuelve los pesos, el sesgo y el n\'umero de \'epocas empleadas. El sesgo se implementa como el peso $w_0$ de una entrada constante 1, que es el modelo de la figura del taller. Los pesos iniciales se toman de una distribuci\'on uniforme en $[0,1]$ a partir de una semilla, para que cualquier ejecuci'on sea reproducible. Una funci\'on auxiliar \texttt{predecir.m} aplica la suma ponderada y el escal\'on, y sirve igual para los dos modelos.
 
 En los dos modelos los patrones se presentan en el orden fijo del conjunto de entrenamiento y los pesos se corrigen tras cada patr\'on. En el perceptr\'on una \'epoca es una pasada por todos los patrones, y se declara convergencia cuando una \'epoca completa no requiere ninguna correcci\'on, lo que equivale al contador \texttt{aux} del c\'odigo de clase. En el Adaline, al final de cada \'epoca se calcula \eqref{eq:ec}. Se incorpor\'o un segundo criterio de parada adem\'as del error m\'inimo, porque con una tabla de verdad la salida lineal no coincide de forma exacta con los ceros y unos deseados, el $EC$ se estabiliza en un valor positivo y el entrenamiento no terminar\'ia con el error m\'inimo como \'unico criterio. Por esa raz\'on el entrenamiento tambi\'en se detiene cuando el cambio del $EC$ entre dos \'epocas consecutivas cae por debajo de una tolerancia, fijada por defecto en $10^{-6}$.
 
@@ -204,7 +205,7 @@ B & 90-10 & 200,0 & 95,4  & 100,0 \\
 Con los cuatro atributos de la transformada \textit{wavelet} el perceptr\'on no converge dentro del tope de \'epocas en ninguna de las 40 ejecuciones, lo que indica que las dos clases no son perfectamente separables, aunque la exactitud es alta y estable y se sit\'ua entre 97,1 y 99,3\,\% en prueba seg\'un el valor de $\alpha$. La Tabla \ref{tab:perc_bank} resume los promedios por partici\'on y condici\'on de escalado. El escalado al rango $[0,1]$ no mejora el resultado del perceptr\'on, y de hecho la mejor exactitud, de 99,3\,\% en la partici\'on 60-40 con $\alpha = 0{,}05$, se obtiene sin escalar. Este comportamiento es coherente con el modelo, ya que el escal\'on depende solo del signo de la suma ponderada y un cambio de escala en las entradas se compensa con un cambio de escala en los pesos \cite{lecun1998}. En el mejor caso, de 549 billetes de prueba el perceptr\'on clasifica mal 4.
 
 \begin{table}[!t]
-\caption{Perceptr\'on en billetes, promedio sobre $\alpha \in \{0{,}01, 0{,}05, 0{,}1, 0{,}5, 1\}$. Ninguna corrida convergi\'o en 200 \'epocas. Exactitud en \%.}
+\caption{Perceptr\'on en billetes, promedio sobre $\alpha \in \{0{,}01, 0{,}05, 0{,}1, 0{,}5, 1\}$. Ninguna ejecuci'on convergi\'o en 200 \'epocas. Exactitud en \%.}
 \label{tab:perc_bank}
 \centering
 \small
