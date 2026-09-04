@@ -73,7 +73,7 @@ T1.previous = min(T1.previous, quantile(T1.previous, 0.99));
 num1 = {'age','balance','campaign','pdays','previous','dia_anio'};
 figure
 for k = 1:6
-    subplot(2,4,k); boxplot(T1.(num1{k})); title(num1{k})
+    subplot(2,4,k); boxplot(T1.(num1{k})); title(num1{k}, 'Interpreter', 'none')
 end
 subplot(2,4,7); histogram(categorical(T1.education)); title('education')
 subplot(2,4,8); histogram(categorical(T1.contactado_antes)); title('contactado antes')
