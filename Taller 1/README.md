@@ -1,62 +1,40 @@
-# Taller 1: Perceptrón y Adaline
+# Taller 1. Perceptrón y Adaline
 
 Red de una sola neurona en MATLAB, primero como perceptrón simple con las tres reglas de corrección del taller y después como Adaline con la regla delta. Se prueba en compuertas AND y OR de 2, 3 y 4 entradas, en Iris y en el dataset de autenticación de billetes, con particiones 60-40, 70-30, 80-20 y 90-10.
 
-## Qué hay
+## Scripts
 
-| Archivo | Punto del taller | Qué hace |
-|---|---|---|
-| `T0_Dataset_train_test.m` | base del 4 | el script de particiones de clase, sobre Iris, guardando las cuatro particiones |
-| `T1_perceptron_compuertas.m` | 1, 2, 3 | perceptrón parametrizable y reporte de aprendizaje en compuertas |
-| `T2_perceptron_iris.m` | 4 | perceptrón sobre las particiones de Iris con varios alpha |
-| `T3_dataset_banknote.m` | 5 | el script de particiones modificado para banknote |
-| `T4_perceptron_banknote.m` | 6 | perceptrón sobre las particiones de banknote |
-| `T5_adaline_compuertas.m` | 7, 8, 9 | Adaline y reporte en compuertas |
-| `T6_adaline_iris.m` | 10 | Adaline sobre Iris |
-| `T7_adaline_banknote.m` | 11, 12 | Adaline sobre banknote |
-
-Antes de la red hay una revisión de los datos. Dos scripts, uno por dataset, dejan en el workspace una tabla por paso (`T0_crudo`, `T1_outliers`, `T2_balanceado`, `T3_estandarizado`, `T4_normalizado`) y un tercero entrena el perceptrón y el Adaline sobre cada una para ver qué paso le sirve a la neurona.
-
-| Archivo | Qué hace |
+| Archivo | Punto del taller |
 |---|---|
-| `R1_revision_iris.m` | histogramas, boxplots, balance y dispersión de Iris, más outliers, estandarización y normalización |
-| `R2_revision_banknote.m` | lo mismo para banknote, que sí necesita balanceo y escalado |
-| `R3_modelos_por_paso.m` | perceptrón y Adaline sobre las cinco versiones de cada dataset, partición 70-30 |
-| `correr_revision.m` | corre los tres y genera sus `.mlx` |
+| `T0_Dataset_train_test.m` | el script de particiones de clase, sobre Iris |
+| `T1_perceptron_compuertas.m` | 1, 2, 3 |
+| `T2_perceptron_iris.m` | 4 |
+| `T3_dataset_banknote.m` | 5 |
+| `T4_perceptron_banknote.m` | 6 |
+| `T5_adaline_compuertas.m` | 7, 8, 9 |
+| `T6_adaline_iris.m` | 10 |
+| `T7_adaline_banknote.m` | 11, 12 |
+| `R1_revision_iris.m`, `R2_revision_banknote.m` | revisión de los datos, una tabla por paso |
+| `R3_modelos_por_paso.m` | perceptrón y Adaline sobre cada versión del dato |
 
-El informe de esa revisión, con las figuras y los resultados, es `Revision_datos.docx`.
-
-Las funciones están aparte para no repetirlas en cada script:
+Funciones que usan los scripts
 
 | Función | Qué hace |
 |---|---|
-| `perceptron.m` | entrena la neurona con la regla 1, 2 o 3; parámetros en una estructura |
-| `adaline.m` | entrena con la regla delta sobre la salida lineal; para por error mínimo o por estancamiento del EC |
-| `predecir.m` | suma ponderada y escalón, sirve para los dos modelos |
+| `perceptron.m` | entrena la neurona con la regla 1, 2 o 3 |
+| `adaline.m` | entrena con la regla delta sobre la salida lineal |
+| `predecir.m` | suma ponderada y escalón |
 | `compuerta.m` | tabla de verdad de AND, OR o XOR de n entradas |
-| `graficar_frontera.m` | dibuja los patrones y la recta separadora en 2 entradas |
-| `guardar_fig.m` | exporta la figura a `informe/figuras` con fondo claro |
+| `graficar_frontera.m` | patrones y recta separadora en 2 entradas |
 
-Los `.mlx` ya ejecutados, con salidas y gráficas adentro, están en `mlx/`, y una versión en PDF de cada uno en `pdf/`. El informe en formato IEEE está en `informe/main.pdf`, con su fuente en `informe/main.tex`.
+Los `.mlx` ya ejecutados están en `mlx/` y su PDF en `pdf/`. El informe está en `informe/main.pdf`. La revisión de datos está en `Revision_datos.docx`.
 
-## Cómo correrlo
+`iris.dat` se generó desde `fisheriris` de MATLAB con la clase codificada 1, 2, 3, porque el zip de clase no lo traía. `data_banknote_authentication.txt` es el original del taller.
 
-Desde la carpeta del taller, en MATLAB:
+## Para regenerar todo
+
+Desde la carpeta del taller, en MATLAB
 
 ```matlab
-correr_todo      % corre los ocho scripts en orden y deja tablas y figuras en informe/
-generar_mlx      % convierte los .m a .mlx, los ejecuta y exporta los PDF
+addpath('herramientas'); correr_todo
 ```
-
-`iris.dat` se generó a partir de `fisheriris` de MATLAB con la clase codificada 1, 2, 3, porque el zip de clase no lo traía. `data_banknote_authentication.txt` es el original del taller.
-
-Todo usa semillas fijas, así que los números se repiten.
-
-## Para compilar el informe
-
-```bash
-cd informe
-latexmk -pdf main.tex
-```
-
-Necesita la clase `IEEEtran` y `babel` en español, que vienen con MiKTeX o TeX Live.
