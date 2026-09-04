@@ -1,4 +1,4 @@
-"""Arma exposicion_bank.pptx con las figuras de figuras/. Se corre desde la carpeta Exposicion Bank."""
+"""Arma exposicion_bank_final.pptx con las figuras de figuras/. Se corre desde la carpeta Exposicion Bank."""
 import os
 from pptx import Presentation
 from pptx.util import Inches, Pt
@@ -80,7 +80,8 @@ def portada():
     lineas = [("Bank Marketing", 44, AZUL, True),
               ("Preparación del dataset paso a paso para la herramienta de clasificación", 24, GRIS, False),
               ("", 12, GRIS, False),
-              ("Sergio Duarte", 20, None, False),
+              ("Sergio Santiago Duarte Rojas", 20, None, False),
+              ("Andrea Quintero Villamizar", 20, None, False),
               ("Inteligencia Computacional. Maestría en Ciencias de la Información y las Comunicaciones", 16, GRIS, False),
               ("Universidad Distrital Francisco José de Caldas", 16, GRIS, False)]
     for k, (t, sz, col, neg) in enumerate(lineas):
@@ -196,5 +197,5 @@ vinetas(s, [
     "  Tukey, J. W. (1977). Exploratory Data Analysis. Addison Wesley",
 ], 0.7, 1.6, 12, 5.5, size=17)
 
-prs.save("exposicion_bank.pptx")
-print("Listo exposicion_bank.pptx,", len(prs.slides), "laminas")
+prs.save("exposicion_bank_final.pptx")
+print("Listo exposicion_bank_final.pptx,", len(prs.slides), "laminas")

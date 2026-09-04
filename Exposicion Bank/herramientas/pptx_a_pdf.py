@@ -1,4 +1,4 @@
-"""Dibuja exposicion_bank.pptx en un PDF, una pagina por lamina. Se corre desde la carpeta Exposicion Bank."""
+"""Dibuja exposicion_bank_final.pptx en un PDF, una pagina por lamina. Se corre desde la carpeta Exposicion Bank."""
 import io
 
 from pptx import Presentation
@@ -103,7 +103,7 @@ def convertir(entrada, salida):
     W, H = prs.slide_width * PT, prs.slide_height * PT
     c = canvas.Canvas(salida, pagesize=(W, H))
     c.setTitle("Bank Marketing. Preparación del dataset paso a paso")
-    c.setAuthor("Sergio Duarte")
+    c.setAuthor("Sergio Santiago Duarte Rojas y Andrea Quintero Villamizar")
     for s in prs.slides:
         for sh in s.shapes:
             x, y_top, w = sh.left * PT, H - sh.top * PT, sh.width * PT
@@ -126,4 +126,4 @@ def convertir(entrada, salida):
 
 
 if __name__ == "__main__":
-    convertir("exposicion_bank.pptx", "exposicion_bank.pdf")
+    convertir("exposicion_bank_final.pptx", "exposicion_bank_final.pdf")

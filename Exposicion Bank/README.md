@@ -14,7 +14,7 @@ Las tablas quedan en `bank_pasos.mat`. En Classification Learner se importa la t
 
 El escalado y el sobremuestreo se calculan sobre todo el conjunto porque la partición se delega a Classification Learner. Por eso la validación cruzada sobre `T3_2` sale algo optimista y la comparación de referencia es `T3_1`.
 
-El dataset va en `data/bank-full.csv`, se saca de `bank+marketing.zip` de la Primera actividad. La exposición está en `exposicion_bank.pptx` y su PDF en `exposicion_bank.pdf`.
+El dataset va en `data/bank-full.csv`, se saca de `bank+marketing.zip` de la Primera actividad. La exposición está en `exposicion_bank_final.pptx` y su PDF en `exposicion_bank_final.pdf`.
 
 Para regenerar figuras, mlx y presentación desde la carpeta
 
