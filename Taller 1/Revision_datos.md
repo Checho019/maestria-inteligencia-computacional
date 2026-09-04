@@ -137,24 +137,23 @@ En Iris ningún paso ayudó de verdad, y eso es lo que había que ver. El datase
 ![Dispersión](informe/figuras/rev_banknote_dispersion.png)
 *Varianza contra asimetría. Con solo esas dos ya casi se separan.*
 
-[PANTALLAZO Classification Learner con T0_crudo]
+![Classification Learner con T0_crudo, validación cruzada de 5 pliegues.](informe/pantallazos/banknote_T0_crudo.png)
+*Classification Learner con T0_crudo, validación cruzada de 5 pliegues.*
 
 | Mejor modelo | Exactitud |
 |---|---|
-| | |
+| Quadratic SVM, Fine Gaussian SVM y Medium Gaussian SVM | 100 % |
+
+Con el dato crudo, sin tocar nada, tres SVM clasifican los 1372 billetes sin un solo error, y los KNN quedan en 99,9 %. El SVM lineal se queda en 98,8 % y el Naive Bayes gaussiano en 84,2 %.
 
 ### 2.2 Corrigiendo outliers
 
-Regla del 1,5 por rango intercuartil, recortando al borde.
+Regla del 1,5 por rango intercuartil, recortando al borde. Se recortan 57 valores de curtosis y 33 de entropía.
 
 ![Boxplot sin outliers](informe/figuras/rev_banknote_boxplot_outliers.png)
 *Se recortan las colas de la curtosis y la entropía.*
 
-[PANTALLAZO Classification Learner con T1_outliers]
-
-| Mejor modelo | Exactitud | Cambió |
-|---|---|---|
-| | | |
+No se corrió en la app. Como el crudo ya daba 100 %, se saltó directo a la última versión del dato para ver si el procesamiento completo cambiaba algo.
 
 ### 2.3 Balanceando las clases
 
@@ -163,46 +162,60 @@ Se toman 610 auténticos al azar para igualar a los 610 falsos. Quedan 1220 fila
 ![Balance después](informe/figuras/rev_banknote_balance_despues.png)
 *610 y 610.*
 
-[PANTALLAZO Classification Learner con T2_balanceado]
-
-| Mejor modelo | Exactitud | Cambió |
-|---|---|---|
-| | | |
+No se corrió en la app por la misma razón.
 
 ### 2.4 Estandarizando
 
 ![Boxplot estandarizado](informe/figuras/rev_banknote_boxplot_estandarizado.png)
 *Ahora las cuatro se comparan.*
 
-[PANTALLAZO Classification Learner con T3_estandarizado]
-
-| Mejor modelo | Exactitud | Cambió |
-|---|---|---|
-| | | |
+No se corrió en la app.
 
 ### 2.5 Normalizando
+
+Es el dato con todo el procesamiento encima: sin outliers, balanceado y entre 0 y 1.
 
 ![Boxplot normalizado](informe/figuras/rev_banknote_boxplot_normalizado.png)
 *Todo entre 0 y 1.*
 
-[PANTALLAZO Classification Learner con T4_normalizado]
+![Classification Learner con T4_normalizado.](informe/pantallazos/banknote_T4_normalizado.png)
+*Classification Learner con T4_normalizado, 1220 billetes.*
 
 | Mejor modelo | Exactitud | Cambió |
 |---|---|---|
-| | | |
+| Cubic SVM y Fine Gaussian SVM | 100 % | no |
+
+Lo mismo que con el crudo. Cambia cuál SVM llega al 100 % y cuál se queda en 99,9 %, pero eso es un billete de 1220.
 
 ### 2.6 Qué pasó en banknote
 
-| Paso | Filas | Mejor modelo | Exactitud |
-|---|---|---|---|
-| Crudo | 1372 | | |
-| Sin outliers | 1372 | | |
-| Balanceado | 1220 | | |
-| Estandarizado | 1220 | | |
-| Normalizado | 1220 | | |
+Los modelos de la app en los dos pasos que se corrieron, exactitud de validación en %:
 
-Dos o tres frases.
+| Modelo | T0 crudo (1372) | T4 procesado (1220) |
+|---|---|---|
+| Gaussian Naive Bayes | 84,2 | 84,8 |
+| Kernel Naive Bayes | 91,6 | 92,4 |
+| Linear SVM | 98,8 | 98,8 |
+| Quadratic SVM | **100** | 99,9 |
+| Cubic SVM | 99,9 | **100** |
+| Fine Gaussian SVM | **100** | **100** |
+| Medium Gaussian SVM | **100** | 99,8 |
+| Coarse Gaussian SVM | 97,9 | 97,5 |
+| Fine KNN | 99,9 | 99,8 |
+| Medium KNN | 99,9 | 99,7 |
+| Coarse KNN | 97,3 | 97,5 |
+| Cosine KNN | 98,8 | 99,1 |
+
+**Por qué da 100 % con el dato crudo y también con el procesado.** Hay dos preguntas distintas mezcladas aquí.
+
+La primera es si las clases son linealmente separables, o sea si existe un plano que deje todos los auténticos de un lado y todos los falsos del otro. La respuesta es que casi, pero no del todo. El SVM lineal, que es el modelo que busca exactamente ese plano, se queda en 98,8 %: hay alrededor de 16 billetes que quedan del lado equivocado de cualquier plano. Eso coincide con lo que pasó en el taller con el perceptrón, que nunca convergió en 200 épocas sobre este dataset aunque acertara el 98 o 99 %. Si fueran linealmente separables el perceptrón tendría que haber convergido, por el teorema de convergencia.
+
+La segunda es si las clases se pueden separar con una frontera curva. Ahí la respuesta es sí, y limpiamente. El SVM cuadrático, el cúbico y el gaussiano llegan al 100 %, y los KNN al 99,9 %. Eso quiere decir que las dos clases no se traslapan en ninguna parte del espacio de las cuatro variables: no hay billetes auténticos y falsos con los mismos valores. Lo único que pasa es que la frontera que los separa tiene una curva que un plano no puede seguir. Se ve en la dispersión de varianza contra asimetría de la sección 2.1: las dos nubes están separadas pero la línea que las divide no es recta.
+
+Por eso el procesamiento no cambia nada. Quitar outliers recortando al borde no mueve ningún billete al otro lado de la frontera. Balancear quita 152 auténticos al azar, y una clase con 610 en vez de 762 sigue siendo la misma nube. Y escalar tampoco importa para el resultado, por una razón práctica: Classification Learner estandariza las entradas por defecto antes de entrenar los SVM y los KNN, así que a esos modelos les llega el dato ya escalado aunque uno le pase el crudo. Los únicos que sí ven el dato tal cual son los Naive Bayes, y son justamente los que peor van, 84 y 92 %, porque asumen que cada variable es una campana y las cuatro tienen colas largas.
+
+En resumen: banknote no es linealmente separable, pero sí es separable, y con una frontera curva cualquier modelo flexible lo resuelve completo con el dato crudo. El preprocesamiento no tenía nada que arreglar.
 
 ## 3. Conclusión
 
-Qué paso sirvió más en cada dataset y por qué. Un párrafo.
+En ninguno de los dos datasets el preprocesamiento mejoró el mejor modelo, y eso es lo que había que aprender de esta revisión. Iris viene balanceado, en una sola escala y casi separable: el discriminante lineal da 98 % con las cinco versiones del dato y los 3 errores son flores de la frontera entre versicolor y virginica que ningún paso puede mover. Banknote tiene escalas distintas y un desbalance suave, pero las clases no se traslapan, así que un SVM con kernel llega al 100 % con el dato crudo y con el procesado. Lo que sí se vio en los dos es qué modelos dependen de la escala y cuáles no: discriminantes y árboles no la notan, los SVM sí, y la app se la corrige sola. Corregir outliers, balancear y escalar son pasos que hay que hacer cuando el dato lo necesita; estos dos no lo necesitaban, y la forma de saberlo fue mirar las gráficas antes de correr nada.
