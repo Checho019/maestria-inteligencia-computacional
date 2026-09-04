@@ -8,7 +8,7 @@ T0.y = categorical(T0.y);
 size(T0)
 summary(T0)
 num = {'age','balance','day','duration','campaign','pdays','previous'};
-cat = {'job','marital','education','default','housing','loan','contact','month','poutcome'};
+categ = {'job','marital','education','default','housing','loan','contact','month','poutcome'};
 
 figure
 for k = 1:7
@@ -23,11 +23,11 @@ end
 
 figure
 for k = 1:9
-    subplot(3,3,k); histogram(categorical(T0.(cat{k}))); title(cat{k})
+    subplot(3,3,k); histogram(categorical(T0.(categ{k}))); title(categ{k})
 end
 
 countcats(T0.y)'
-array2table(sum(T0{:,cat} == "unknown"), 'VariableNames', cat)
+array2table(sum(T0{:,categ} == "unknown"), 'VariableNames', categ)
 
 %% T1: columnas, filas, valores faltantes y atipicos
 T1 = T0;
@@ -58,23 +58,24 @@ umbral = 240;
 T1.contactado_antes = double(T1.pdays >= 0 & T1.pdays <= umbral);
 T1.pdays(T1.contactado_antes == 0) = umbral;
 
-num1 = {'age','balance','campaign'};
+rec = {'age','balance','campaign'};
 for k = 1:3
-    x = T1.(num1{k});
+    x = T1.(rec{k});
     q = quantile(x, [0.25 0.75]);
     li = q(1) - 1.5*(q(2)-q(1));  ls = q(2) + 1.5*(q(2)-q(1));
     fuera(k) = sum(x < li | x > ls);
     x(x < li) = li;  x(x > ls) = ls;
-    T1.(num1{k}) = x;
+    T1.(rec{k}) = x;
 end
-array2table(fuera, 'VariableNames', num1)
+array2table(fuera, 'VariableNames', rec)
 T1.previous = min(T1.previous, quantile(T1.previous, 0.99));
 
-num1 = {'age','education','balance','campaign','pdays','previous','dia_anio'};
+num1 = {'age','balance','campaign','pdays','previous','dia_anio'};
 figure
-for k = 1:7
+for k = 1:6
     subplot(2,4,k); boxplot(T1.(num1{k})); title(num1{k})
 end
+subplot(2,4,7); histogram(categorical(T1.education)); title('education')
 subplot(2,4,8); histogram(categorical(T1.contactado_antes)); title('contactado antes')
 size(T1)
 
@@ -99,22 +100,44 @@ figure
 subplot(1,2,1); boxplot(T2z{:,num1}, 'Labels', num1); title('estandarizado')
 subplot(1,2,2); boxplot(T2n{:,num1}, 'Labels', num1); title('normalizado')
 
-%% T3: balanceo por submuestreo de la clase no
+%% T3_1: balanceo por submuestreo de la clase no
 rng(1)
 no = find(T2.y == "no");  si = find(T2.y == "yes");
 sel = [no(randperm(numel(no), numel(si))); si];
-T3z = T2z(sel, :);  T3n = T2n(sel, :);
+T3_1z = T2z(sel, :);  T3_1n = T2n(sel, :);
+
+%% T3_2: balanceo por sobremuestreo sintetico de la clase si
+rng(1)
+falta = numel(no) - numel(si);
+vecinos = knnsearch(T2z{si,1:end-1}, T2z{si,1:end-1}, 'K', 6);
+a = randi(numel(si), falta, 1);
+b = vecinos(sub2ind(size(vecinos), a, randi(5, falta, 1) + 1));
+lambda = rand(falta, 1);
+entera = ~ismember(T2.Properties.VariableNames(1:end-1), num1);
+T3_2z = sobremuestrear(T2z, si, a, b, lambda, entera);
+T3_2n = sobremuestrear(T2n, si, a, b, lambda, entera);
 figure
-subplot(1,2,1); histogram(T2z.y); title('T2')
-subplot(1,2,2); histogram(T3z.y); title('T3')
+subplot(1,3,1); histogram(T2z.y); title('T2')
+subplot(1,3,2); histogram(T3_1z.y); title('T3\_1 submuestreo')
+subplot(1,3,3); histogram(T3_2z.y); title('T3\_2 sobremuestreo')
 
 %% Resumen y guardado
-pasos = {'T0','T1','T2z','T3z'};
+pasos = {'T0','T1','T2z','T3_1z','T3_2z'};
 resumen = table();
-for k = 1:4
+for k = 1:5
     T = eval(pasos{k});
     resumen = [resumen; table(pasos(k), height(T), width(T)-1, sum(T.y == "no"), sum(T.y == "yes"), ...
                'VariableNames', {'Paso','Filas','Columnas','No','Si'})];
 end
 resumen
-save('bank_pasos.mat', 'T0', 'T1', 'T2', 'T2z', 'T2n', 'T3z', 'T3n')
+save('bank_pasos.mat', 'T0', 'T1', 'T2', 'T2z', 'T2n', 'T3_1z', 'T3_1n', 'T3_2z', 'T3_2n')
+
+%% Crea los patrones sinteticos entre cada si y uno de sus vecinos, redondeando las columnas enteras
+function T = sobremuestrear(T, si, a, b, lambda, entera)
+    X = T{si,1:end-1};
+    Xnuevo = X(a,:) + lambda .* (X(b,:) - X(a,:));
+    Xnuevo(:,entera) = round(Xnuevo(:,entera));
+    nuevo = array2table(Xnuevo, 'VariableNames', T.Properties.VariableNames(1:end-1));
+    nuevo.y = repmat(T.y(si(1)), numel(a), 1);
+    T = [T; nuevo];
+end

@@ -1,7 +1,7 @@
 function generar
 % Corre procesar_bank.m, guarda cada figura en figuras/ y deja el .mlx ejecutado.
 % Se llama desde la carpeta Exposicion Bank.
-correr('procesar_bank')
+correr('procesar_bank.m')
 figs = findobj('Type', 'figure');
 [~, orden] = sort([figs.Number]);
 figs = figs(orden);
@@ -15,9 +15,9 @@ mlx = fullfile(pwd, 'procesar_bank.mlx');
 matlab.internal.liveeditor.openAndSave(fullfile(pwd, 'procesar_bank.m'), mlx);
 matlab.internal.liveeditor.executeAndSave(mlx);
 close all
-disp('>>> listo')
 end
 
 function correr(nombre)
+% El script empieza con clear, por eso corre en su propio espacio de trabajo
 run(nombre);
 end

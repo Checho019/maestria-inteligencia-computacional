@@ -97,19 +97,19 @@ vinetas(s, [
     "Sin valores faltantes explícitos, pero varias categóricas usan la etiqueta unknown",
     "Clase muy desbalanceada, 39 922 no frente a 5 289 sí (11.7 % de positivos)",
     "Archivo bank-full.csv, separado por punto y coma",
-    "Plan de trabajo en cuatro versiones del dato",
+    "Plan de trabajo en cuatro pasos sobre el dato",
     "  T0 crudo, tal como viene",
     "  T1 arreglo de columnas, filas, faltantes y atípicos",
     "  T2 codificación, estandarización y normalización",
-    "  T3 balanceo de clases",
+    "  T3 balanceo de clases, por submuestreo y por sobremuestreo",
 ], 0.7, 1.6, 12, 5.3)
 
 s = nueva("Variables", "Tres grupos según la documentación original")
 tabla(s, ["Grupo", "Variable", "Tipo", "Observación"], [
     ["Cliente", "age", "numérica", "18 a 95 años"],
-    ["Cliente", "job", "categórica 12 niveles", "incluye unknown (288)"],
+    ["Cliente", "job", "categórica 12 niveles", "incluye unknown (288), quedan 11 niveles"],
     ["Cliente", "marital", "categórica 3 niveles", "divorced agrupa divorciados y viudos"],
-    ["Cliente", "education", "categórica ordenable", "primary, secondary, tertiary, unknown (1 857)"],
+    ["Cliente", "education", "categórica ordinal", "primary, secondary, tertiary, unknown (1 857)"],
     ["Cliente", "default, housing, loan", "binarias yes/no", "crédito en mora, hipoteca, préstamo personal"],
     ["Cliente", "balance", "numérica", "saldo medio anual en euros, cola muy larga"],
     ["Último contacto", "contact", "categórica 3 niveles", "unknown en el 29 % de las filas"],
@@ -124,11 +124,11 @@ tabla(s, ["Grupo", "Variable", "Tipo", "Observación"], [
 s = nueva("T0. Distribución de las numéricas", "Histogramas de las siete variables numéricas y de la clase")
 imagen(s, "fig01.png", 0.5, 1.45, 8.6)
 vinetas(s, [
-    "age es la única con forma razonable",
-    "balance, campaign y previous tienen colas larguísimas",
+    "age es la única con una distribución aproximadamente simétrica",
+    "balance, campaign y previous presentan colas muy pronunciadas",
     "pdays es casi toda -1 (82 % nunca contactados)",
     "duration se concentra en llamadas cortas",
-    "day cubre todo el mes, sin patrón claro",
+    "day cubre todo el mes de forma casi uniforme",
     "y desbalanceada, 7.5 no por cada sí",
 ], 9.3, 1.6, 3.7, 5.5, size=16)
 
@@ -153,18 +153,18 @@ tabla(s, ["Variable", "unknown", "Decisión"], [
 vinetas(s, [
     "month muy concentrado en mayo",
     "default casi constante, 1.8 % en mora",
-    "Las unknown de poutcome son exactamente las filas con previous igual a cero",
+    "Las unknown de poutcome coinciden con las filas de previous igual a cero salvo cinco casos",
 ], 8.4, 4.2, 4.6, 2.5, size=15)
 
-s = nueva("T1. Arreglo de columnas", "Menos columnas y con significado, sin tocar mucho el dato")
-tabla(s, ["Columna", "Qué se hizo", "Por qué"], [
+s = nueva("T1. Arreglo de columnas", "Menos columnas y con significado, con intervención mínima sobre el dato")
+tabla(s, ["Columna", "Tratamiento", "Por qué"], [
     ["duration", "se elimina", "solo se conoce al terminar la llamada, es fuga de información hacia la clase"],
     ["day y month", "se unen en dia_anio (1 a 365)", "una sola columna numérica en vez de una numérica y una categórica de 12 niveles"],
     ["education", "ordinal 1, 2, 3", "los niveles tienen orden natural, no hace falta one hot"],
     ["education unknown", "moda dentro de cada job", "el oficio es el mejor indicio del nivel educativo"],
     ["job unknown", "se eliminan 288 filas", "no hay con qué imputar y son el 0.6 %"],
-    ["contact unknown", "se conserva", "es un tercio del dato y tiene comportamiento propio"],
-    ["pdays", "dos campos, ver siguiente lámina", "el -1 no es un número"],
+    ["contact unknown", "se conserva", "es cerca del 29 % del dato y tiene comportamiento propio"],
+    ["pdays", "dos campos, ver siguiente lámina", "el -1 es un código de ausencia, no una cantidad de días"],
 ], 0.5, 1.5, 12.3, 4.2, size=13)
 pie(s, "Para dia_anio se usa un año no bisiesto de referencia porque el dataset no trae el año. Resultado 44 923 filas y 15 columnas de entrada.")
 
@@ -174,7 +174,7 @@ vinetas(s, [
     "Nunca contactado responde sí el 9.2 % de las veces (línea roja)",
     "Hasta 239 días la tasa se mantiene muy por encima de la base",
     "Entre 240 y 364 días cae a 12 % y 8.6 %, ya se comporta como nunca contactado",
-    "Más de 365 días son 691 filas (1.5 %), se tratan igual bajo el mismo supuesto",
+    "Desde 365 días la tasa vuelve a subir a 27 %, pero son 691 filas (1.5 %) y se asumen bajo el mismo umbral para no abrir un tercer caso",
     "Umbral elegido 240 días, unos ocho meses",
     "contactado_antes vale 1 si pdays está entre 0 y 240",
     "pdays se deja en 240 para el resto, así el -1 desaparece",
@@ -183,72 +183,86 @@ vinetas(s, [
 s = nueva("T1. Atípicos", "Regla de 1.5 veces el rango intercuartil, recortando al borde")
 imagen(s, "fig05.png", 0.5, 1.45, 7.4)
 tabla(s, ["Variable", "Fuera del rango", "Tratamiento"], [
-    ["age", "480", "recorte a 10.5 y 70.5"],
+    ["age", "480", "recorte al borde superior 70.5"],
     ["balance", "4 712", "recorte a -1 962 y 3 462"],
     ["campaign", "3 031", "recorte a 6"],
     ["previous", "IQR cero", "recorte al percentil 99 (9)"],
     ["pdays", "IQR cero", "ya acotada por el umbral"],
-], 8.1, 1.6, 4.9, 2.4, size=13)
+    ["education, dia_anio", "sin atípicos", "sin tratamiento"],
+], 8.1, 1.6, 4.9, 2.7, size=13)
 vinetas(s, [
     "Se recorta al borde en vez de borrar filas para no perder varios miles de filas",
-    "Los 5 255 sí son pocos y borrar filas los reduce aún más",
-], 8.1, 4.4, 4.9, 2, size=15)
+    "Los 5 255 registros de la clase sí son escasos y eliminar filas los reduciría todavía más",
+], 8.1, 4.6, 4.9, 2, size=15)
 
 s = nueva("T2. Codificación", "Todo queda numérico para la herramienta de clasificación")
 tabla(s, ["Tipo", "Variables", "Método", "Columnas"], [
-    ["binaria yes/no", "default, housing, loan", "0 y 1", "3"],
+    ["binaria", "default, housing, loan, contactado_antes", "0 y 1", "4"],
     ["ordinal", "education", "1 primary, 2 secondary, 3 tertiary", "1"],
     ["nominal", "job", "one hot", "11"],
     ["nominal", "marital", "one hot", "3"],
     ["nominal", "contact", "one hot", "3"],
     ["nominal", "poutcome", "one hot sin unknown", "3"],
-    ["numérica", "age, balance, campaign, pdays, previous, dia_anio, contactado_antes", "sin cambio", "7"],
+    ["numérica", "age, balance, campaign, pdays, previous, dia_anio", "sin cambio", "6"],
 ], 0.5, 1.5, 12.3, 3.6, size=13)
 vinetas(s, [
-    "poutcome_unknown se elimina porque equivale a previous igual a cero",
+    "poutcome_unknown se elimina por redundancia, se deduce de las otras tres indicadoras y marca a los nunca contactados, que ya identifica contactado_antes",
     "De 15 columnas de entrada se pasa a 31, todas numéricas",
 ], 0.7, 5.4, 12, 1.4, size=16)
 
-s = nueva("T2. Estandarización y normalización", "Solo sobre las siete columnas numéricas, las indicadoras se quedan en 0 y 1")
+s = nueva("T2. Estandarización y normalización", "Sobre age, balance, campaign, pdays, previous y dia_anio. Las indicadoras, contactado_antes y education se quedan como están")
 imagen(s, "fig06.png", 0.5, 1.45, 8.2)
 vinetas(s, [
     "T2z con z score, media cero y desviación uno",
     "T2n con escalado al rango 0 a 1",
-    "pdays se ve rara porque el 82 % vale 240 y el resto queda por debajo",
+    "pdays se ve concentrada porque el 90 % de las filas vale 240 y el resto queda por debajo",
     "previous sigue concentrada en cero, es la variable con menos información",
     "Se guardan las dos versiones para comparar en la herramienta",
 ], 8.9, 1.6, 4.1, 5.5, size=15)
 
-s = nueva("T3. Balanceo", "Submuestreo aleatorio de la clase no")
+s = nueva("T3. Balanceo por dos caminos", "Submuestreo de la clase no (T3_1) y sobremuestreo sintético de la clase sí (T3_2)")
 imagen(s, "fig07.png", 0.5, 1.45, 7.4)
 vinetas(s, [
-    "Se toman al azar 5 255 no para igualar a los 5 255 sí",
-    "Quedan 10 510 filas, suficientes para entrenar",
-    "No se sobremuestrea porque inventar 34 000 filas sintéticas hace lento el entrenamiento y no agrega información real",
-    "Semilla fija para que la muestra sea reproducible",
-    "Se guarda T3z desde la estandarizada y T3n desde la normalizada, con las mismas filas",
+    "T3_1. Se toman al azar 5 255 no para igualar a los 5 255 sí, quedan 10 510 filas",
+    "T3_2. Se crean 34 413 sí sintéticos entre cada positivo y uno de sus cinco vecinos más cercanos, quedan 79 336 filas",
+    "En T3_2 las indicadoras se redondean para que sigan valiendo 0 o 1 y education para que siga en 1, 2 o 3",
+    "No se duplican filas porque la copia y su original caen en particiones distintas y la prueba deja de ser independiente",
+    "Con los sintéticos el riesgo baja pero no desaparece, la comparación entre T3_1 y T3_2 debe leerse con esa reserva",
+    "Semilla fija en los dos caminos y las mismas filas en la versión z y en la versión n",
 ], 8.1, 1.6, 4.9, 5.5, size=15)
+
+s = nueva("Categóricas y numéricas mezcladas", "Efecto sobre la distancia en KNN y sobre el sobremuestreo")
+vinetas(s, [
+    "Tras T2 todo es numérico, las one hot y las binarias valen 0 o 1, education va de 1 a 3 y las seis numéricas están en z score o en rango 0 a 1",
+    "Dos clientes con distinto oficio difieren en dos columnas one hot, así que la distancia euclídea suma un salto fijo por cada categórica distinta",
+    "Con z score las numéricas pesan más que las indicadoras, con rango 0 a 1 quedan en la misma escala, por eso se comparan las versiones z y n",
+    "KNN sirve, pero conviene la distancia euclídea sobre la versión n, o la distancia de Manhattan, que trata cada columna por igual",
+    "Los árboles y los modelos de conjunto no dependen de la escala y manejan las indicadoras sin problema",
+    "En T3_2 se redondean las indicadoras y education para no crear clientes con valores intermedios en oficio, estado civil o nivel educativo, que no tienen interpretación",
+], 0.7, 1.6, 12, 5.5, size=17)
 
 s = nueva("Resumen de las versiones del dato", "Tablas que quedan en bank_pasos.mat")
 tabla(s, ["Paso", "Filas", "Columnas de entrada", "No", "Sí", "Qué cambió"], [
     ["T0", "45 211", "16", "39 922", "5 289", "dato crudo"],
     ["T1", "44 923", "15", "39 668", "5 255", "sin duration, dia_anio, education ordinal, pdays con umbral, atípicos recortados"],
     ["T2z y T2n", "44 923", "31", "39 668", "5 255", "one hot, binarias en 0 y 1, z score o rango 0 a 1"],
-    ["T3z y T3n", "10 510", "31", "5 255", "5 255", "submuestreo de la clase no"],
-], 0.5, 1.5, 12.3, 2.6, size=14)
+    ["T3_1z y T3_1n", "10 510", "31", "5 255", "5 255", "submuestreo de la clase no"],
+    ["T3_2z y T3_2n", "79 336", "31", "39 668", "39 668", "sobremuestreo sintético de la clase sí"],
+], 0.5, 1.5, 12.3, 3.0, size=14)
 vinetas(s, [
-    "Un solo live script, procesar_bank.mlx, genera las cuatro versiones y las figuras",
+    "Un solo live script, procesar_bank.mlx, genera las cinco versiones y las figuras",
     "Cada tabla lleva la clase y como última columna",
-    "Ninguna versión modifica la clase ni elimina positivos, salvo las 34 filas con job unknown",
-], 0.7, 4.4, 12, 2.2, size=16)
+    "Ninguna versión modifica la clase ni elimina positivos reales, salvo las 34 filas con job unknown",
+], 0.7, 4.8, 12, 2.0, size=16)
 
 s = nueva("Siguiente paso. Herramienta de clasificación", "Qué se va a comparar en Classification Learner")
 vinetas(s, [
     "Importar cada tabla desde el workspace con y como respuesta",
     "Validación cruzada de 5 particiones en todas las pruebas",
-    "Comparar T2z frente a T3z para ver el efecto del balanceo sobre la sensibilidad de la clase sí",
-    "Comparar T2z frente a T2n para ver si el escalado cambia algo según el modelo",
-    "Mirar la exactitud, pero sobre todo la matriz de confusión, porque con 88 % de no la exactitud engaña",
+    "El escalado y el sobremuestreo se hicieron sobre todo el conjunto porque la partición se delega a la herramienta, así que las cifras de T3_2 salen algo optimistas",
+    "Comparar T2z, T3_1z y T3_2z para ver el efecto de cada balanceo sobre la sensibilidad de la clase sí",
+    "Comparar T2z frente a T2n para evaluar la sensibilidad de cada modelo al escalado",
+    "Mirar la exactitud, pero sobre todo la matriz de confusión, porque con 88 % de la clase no la exactitud resulta poco informativa",
     "Referencias",
     "  Moro, S., Cortez, P. y Rita, P. (2014). A data driven approach to predict the success of bank telemarketing. Decision Support Systems, 62, 22 a 31",
     "  Tukey, J. W. (1977). Exploratory Data Analysis. Addison Wesley",
