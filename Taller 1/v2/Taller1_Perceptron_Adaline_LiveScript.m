@@ -76,6 +76,9 @@ cfg.init_scale    = 0.5;              % escala de los pesos iniciales, W = randn
 cfg.n_seeds       = 10;               % repeticiones con distinta semilla en los reportes
 cfg.normalize     = true;             % escalado min-max de las entradas en datos reales
 
+paleta = [0.00 0.35 0.64; 0.85 0.37 0.01; 0.00 0.55 0.40; 0.45 0.20 0.55; 0.80 0.65 0.10; 0.40 0.45 0.50];
+set(groot, 'defaultAxesColorOrder', paleta)
+
 rng(cfg.seed);
 %% 3. Generación de datos: compuertas lógicas AND / OR
 % *Teoría:* las compuertas AND y OR de $n$ entradas tienen $2^n$ combinaciones
@@ -165,6 +168,7 @@ end
 R1
 
 figure
+colororder(paleta)
 bar(reshape(R1.Epocas, 6, 3))
 set(gca, 'XTickLabel', etiquetas); ylabel('épocas promedio'); grid on
 legend(rules, 'Interpreter', 'none', 'Location', 'northwest')
@@ -236,6 +240,7 @@ cfg.init_scale = 0.5;
 R4
 
 figure
+colororder(paleta)
 subplot(1, 2, 1)
 bar(reshape(R4.Epocas, 4, 2)); set(gca, 'XTickLabel', compose('%g', init_scales))
 xlabel('escala de los pesos iniciales'); ylabel('épocas promedio'); grid on; legend(gates)
@@ -365,7 +370,7 @@ rng(cfgA.seed);
 % de Adaline (continua, decreciente de forma suave) contra el comportamiento del
 % Perceptrón (que no minimiza una función de costo continua) para su reporte.
 
-figure; hold on
+figure; colororder(paleta); hold on
 for g = 1:numel(gates)
     for n = n_inputs_list
         cfgA.n_inputs = n;
@@ -382,7 +387,7 @@ for g = 1:numel(gates)
 
         fprintf('[Adaline] Compuerta %s (%d entradas) | épocas=%d | MSE final=%.6f | exactitud=%.1f%%\n', ...
             gates{g}, n, numel(mse_hist), mse_hist(end), accuracy);
-        plot(mse_hist, 'DisplayName', sprintf('%s %d', gates{g}, n))
+        plot(mse_hist, 'LineWidth', 1.3, 'DisplayName', sprintf('%s %d', gates{g}, n))
     end
 end
 set(gca, 'YScale', 'log'); grid on; legend; xlabel('época'); ylabel('MSE')
@@ -482,6 +487,7 @@ cfgA.max_epochs = n_ep;  rng(cfgA.seed);
 cfgA.max_epochs = 200;
 
 figure
+colororder(paleta(1:2, :))
 yyaxis left;  stairs(errores, 'LineWidth', 1.3); ylabel('patrones mal clasificados'); ylim([-0.2 3])
 yyaxis right; plot(mse_and, 'LineWidth', 1.3); ylabel('MSE')
 xlabel('época'); grid on; legend('Perceptrón, errores de clasificación', 'Adaline, MSE')
@@ -513,9 +519,9 @@ for nz = [false true]
 end
 R8
 
-figure; hold on
-plot(proporciones, R5.Exact_prueba(R5.Alpha == 0.1), '-o', 'DisplayName', 'Perceptrón, \alpha = 0.1')
-plot(proporciones, R8.Exact_prueba(R8.Escalado & R8.Alpha == 0.01), '-s', 'DisplayName', 'Adaline, \alpha = 0.01')
+figure; colororder(paleta); hold on
+plot(proporciones, R5.Exact_prueba(R5.Alpha == 0.1), '-o', 'LineWidth', 1.3, 'DisplayName', 'Perceptrón, \alpha = 0.1')
+plot(proporciones, R8.Exact_prueba(R8.Escalado & R8.Alpha == 0.01), '-s', 'LineWidth', 1.3, 'DisplayName', 'Adaline, \alpha = 0.01')
 xticks(proporciones); xticklabels({'60-40', '70-30', '80-20', '90-10'})
 xlabel('partición'); ylabel('exactitud de prueba (%)'); grid on; legend('Location', 'southeast')
 %% 14.1 Matriz de confusión en la partición 70-30
