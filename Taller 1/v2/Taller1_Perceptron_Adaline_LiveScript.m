@@ -234,6 +234,31 @@ for g = 1:numel(gates)
 end
 cfg.init_scale = 0.5;
 R4
+
+figure
+subplot(1, 2, 1)
+bar(reshape(R4.Epocas, 4, 2)); set(gca, 'XTickLabel', compose('%g', init_scales))
+xlabel('escala de los pesos iniciales'); ylabel('épocas promedio'); grid on; legend(gates)
+subplot(1, 2, 2)
+bar(reshape(R4.Rango_W1_W2_b(:, 1), 4, 2)); set(gca, 'XTickLabel', compose('%g', init_scales))
+xlabel('escala de los pesos iniciales'); ylabel('rango de w_1 entre semillas'); grid on; legend(gates)
+%% 7.5 Pesos finales según la regla de aprendizaje
+% Los pesos con que termina cada regla explican por qué hebb no resuelve la AND.
+
+Pesos = table();
+for r = 1:numel(rules)
+    cfg.learning_rule = rules{r};
+    for g = 1:numel(gates)
+        cfg.n_inputs = 2;
+        [X, D] = generate_gate_data(2, gates{g});
+        rng(cfg.seed);
+        [W, b, ep] = train_perceptron(X, D, cfg);
+        Pesos = [Pesos; table(rules(r), gates(g), W(1), W(2), b, ep, accuracy_of(X, D, W, b, cfg.threshold), ...
+              'VariableNames', {'Regla', 'Compuerta', 'W1', 'W2', 'b', 'Epocas', 'Exactitud'})];
+    end
+end
+cfg.learning_rule = 'perceptron_alpha';
+Pesos
 %% 8. Partición de datasets — función |split_dataset|
 % *Teoría:* para evaluar el modelo sobre datos reales (numerales 4-6 del taller)
 % se necesita separar un subconjunto de *entrenamiento* (usado para ajustar los
@@ -253,6 +278,12 @@ R4
 data = readmatrix('data_banknote_authentication.txt');
 X_bank = data(:, 1:end-1);
 D_bank = data(:, end);
+
+vars_bank = {'varianza', 'asimetria', 'curtosis', 'entropia'};
+Descriptivos = array2table([min(X_bank); max(X_bank); mean(X_bank); std(X_bank)]', ...
+    'RowNames', vars_bank, 'VariableNames', {'Minimo', 'Maximo', 'Media', 'Desviacion'})
+Clases = table(sum(D_bank == 0), sum(D_bank == 1), size(X_bank, 1), ...
+    'VariableNames', {'Clase_0', 'Clase_1', 'Total'})
 
 proporciones = [0.6, 0.7, 0.8, 0.9];
 alphas_bank = [0.01 0.1 1];
@@ -417,6 +448,43 @@ for g = 1:numel(gates)
 end
 cfgA.init_scale = 0.5;
 R7
+%% 13.4 Control negativo, la compuerta XOR
+% La XOR no es linealmente separable, así que ninguno de los dos modelos debe
+% resolverla. Se usa como control para verificar que el resto de los resultados
+% no proviene de un error de implementación.
+
+[X, ~] = generate_gate_data(2, 'AND');
+D_xor = double(xor(X(:, 1), X(:, 2)));
+cfg.n_inputs = 2;  rng(cfg.seed);
+[Wp, bp, ep_xor] = train_perceptron(X, D_xor, cfg);
+cfgA.n_inputs = 2;  rng(cfgA.seed);
+[Wa, ba, mse_xor] = train_adaline(X, D_xor, cfgA);
+XOR = table({'Perceptrón'; 'Adaline'}, [ep_xor; numel(mse_xor)], [NaN; mse_xor(end)], ...
+    [accuracy_of(X, D_xor, Wp, bp, cfg.threshold); accuracy_of(X, D_xor, Wa, ba, cfgA.threshold)], ...
+    'VariableNames', {'Modelo', 'Epocas', 'MSE_final', 'Exactitud'})
+%% 13.5 Dinámica del error, Perceptrón frente a Adaline
+% El Perceptrón cuenta errores enteros por época y se detiene en la primera época
+% sin errores; el Adaline sigue un descenso continuo sobre el MSE. Para reconstruir
+% la trayectoria del Perceptrón se entrena con un tope de épocas creciente, que
+% con semilla fija reproduce la misma secuencia de correcciones.
+
+[X, D] = generate_gate_data(2, 'AND');
+n_ep = 30;
+errores = zeros(n_ep, 1);
+for k = 1:n_ep
+    cfg.max_epochs = k;  rng(cfg.seed);
+    [W, b] = train_perceptron(X, D, cfg);
+    errores(k) = sum(step_activation(X * W' + b, cfg.threshold) ~= D);
+end
+cfg.max_epochs = 100;
+cfgA.max_epochs = n_ep;  rng(cfgA.seed);
+[~, ~, mse_and] = train_adaline(X, D, cfgA);
+cfgA.max_epochs = 200;
+
+figure
+yyaxis left;  stairs(errores, 'LineWidth', 1.3); ylabel('patrones mal clasificados'); ylim([-0.2 3])
+yyaxis right; plot(mse_and, 'LineWidth', 1.3); ylabel('MSE')
+xlabel('época'); grid on; legend('Perceptrón, errores de clasificación', 'Adaline, MSE')
 %% 14. Aplicación de Adaline a datos reales — |data_banknote_authentication.txt|
 % *Qué se espera en esta sección:* al igual que en la Sección 9, entrenar y
 % evaluar Adaline sobre las particiones 60-40, 70-30, 80-20 y 90-10, y comparar
@@ -450,6 +518,25 @@ plot(proporciones, R5.Exact_prueba(R5.Alpha == 0.1), '-o', 'DisplayName', 'Perce
 plot(proporciones, R8.Exact_prueba(R8.Escalado & R8.Alpha == 0.01), '-s', 'DisplayName', 'Adaline, \alpha = 0.01')
 xticks(proporciones); xticklabels({'60-40', '70-30', '80-20', '90-10'})
 xlabel('partición'); ylabel('exactitud de prueba (%)'); grid on; legend('Location', 'southeast')
+%% 14.1 Matriz de confusión en la partición 70-30
+% La exactitud sola no dice de qué lado se equivoca el modelo. Se reportan los
+% cuatro conteos sobre el conjunto de prueba con las entradas escaladas.
+
+[Xtr, Dtr, Xte, Dte] = split_dataset(X_bank, D_bank, 0.7, cfg.seed);
+[Xtr, Xte] = scale_minmax(Xtr, Xte);
+cfg.n_inputs = size(Xtr, 2);  cfg.alpha = 0.1;  rng(cfg.seed);
+[Wp, bp] = train_perceptron(Xtr, Dtr, cfg);
+cfgA.n_inputs = size(Xtr, 2);  cfgA.alpha = 0.01;  rng(cfgA.seed);
+[Wa, ba] = train_adaline(Xtr, Dtr, cfgA);
+Yp = step_activation(Xte * Wp' + bp, cfg.threshold);
+Ya = step_activation(Xte * Wa' + ba, cfgA.threshold);
+Confusion = table([sum(Yp == 0 & Dte == 0); sum(Ya == 0 & Dte == 0)], ...
+                  [sum(Yp == 1 & Dte == 0); sum(Ya == 1 & Dte == 0)], ...
+                  [sum(Yp == 0 & Dte == 1); sum(Ya == 0 & Dte == 1)], ...
+                  [sum(Yp == 1 & Dte == 1); sum(Ya == 1 & Dte == 1)], ...
+    'RowNames', {'Perceptrón', 'Adaline'}, 'VariableNames', {'TN', 'FP', 'FN', 'TP'})
+Pesos_bank = table([Wp'; bp], [Wa'; ba], 'RowNames', [vars_bank, {'sesgo'}], ...
+    'VariableNames', {'Perceptron', 'Adaline'})
 %% Funciones locales
 % MATLAB permite definir funciones locales al final de un script. No cambie
 % los nombres ni los argumentos de entrada/salida.

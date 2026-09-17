@@ -3,6 +3,9 @@ function generar_v2
 % y deja el .mlx ejecutado en v2/. Se llama desde la carpeta Taller 1.
 cd v2
 copyfile('../data_banknote_authentication.txt', '.');
+if exist('Taller1_Perceptron_Adaline_LiveScript.mlx', 'file')
+    delete('Taller1_Perceptron_Adaline_LiveScript.mlx')   % el mlx ensombrece al .m
+end
 correr('Taller1_Perceptron_Adaline_LiveScript.m')
 figs = findobj('Type', 'figure');
 [~, orden] = sort([figs.Number]);
