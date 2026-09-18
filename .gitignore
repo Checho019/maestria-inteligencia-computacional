@@ -88,3 +88,21 @@ Taller 1/v2/informe/latexmk.log
 # Exposicion Bank. El .mat se regenera con procesar_bank
 # ---------------------------------------------------------------
 Exposicion Bank/*.mat
+
+# ---------------------------------------------------------------
+# Taller 2. Material del profesor y temporales
+# ---------------------------------------------------------------
+Taller 2/Taller_2.pdf
+Taller 2/BACKPROPAGATION.pdf
+Taller 2/plantilla_profesor.mlx
+Taller 2/*.data
+Taller 2/*.dat
+Taller 2/*.txt
+Taller 2/informe/*.aux
+Taller 2/informe/*.log
+Taller 2/informe/*.out
+Taller 2/informe/*.toc
+Taller 2/informe/*.fls
+Taller 2/informe/*.fdb_latexmk
+Taller 2/informe/*.synctex.gz
+Taller 2/informe/latexmk.log
