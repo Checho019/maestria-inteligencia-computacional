@@ -14,7 +14,11 @@ figs = figs(orden);
 if ~exist('informe/figuras', 'dir'), mkdir('informe/figuras'); end
 for k = 1:numel(figs)
     figs(k).Theme = 'light';
-    figs(k).Position = [50 50 760 440];
+    if strcmp(figs(k).Name, 'dinamica')
+        figs(k).Position = [50 50 760 620];   % dos paneles apilados necesitan mas alto
+    else
+        figs(k).Position = [50 50 760 440];
+    end
     set(findall(figs(k), '-property', 'FontSize'), 'FontSize', 13)
     exportgraphics(figs(k), fullfile('informe', 'figuras', sprintf('fig%02d.png', k)), 'Resolution', 150)
 end

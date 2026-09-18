@@ -422,12 +422,12 @@ El mismo experimento de la Tabla \ref{tab:init} aplicado al Adaline produce el r
 
 \subsection{Dinámica del error de los dos modelos}
 
-La Figura \ref{fig:dinamica} superpone las dos formas de error sobre la compuerta AND de dos entradas. La curva del Adaline es continua y decreciente en todo momento, tal como corresponde a un descenso de gradiente sobre una función convexa. El conteo de errores del Perceptrón, en cambio, avanza a saltos y no es monótono, pues sube de dos a tres patrones mal clasificados en la tercera época, baja a uno, vuelve a subir a dos en la época trece y solo alcanza cero en la época dieciséis. La función declara la convergencia en la época diecisiete, una más, porque necesita recorrer una época completa sin aplicar ninguna corrección para poder afirmar que el hiperplano ya separa los datos.
+La Figura \ref{fig:dinamica} presenta las dos formas de error sobre la compuerta AND de dos entradas en paneles separados, porque un conteo entero de patrones y un error cuadrático medio no comparten unidad ni escala y no deben leerse sobre el mismo eje. Lo que se compara entre ambos paneles es la forma de la trayectoria, no su magnitud. La curva del Adaline es continua y decreciente en todo momento, tal como corresponde a un descenso de gradiente sobre una función convexa. El conteo de errores del Perceptrón, en cambio, avanza a saltos y no es monótono, pues sube de dos a tres patrones mal clasificados en la tercera época, baja a uno, vuelve a subir a dos en la época trece y solo alcanza cero en la época dieciséis. La función declara la convergencia en la época diecisiete, una más, porque necesita recorrer una época completa sin aplicar ninguna corrección para poder afirmar que el hiperplano ya separa los datos.
 
 \begin{figure}[!htb]
     \centering
     \includegraphics[width=0.70\textwidth]{fig04.png}
-    \caption{Dinámica del error sobre la compuerta AND de dos entradas. El eje izquierdo cuenta los patrones mal clasificados por el Perceptrón y el derecho mide el MSE del Adaline}
+    \caption{Dinámica del error sobre la compuerta AND de dos entradas. Arriba, patrones mal clasificados por el Perceptrón en cada época. Abajo, error cuadrático medio del Adaline en cada época}
     \label{fig:dinamica}
 \end{figure}
 

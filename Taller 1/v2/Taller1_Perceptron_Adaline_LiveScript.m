@@ -515,11 +515,15 @@ cfgA.max_epochs = n_ep;  rng(cfgA.seed);
 [~, ~, mse_and] = train_adaline(X, D, cfgA);
 cfgA.max_epochs = 200;
 
-figure
-colororder(paleta(1:2, :))
-yyaxis left;  stairs(errores, 'LineWidth', 1.3); ylabel('patrones mal clasificados'); ylim([-0.2 3])
-yyaxis right; plot(mse_and, 'LineWidth', 1.3); ylabel('MSE')
-xlabel('época'); grid on; legend('Perceptrón, errores de clasificación', 'Adaline, MSE')
+figure('Name', 'dinamica')
+subplot(2, 1, 1)
+stairs(errores, 'LineWidth', 1.3, 'Color', paleta(1, :))
+ylabel('patrones mal clasificados'); ylim([-0.2 3.2]); xlim([1 n_ep]); grid on
+title('Perceptrón, errores de clasificación por época')
+subplot(2, 1, 2)
+plot(mse_and, 'LineWidth', 1.3, 'Color', paleta(2, :))
+xlabel('época'); ylabel('MSE'); xlim([1 n_ep]); grid on
+title('Adaline, error cuadrático medio por época')
 %% 14. Aplicación de Adaline a datos reales — |data_banknote_authentication.txt|
 % *Qué se espera en esta sección:* al igual que en la Sección 9, entrenar y
 % evaluar Adaline sobre las particiones 60-40, 70-30, 80-20 y 90-10, y comparar
