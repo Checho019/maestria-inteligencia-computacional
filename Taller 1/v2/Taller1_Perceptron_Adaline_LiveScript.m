@@ -75,6 +75,9 @@ cfg.seed          = 1;
 cfg.init_scale    = 0.5;              % escala de los pesos iniciales, W = randn * init_scale
 cfg.n_seeds       = 10;               % repeticiones con distinta semilla en los reportes
 cfg.normalize     = true;             % escalado min-max de las entradas en datos reales
+cfg.datos_bank    = 'data_banknote_authentication.txt';
+cfg.datos_iris    = 'iris.dat';
+cfg_base          = cfg;              % copia de referencia, cada barrido vuelve a ella
 
 paleta = [0.00 0.35 0.64; 0.85 0.37 0.01; 0.00 0.55 0.40; 0.45 0.20 0.55; 0.80 0.65 0.10; 0.40 0.45 0.50];
 set(groot, 'defaultAxesColorOrder', paleta)
@@ -171,10 +174,10 @@ figure
 colororder(paleta)
 bar(reshape(R1.Epocas, 6, 3))
 set(gca, 'XTickLabel', etiquetas); ylabel('épocas promedio'); grid on
-legend(rules, 'Interpreter', 'none', 'Location', 'northwest')
+legend({'regla 1, hebb', 'regla 2, perceptron', 'regla 3, alpha'}, 'Location', 'northoutside', 'Orientation', 'horizontal')
 %% 7.2 Efecto de la tasa de aprendizaje con la regla perceptron_alpha
 
-cfg.learning_rule = 'perceptron_alpha';
+cfg = cfg_base;
 alphas = [0.01 0.05 0.1 0.5 1];
 E = zeros(6, numel(alphas));  k = 0;
 for g = 1:numel(gates)
@@ -194,7 +197,7 @@ end
 R2 = array2table(E, 'RowNames', etiquetas, 'VariableNames', matlab.lang.makeValidName(compose('alpha %g', alphas)))
 %% 7.3 Efecto del umbral de la función escalón
 
-cfg.alpha = 0.1;
+cfg = cfg_base;
 thresholds = [0 0.5 1];
 E = zeros(6, numel(thresholds));  k = 0;
 for g = 1:numel(gates)
@@ -218,7 +221,7 @@ R3 = array2table(E, 'RowNames', etiquetas, 'VariableNames', matlab.lang.makeVali
 % cuánto difieren los pesos finales entre semillas (rango entre el mayor y el menor
 % valor final de cada peso).
 
-cfg.threshold = 0.5;
+cfg = cfg_base;
 init_scales = [0 1e-3 0.5 5];
 R4 = table();
 for g = 1:numel(gates)
@@ -236,7 +239,7 @@ for g = 1:numel(gates)
               'VariableNames', {'Compuerta', 'Escala_inicial', 'Epocas', 'Convergio', 'Exactitud', 'Rango_W1_W2_b'})];
     end
 end
-cfg.init_scale = 0.5;
+cfg = cfg_base;
 R4
 
 figure
@@ -262,7 +265,7 @@ for r = 1:numel(rules)
               'VariableNames', {'Regla', 'Compuerta', 'W1', 'W2', 'b', 'Epocas', 'Exactitud'})];
     end
 end
-cfg.learning_rule = 'perceptron_alpha';
+cfg = cfg_base;
 Pesos
 %% 8. Partición de datasets — función |split_dataset|
 % *Teoría:* para evaluar el modelo sobre datos reales (numerales 4-6 del taller)
@@ -280,7 +283,7 @@ Pesos
 % taller (puede variar también $\alpha$ entre corridas, como sugiere el ejemplo
 % del enunciado).
 
-data = readmatrix('data_banknote_authentication.txt');
+data = readmatrix(cfg.datos_bank);
 X_bank = data(:, 1:end-1);
 D_bank = data(:, end);
 
@@ -293,19 +296,44 @@ Clases = table(sum(D_bank == 0), sum(D_bank == 1), size(X_bank, 1), ...
 proporciones = [0.6, 0.7, 0.8, 0.9];
 alphas_bank = [0.01 0.1 1];
 R5 = table();
+for nz = [false true]
+    cfg.normalize = nz;
+    for r = proporciones
+        [Xtr, Dtr, Xte, Dte] = split_dataset(X_bank, D_bank, r, cfg.seed);
+        if cfg.normalize, [Xtr, Xte] = scale_minmax(Xtr, Xte); end
+        cfg.n_inputs = size(Xtr, 2);
+        for a = alphas_bank
+            cfg.alpha = a;  rng(cfg.seed);
+            [W, b, ep] = train_perceptron(Xtr, Dtr, cfg);
+            R5 = [R5; table(nz, r, a, ep, accuracy_of(Xtr, Dtr, W, b, cfg.threshold), accuracy_of(Xte, Dte, W, b, cfg.threshold), ...
+                  'VariableNames', {'Escalado', 'Proporcion', 'Alpha', 'Epocas', 'Exact_entrenamiento', 'Exact_prueba'})];
+        end
+    end
+end
+cfg = cfg_base;
+R5
+%% 9.1 Numeral 4, los conjuntos que genera el script Dataset_train_test
+% El script de particiones entregado en clase trabaja sobre Iris. Como la red
+% tiene una sola neurona se plantea el problema binario setosa contra el resto,
+% que es linealmente separable, con las mismas cuatro proporciones.
+
+iris = load(cfg.datos_iris);
+X_iris = iris(:, 1:4);
+D_iris = double(iris(:, 5) == 1);
+R6 = table();
 for r = proporciones
-    [Xtr, Dtr, Xte, Dte] = split_dataset(X_bank, D_bank, r, cfg.seed);
-    if cfg.normalize, [Xtr, Xte] = scale_minmax(Xtr, Xte); end
+    [Xtr, Dtr, Xte, Dte] = split_dataset(X_iris, D_iris, r, cfg.seed);
+    [Xtr, Xte] = scale_minmax(Xtr, Xte);
     cfg.n_inputs = size(Xtr, 2);
     for a = alphas_bank
         cfg.alpha = a;  rng(cfg.seed);
         [W, b, ep] = train_perceptron(Xtr, Dtr, cfg);
-        R5 = [R5; table(r, a, ep, accuracy_of(Xtr, Dtr, W, b, cfg.threshold), accuracy_of(Xte, Dte, W, b, cfg.threshold), ...
+        R6 = [R6; table(r, a, ep, accuracy_of(Xtr, Dtr, W, b, cfg.threshold), accuracy_of(Xte, Dte, W, b, cfg.threshold), ...
               'VariableNames', {'Proporcion', 'Alpha', 'Epocas', 'Exact_entrenamiento', 'Exact_prueba'})];
     end
 end
-cfg.alpha = 0.1;
-R5
+cfg = cfg_base;
+R6
 %% =========================================================================
 %% PARTE B — ADALINE (ADAptive LInear NEuron)
 %% =========================================================================
@@ -359,6 +387,7 @@ cfgA.seed       = 1;
 cfgA.init_scale = 0.5;
 cfgA.n_seeds    = 10;
 cfgA.normalize  = true;
+cfgA_base       = cfgA;
 rng(cfgA.seed);
 %% 12. Entrenamiento de Adaline — Regla Delta
 % *Qué se espera en esta sección:* la función |train_adaline| debe ajustar |W|
@@ -417,7 +446,7 @@ Exactitud = array2table(A, 'RowNames', etiquetas, 'VariableNames', nombres)
 % El umbral no interviene en el ajuste de los pesos, solo en la decisión final
 % sobre la salida lineal. Se entrena una vez por compuerta y se evalúa con varios umbrales.
 
-cfgA.alpha = 0.05;
+cfgA = cfgA_base;
 thresholdsA = [0.3 0.5 0.7];
 A = zeros(6, numel(thresholdsA));  k = 0;
 for g = 1:numel(gates)
@@ -430,12 +459,12 @@ for g = 1:numel(gates)
         end
     end
 end
-R6 = array2table(A, 'RowNames', etiquetas, 'VariableNames', matlab.lang.makeValidName(compose('umbral %g', thresholdsA)))
+R_umbralA = array2table(A, 'RowNames', etiquetas, 'VariableNames', matlab.lang.makeValidName(compose('umbral %g', thresholdsA)))
 %% 13.3 Efecto de los pesos iniciales en Adaline
 % Misma prueba que en 7.4. Como el error cuadrático es convexo, se espera que
 % los pesos finales sean los mismos sin importar de dónde se parta.
 
-R7 = table();
+R_iniA = table();
 for g = 1:numel(gates)
     cfgA.n_inputs = 2;
     [X, D] = generate_gate_data(2, gates{g});
@@ -447,12 +476,12 @@ for g = 1:numel(gates)
             [W, b, mse_hist] = train_adaline(X, D, cfgA);
             Wf(s, :) = [W b];  m(s) = mse_hist(end);  acc(s) = accuracy_of(X, D, W, b, cfgA.threshold);
         end
-        R7 = [R7; table(gates(g), sc, mean(m), mean(acc), mean(Wf), max(Wf) - min(Wf), ...
+        R_iniA = [R_iniA; table(gates(g), sc, mean(m), mean(acc), mean(Wf), max(Wf) - min(Wf), ...
               'VariableNames', {'Compuerta', 'Escala_inicial', 'MSE_final', 'Exactitud', 'W1_W2_b_final', 'Rango_W1_W2_b'})];
     end
 end
-cfgA.init_scale = 0.5;
-R7
+cfgA = cfgA_base;
+R_iniA
 %% 13.4 Control negativo, la compuerta XOR
 % La XOR no es linealmente separable, así que ninguno de los dos modelos debe
 % resolverla. Se usa como control para verificar que el resto de los resultados
@@ -520,7 +549,7 @@ end
 R8
 
 figure; colororder(paleta); hold on
-plot(proporciones, R5.Exact_prueba(R5.Alpha == 0.1), '-o', 'LineWidth', 1.3, 'DisplayName', 'Perceptrón, \alpha = 0.1')
+plot(proporciones, R5.Exact_prueba(R5.Escalado & R5.Alpha == 0.1), '-o', 'LineWidth', 1.3, 'DisplayName', 'Perceptrón, \alpha = 0.1')
 plot(proporciones, R8.Exact_prueba(R8.Escalado & R8.Alpha == 0.01), '-s', 'LineWidth', 1.3, 'DisplayName', 'Adaline, \alpha = 0.01')
 xticks(proporciones); xticklabels({'60-40', '70-30', '80-20', '90-10'})
 xlabel('partición'); ylabel('exactitud de prueba (%)'); grid on; legend('Location', 'southeast')
@@ -543,6 +572,23 @@ Confusion = table([sum(Yp == 0 & Dte == 0); sum(Ya == 0 & Dte == 0)], ...
     'RowNames', {'Perceptrón', 'Adaline'}, 'VariableNames', {'TN', 'FP', 'FN', 'TP'})
 Pesos_bank = table([Wp'; bp], [Wa'; ba], 'RowNames', [vars_bank, {'sesgo'}], ...
     'VariableNames', {'Perceptron', 'Adaline'})
+%% 14.2 Numeral 10, el Adaline sobre los conjuntos de Dataset_train_test
+% Mismo problema binario de la sección 9.1, ahora con la Regla Delta.
+
+R_iris_ada = table();
+for r = proporciones
+    [Xtr, Dtr, Xte, Dte] = split_dataset(X_iris, D_iris, r, cfgA.seed);
+    [Xtr, Xte] = scale_minmax(Xtr, Xte);
+    cfgA.n_inputs = size(Xtr, 2);
+    for a = alphasA_bank
+        cfgA.alpha = a;  rng(cfgA.seed);
+        [W, b, mse_hist] = train_adaline(Xtr, Dtr, cfgA);
+        R_iris_ada = [R_iris_ada; table(r, a, numel(mse_hist), mse_hist(end), accuracy_of(Xtr, Dtr, W, b, cfgA.threshold), accuracy_of(Xte, Dte, W, b, cfgA.threshold), ...
+              'VariableNames', {'Proporcion', 'Alpha', 'Epocas', 'MSE_final', 'Exact_entrenamiento', 'Exact_prueba'})];
+    end
+end
+cfgA = cfgA_base;
+R_iris_ada
 %% Funciones locales
 % MATLAB permite definir funciones locales al final de un script. No cambie
 % los nombres ni los argumentos de entrada/salida.

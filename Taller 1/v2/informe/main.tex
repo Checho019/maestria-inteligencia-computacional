@@ -6,6 +6,7 @@
 \usepackage[utf8]{inputenc}
 \usepackage[T1]{fontenc}
 \usepackage[spanish,es-noindentfirst,es-tabla]{babel}
+\decimalpoint
 \usepackage[margin=2.5cm]{geometry}
 \usepackage{graphicx}
 \usepackage{booktabs}
@@ -44,8 +45,8 @@
     tabsize=2,
     backgroundcolor=\color{gray!5},
     extendedchars=true,
-    literate={á}{{'a}}1 {é}{{'e}}1 {í}{{'i}}1 {ó}{{'o}}1 {ú}{{'u}}1
-             {Á}{{'A}}1 {É}{{'E}}1 {Í}{{'I}}1 {Ó}{{'O}}1 {Ú}{{'U}}1
+    literate={á}{{\'a}}1 {é}{{\'e}}1 {í}{{\'i}}1 {ó}{{\'o}}1 {ú}{{\'u}}1
+             {Á}{{\'A}}1 {É}{{\'E}}1 {Í}{{\'I}}1 {Ó}{{\'O}}1 {Ú}{{\'U}}1
              {ñ}{{\~n}}1 {Ñ}{{\~N}}1 {¿}{{?`}}1 {¡}{{!`}}1
 }
 \lstset{style=codigo}
@@ -126,13 +127,13 @@ Geométricamente la condición $net = \theta$ define un hiperplano en el espacio
 
 \subsection{Las tres reglas de ajuste de pesos}
 
-El taller pide dejar el modelo parametrizable para elegir entre tres formas de corregir los pesos, que se listan en las ecuaciones \eqref{eq:hebb} a \eqref{eq:alpha}. En los tres casos el ajuste final es $w_i^{*} = w_i + \Delta w_i$.
+El taller pide dejar el modelo parametrizable para elegir entre tres formas de corregir los pesos, numeradas 1, 2 y 3 en el enunciado y recogidas en las ecuaciones \eqref{eq:hebb} a \eqref{eq:alpha}. En los tres casos el ajuste final es $w_i^{*} = w_i + \Delta w_i$.
 \begin{align}
     \Delta w_i &= d(x)\, x_i \label{eq:hebb} \\
     \Delta w_i &= \left[d(x) - Y(x)\right] x_i \label{eq:perc} \\
     \Delta w_i &= \alpha \left[d(x) - Y(x)\right] x_i \label{eq:alpha}
 \end{align}
-La diferencia conceptual entre ellas es más grande de lo que sugiere su parecido. La regla \eqref{eq:hebb} es de tipo hebbiano y no consulta la salida actual de la red, de manera que aplica el mismo incremento cada vez que ve un patrón, acierte o no. Es una regla de asociación, no de corrección de error, y carece de un mecanismo que la detenga. La regla \eqref{eq:perc} es la formulación original del Perceptrón y sí usa el error, por lo cual el incremento se anula exactamente cuando la clasificación es correcta. La regla \eqref{eq:alpha} es la misma con una tasa de aprendizaje explícita que gradúa el tamaño del paso. Para las dos últimas, el teorema de convergencia del Perceptrón garantiza que si las clases son linealmente separables el algoritmo encuentra un hiperplano separador tras un número finito de correcciones, sin importar el punto de partida.
+La diferencia conceptual entre ellas es más grande de lo que sugiere su parecido. La regla 1 es de tipo hebbiano y no consulta la salida actual de la red, de manera que aplica el mismo incremento cada vez que ve un patrón, acierte o no. Es una regla de asociación, no de corrección de error, y carece de un mecanismo que la detenga. La regla 2 es la formulación original del Perceptrón y sí usa el error, por lo cual el incremento se anula exactamente cuando la clasificación es correcta. La regla 3 es la misma con una tasa de aprendizaje explícita que gradúa el tamaño del paso. Para las dos últimas, el teorema de convergencia del Perceptrón garantiza que si las clases son linealmente separables el algoritmo encuentra un hiperplano separador tras un número finito de correcciones, sin importar el punto de partida.
 
 \subsection{El Adaline, la Regla Delta y la función de costo continua}
 
@@ -147,7 +148,7 @@ Derivando esa función respecto de cada peso y avanzando en sentido contrario al
     \label{eq:delta}
 \end{equation}
 
-La expresión \eqref{eq:delta} es idéntica a la \eqref{eq:alpha}, y sin embargo los dos algoritmos se comportan de forma distinta porque $Y(x)$ significa cosas diferentes en cada una. En el Perceptrón $Y(x)$ es la salida del escalón, una función que solo toma dos valores y cuya derivada es cero en casi todo el dominio e indefinida en el umbral. No existe entonces una superficie de error sobre la cual descender, y lo único que el algoritmo puede hacer es contar patrones mal clasificados, un número entero que cambia a saltos. En el Adaline $Y(x)$ es la salida lineal, de modo que $E$ es una función cuadrática de los pesos, continua, diferenciable y convexa, con un paraboloide como superficie de error y un único mínimo global.
+La expresión \eqref{eq:delta} es idéntica a la de la regla 3, y sin embargo los dos algoritmos se comportan de forma distinta porque $Y(x)$ significa cosas diferentes en cada una. En el Perceptrón $Y(x)$ es la salida del escalón, una función que solo toma dos valores y cuya derivada es cero en casi todo el dominio e indefinida en el umbral. No existe entonces una superficie de error sobre la cual descender, y lo único que el algoritmo puede hacer es contar patrones mal clasificados, un número entero que cambia a saltos. En el Adaline $Y(x)$ es la salida lineal, de modo que $E$ es una función cuadrática de los pesos, continua, diferenciable y convexa, con un paraboloide como superficie de error y un único mínimo global.
 
 De esa distinción se derivan tres consecuencias que aparecen una y otra vez en los resultados. El Perceptrón se detiene en cuanto clasifica bien y el Adaline sigue ajustando aunque la clasificación ya sea correcta, el mínimo de $E$ no coincide necesariamente con el hiperplano que separa las clases, y el descenso de gradiente tiene un límite de estabilidad para la tasa de aprendizaje que el Perceptrón no puede presentar.
 
@@ -157,6 +158,8 @@ De esa distinción se derivan tres consecuencias que aparecen una y otra vez en 
 \subsection{Implementación}
 
 Todo el trabajo se desarrolló sobre el \textit{live script} base del docente, que define ocho funciones locales y deja cuatro con bloques pendientes. Se completó \texttt{init\_perceptron} con la inicialización aleatoria de pesos y sesgo, \texttt{compute\_delta} con las tres reglas de las ecuaciones \eqref{eq:hebb} a \eqref{eq:alpha}, \texttt{train\_adaline} con la Regla Delta de la ecuación \eqref{eq:delta} y \texttt{split\_dataset} con la partición aleatoria en entrenamiento y prueba. El código de los cuatro bloques se reproduce en el Anexo \ref{anexo:codigo}. No se modificó ningún nombre ni ningún argumento, de modo que el script conserva la estructura original.
+
+Conviene dejar constancia de un detalle de la plantilla que afecta la interpretación de los resultados. La función \texttt{train\_perceptron} ajusta el sesgo con $b \leftarrow b + [d(x)-Y(x)]$ cualquiera que sea la regla seleccionada, es decir con paso unitario y sin el factor $\alpha$. El sesgo no se comporta entonces como un peso más de una entrada constante, que es lo que sugiere la figura del enunciado, y en la regla 1 tampoco es hebbiano. Como el enunciado pide no modificar las funciones de la plantilla, esa línea se conservó intacta y los resultados de este informe corresponden a esa formulación.
 
 Para poder ejecutar los reportes de aprendizaje que piden los numerales 3 y 9 se agregaron tres campos a las estructuras de configuración, la escala de los pesos iniciales, el número de semillas por experimento y el interruptor de escalado de las entradas, y dos funciones locales nuevas, \texttt{accuracy\_of} para calcular la exactitud de un par de pesos sobre un conjunto y \texttt{scale\_minmax} para reescalar las entradas con las cotas del conjunto de entrenamiento. Las secciones de experimentos se numeraron como subsecciones de las que trae la plantilla, de manera que la sección 7.2 desarrolla el barrido de la tasa de aprendizaje que la sección 7 menciona, y así sucesivamente.
 
@@ -189,9 +192,11 @@ Los valores explorados en los barridos fueron $\alpha \in \{0.01,\ 0.05,\ 0.1,\ 
 
 \subsection{Datasets empleados}
 
-El primer conjunto lo forman las compuertas lógicas AND y OR de 2, 3 y 4 entradas, generadas como tabla de verdad completa con $2^n$ patrones, es decir 4, 8 y 16 filas. La compuerta AND produce salida uno solamente cuando todas las entradas valen uno, de manera que la clase positiva tiene un único representante sin importar el número de entradas. La compuerta OR produce salida uno cuando al menos una entrada vale uno, y por lo tanto la clase negativa es la que tiene un único representante. Ese desbalance espejo entre las dos compuertas resulta determinante para explicar el comportamiento de la primera regla de aprendizaje. Se incluyó además la compuerta XOR de 2 entradas como control negativo, por no ser linealmente separable.
+Se emplearon tres conjuntos de datos. El primero lo forman las compuertas lógicas AND y OR de 2, 3 y 4 entradas, generadas como tabla de verdad completa con $2^n$ patrones, es decir 4, 8 y 16 filas. La compuerta AND produce salida uno solamente cuando todas las entradas valen uno, de manera que la clase positiva tiene un único representante sin importar el número de entradas. La compuerta OR produce salida uno cuando al menos una entrada vale uno, y por lo tanto la clase negativa es la que tiene un único representante. Ese desbalance espejo entre las dos compuertas resulta determinante para explicar el comportamiento de la primera regla de aprendizaje. Se incluyó además la compuerta XOR de 2 entradas como control negativo, por no ser linealmente separable.
 
-El segundo conjunto es \texttt{data\_banknote\_authentication.txt}, que contiene 1372 billetes descritos por cuatro estadísticos obtenidos de la transformada wavelet de su imagen. La Tabla \ref{tab:desc} resume esos atributos. Las cuatro variables se mueven en escalas comparables entre sí en cuanto al orden de magnitud, pero la curtosis alcanza un máximo de 17.93 frente a un máximo de 2.45 de la entropía, diferencia suficiente para afectar al Adaline, cuya corrección es proporcional al valor de la entrada. La clase está razonablemente balanceada, con 762 billetes auténticos y 610 falsos.
+El segundo conjunto es Iris, el que carga el script de particiones entregado en clase, con 150 flores, cuatro medidas en centímetros y tres especies de cincuenta ejemplares cada una. Sobre él se plantea el problema binario de \textit{setosa} contra el resto, que es linealmente separable, y que da respuesta a los numerales 4 y 10 del enunciado.
+
+El tercer conjunto es \texttt{data\_banknote\_authentication.txt}, que contiene 1372 billetes descritos por cuatro estadísticos obtenidos de la transformada wavelet de su imagen. La Tabla \ref{tab:desc} resume esos atributos. Las cuatro variables se mueven en escalas comparables entre sí en cuanto al orden de magnitud, pero la curtosis alcanza un máximo de 17.93 frente a un máximo de 2.45 de la entropía, diferencia suficiente para afectar al Adaline, cuya corrección es proporcional al valor de la entrada. La clase está razonablemente balanceada, con 762 billetes auténticos y 610 falsos.
 
 \begin{table}[!htb]
     \centering
@@ -215,14 +220,14 @@ Las particiones se generan con la función \texttt{split\_dataset}, que mezcla l
 
 \subsection{Protocolo experimental}
 
-En las compuertas el resultado depende de los pesos iniciales, de modo que cada configuración se repite con diez semillas y se reporta el promedio de épocas, el porcentaje de ejecuciones que convergieron dentro del tope y la exactitud promedio de los pesos finales. Se considera que el Perceptrón converge cuando completa una época entera sin necesitar ninguna corrección. En el conjunto de billetes se usa una sola semilla por configuración, porque el número de patrones hace que la variación entre semillas sea mucho menor que entre particiones, y se reporta la exactitud sobre entrenamiento y sobre prueba junto con el número de épocas. Las entradas se escalan al rango cero a uno con los mínimos y máximos calculados únicamente sobre el conjunto de entrenamiento, y esas mismas cotas se aplican al conjunto de prueba para no filtrar información.
+En las compuertas el resultado depende de los pesos iniciales, de modo que cada configuración se repite con diez semillas y se reporta el promedio de épocas, el porcentaje de ejecuciones que convergieron dentro del tope y la exactitud promedio de los pesos finales. Se considera que el Perceptrón converge cuando completa una época entera sin necesitar ninguna corrección. En el conjunto de billetes se usa una sola semilla por configuración, porque el número de patrones hace que la variación entre semillas sea mucho menor que entre particiones, y se reporta la exactitud sobre entrenamiento y sobre prueba. El número de épocas se omite de esas tablas porque es constante, el Perceptrón agota siempre su tope de cien y el Adaline el suyo de doscientas. Las entradas se escalan al rango cero a uno con los mínimos y máximos calculados únicamente sobre el conjunto de entrenamiento, y esas mismas cotas se aplican al conjunto de prueba para no filtrar información.
 
 % ============================================================
 \section{Resultados}
 
 \subsection{Perceptrón con las tres reglas de ajuste}
 
-La Tabla \ref{tab:reglas} y la Figura \ref{fig:reglas} comparan las tres reglas sobre las seis compuertas con los parámetros base. Las reglas \eqref{eq:perc} y \eqref{eq:alpha} convergen en la totalidad de las semillas y en todas las compuertas, con exactitud del cien por ciento. La regla hebbiana se comporta de forma radicalmente distinta según la compuerta. En OR converge en poco más de tres épocas, más rápido que las otras dos, mientras que en AND no converge en ninguna de las treinta ejecuciones y deja una exactitud entre 62.5 y 75.0 por ciento.
+La Tabla \ref{tab:reglas} y la Figura \ref{fig:reglas} comparan las tres reglas sobre las seis compuertas con los parámetros base. Las reglas 2 y 3 convergen en la totalidad de las semillas y en todas las compuertas, con exactitud del cien por ciento. La regla hebbiana se comporta de forma radicalmente distinta según la compuerta. En OR converge en poco más de tres épocas, más rápido que las otras dos, mientras que en AND no converge en ninguna de las treinta ejecuciones y deja una exactitud entre 62.5 y 75.0 por ciento.
 
 \begin{table}[!htb]
     \centering
@@ -233,7 +238,7 @@ La Tabla \ref{tab:reglas} y la Figura \ref{fig:reglas} comparan las tres reglas 
         \toprule
         \multicolumn{2}{c}{\textbf{Compuerta}} & \multicolumn{3}{c}{\textbf{Épocas}} & \multicolumn{3}{c}{\textbf{Exactitud (\%)}} \\
         \cmidrule(lr){1-2} \cmidrule(lr){3-5} \cmidrule(lr){6-8}
-        \textbf{Tipo} & \textbf{Entradas} & \textbf{(1) hebb} & \textbf{(2) perc.} & \textbf{(3) alpha} & \textbf{(1) hebb} & \textbf{(2) perc.} & \textbf{(3) alpha} \\
+        \textbf{Tipo} & \textbf{Entradas} & \textbf{Regla 1} & \textbf{Regla 2} & \textbf{Regla 3} & \textbf{Regla 1} & \textbf{Regla 2} & \textbf{Regla 3} \\
         \midrule
         AND & 2 & 100.0 & 5.9  & 13.7 & 67.5  & 100.0 & 100.0 \\
         AND & 3 & 100.0 & 12.1 & 17.7 & 62.5  & 100.0 & 100.0 \\
@@ -247,12 +252,12 @@ La Tabla \ref{tab:reglas} y la Figura \ref{fig:reglas} comparan las tres reglas 
 
 \begin{figure}[!htb]
     \centering
-    \includegraphics[width=0.54\textwidth]{fig01.png}
+    \includegraphics[width=0.62\textwidth]{fig01.png}
     \caption{Épocas promedio hasta la convergencia con las tres reglas de ajuste. Las barras de la regla hebbiana en AND alcanzan el tope de cien épocas porque nunca convergen}
     \label{fig:reglas}
 \end{figure}
 
-Los pesos finales explican ese contraste mejor que las épocas. En la Tabla \ref{tab:pesos} las reglas \eqref{eq:perc} y \eqref{eq:alpha} terminan con pesos del orden de la unidad, mientras que la regla hebbiana sobre la compuerta AND llega a valores cercanos a cien en los pesos y a menos cien en el sesgo, dos órdenes de magnitud por encima de la solución que encuentran las otras dos reglas para el mismo problema.
+Los pesos finales explican ese contraste mejor que las épocas. En la Tabla \ref{tab:pesos} las reglas 2 y 3 terminan con pesos del orden de la unidad, mientras que la regla hebbiana sobre la compuerta AND llega a valores cercanos a cien en los pesos y a menos cien en el sesgo, dos órdenes de magnitud por encima de la solución que encuentran las otras dos reglas para el mismo problema.
 
 \begin{table}[!htb]
     \centering
@@ -263,24 +268,24 @@ Los pesos finales explican ese contraste mejor que las épocas. En la Tabla \ref
         \toprule
         \textbf{Regla} & \textbf{Compuerta} & \textbf{$w_1$} & \textbf{$w_2$} & \textbf{$b$} & \textbf{Épocas} & \textbf{Exactitud (\%)} \\
         \midrule
-        (1) hebb   & AND & 99.675 & 100.590 & $-99.379$ & 100 & 75.0  \\
-        (1) hebb   & OR  & 7.676  & 8.591   & $-0.379$  & 4   & 100.0 \\
-        (2) perc.  & AND & 1.676  & 0.591   & $-1.379$  & 4   & 100.0 \\
-        (2) perc.  & OR  & 1.676  & 1.591   & $-0.379$  & 5   & 100.0 \\
-        (3) alpha  & AND & 1.176  & 0.791   & $-1.379$  & 17  & 100.0 \\
-        (3) alpha  & OR  & 0.975  & 0.891   & $-0.379$  & 18  & 100.0 \\
+        Regla 1 & AND & 99.675 & 100.590 & $-99.379$ & 100 & 75.0  \\
+        Regla 1 & OR  & 7.676  & 8.591   & $-0.379$  & 4   & 100.0 \\
+        Regla 2 & AND & 1.676  & 0.591   & $-1.379$  & 4   & 100.0 \\
+        Regla 2 & OR  & 1.676  & 1.591   & $-0.379$  & 5   & 100.0 \\
+        Regla 3 & AND & 1.176  & 0.791   & $-1.379$  & 17  & 100.0 \\
+        Regla 3 & OR  & 0.975  & 0.891   & $-0.379$  & 18  & 100.0 \\
         \bottomrule
     \end{tabular}
 \end{table}
 
 \subsection{Efecto de la tasa de aprendizaje y del umbral en el Perceptrón}
 
-La Tabla \ref{tab:alpha} muestra que con la regla \eqref{eq:alpha} el número de épocas disminuye de forma monótona al aumentar $\alpha$ en las seis compuertas. Con $\alpha$ igual a 0.01 se requieren entre 71.3 y 91.4 épocas, y con $\alpha$ igual a uno se requieren entre 4.0 y 12.3, valores que coinciden con los de la regla \eqref{eq:perc} en la Tabla \ref{tab:reglas} porque ambas expresiones se vuelven la misma cuando la tasa vale uno. Ninguna de las configuraciones presentó inestabilidad, lo cual confirma que en el Perceptrón una tasa alta no degrada la solución.
+La Tabla \ref{tab:alpha} muestra que con la regla 3 el número de épocas disminuye de forma monótona al aumentar $\alpha$ en las seis compuertas. Con $\alpha$ igual a 0.01 se requieren entre 71.3 y 91.4 épocas, y con $\alpha$ igual a uno se requieren entre 4.0 y 12.3, valores que coinciden con los de la regla 2 en la Tabla \ref{tab:reglas} porque ambas expresiones se vuelven la misma cuando la tasa vale uno. Ninguna de las configuraciones presentó inestabilidad, lo cual confirma que en el Perceptrón una tasa alta no degrada la solución.
 
 \begin{table}[!htb]
     \centering
     \small
-    \caption{Perceptrón con la regla (3). Épocas promedio de diez semillas según la tasa de aprendizaje}
+    \caption{Perceptrón con la regla 3. Épocas promedio de diez semillas según la tasa de aprendizaje}
     \label{tab:alpha}
     \begin{tabular}{lrrrrr}
         \toprule
@@ -296,18 +301,18 @@ La Tabla \ref{tab:alpha} muestra que con la regla \eqref{eq:alpha} el número de
     \end{tabular}
 \end{table}
 
-El umbral, en cambio, apenas altera el resultado. Los tres valores probados producen promedios que difieren en pocas unidades y sin una dirección consistente, entre 12.0 y 19.9 épocas para $\theta$ igual a cero, entre 13.0 y 30.4 para 0.5 y entre 12.5 y 19.5 para uno, porque el sesgo absorbe durante las primeras correcciones cualquier desplazamiento del umbral.
+El umbral, en cambio, apenas altera el resultado. La Tabla \ref{tab:anexo_umbral} del anexo recoge el barrido completo. Ninguna de las seis compuertas muestra una tendencia consistente al mover el umbral, y la mayor diferencia aparece en OR de 4 entradas, que pasa de 15.8 épocas con $\theta$ igual a cero a 30.4 con 0.5 y vuelve a 15.0 con uno. El umbral no cambia el hiperplano al que se llega, solo el número de correcciones necesarias para alcanzarlo, porque el sesgo absorbe durante las primeras épocas cualquier desplazamiento del umbral.
 
 \subsection{Efecto de los pesos iniciales en el Perceptrón}
 
 La Tabla \ref{tab:init} y la Figura \ref{fig:init} presentan el experimento sobre el punto de partida de los pesos. Con pesos iniciales exactamente cero, la compuerta AND converge en cinco épocas y la OR en doce, con la totalidad de las semillas y con pesos finales idénticos entre ellas, lo cual es esperable porque con escala cero todas las semillas parten del mismo punto. Lo relevante es que con escala 0.001 el resultado se mantiene igual, con un rango de dispersión de los pesos finales de 0.004 en AND, lo cual indica que la trayectoria queda determinada por los datos y no por el azar de la inicialización.
 
-A medida que la escala crece el comportamiento se degrada de forma progresiva. Con escala 0.5, que es el valor de la plantilla, se necesitan trece épocas y los pesos finales varían alrededor de una unidad entre semillas. Con escala cinco se superan las cuarenta épocas, una de cada diez semillas agota el tope sin converger y el rango de los pesos finales pasa de diez unidades, es decir que cada semilla termina en un hiperplano distinto.
+A medida que la escala crece el comportamiento se degrada de forma progresiva. Con escala 0.5, que es el valor de la plantilla, se necesitan trece épocas y los pesos finales varían alrededor de una unidad entre semillas. Con escala cinco se superan las cuarenta épocas, una de cada diez semillas agota el tope sin converger y el rango de los pesos finales supera las diez unidades, es decir que cada semilla termina en un hiperplano distinto.
 
 \begin{table}[!htb]
     \centering
     \small
-    \caption{Efecto de la escala de los pesos iniciales en el Perceptrón con la regla (3). Promedio de diez semillas. El rango es la diferencia entre el mayor y el menor valor final de $w_1$}
+    \caption{Efecto de la escala de los pesos iniciales en el Perceptrón con la regla 3. Promedio de diez semillas. El rango es la diferencia entre el mayor y el menor valor final de $w_1$}
     \label{tab:init}
     \begin{tabular}{lrrrrr}
         \toprule
@@ -328,8 +333,8 @@ A medida que la escala crece el comportamiento se degrada de forma progresiva. C
 
 \begin{figure}[!htb]
     \centering
-    \includegraphics[width=0.70\textwidth]{fig02.png}
-    \caption{Efecto de la escala de los pesos iniciales en el Perceptrón. A la izquierda las épocas promedio hasta converger y a la derecha la dispersión de los pesos finales entre semillas}
+    \includegraphics[width=0.82\textwidth]{fig02.png}
+    \caption{Efecto de la escala de los pesos iniciales en el Perceptrón con la regla 3. A la izquierda las épocas promedio hasta converger y a la derecha la dispersión de los pesos finales entre semillas}
     \label{fig:init}
 \end{figure}
 
@@ -360,12 +365,12 @@ La Tabla \ref{tab:ada} resume el Adaline sobre las seis compuertas con la tasa b
 
 \begin{figure}[!htb]
     \centering
-    \includegraphics[width=0.54\textwidth]{fig03.png}
+    \includegraphics[width=0.66\textwidth]{fig03.png}
     \caption{Curva de error de entrenamiento del Adaline sobre las seis compuertas con la tasa de aprendizaje base. La escala vertical es logarítmica}
     \label{fig:mse}
 \end{figure}
 
-La tasa de aprendizaje determina dónde se detiene el descenso, como recoge la Tabla \ref{tab:ada_alpha}. Con 0.001 el paso es tan pequeño que doscientas épocas no bastan para llegar al fondo del paraboloide, el MSE se queda entre 0.0430 y 0.1082 y la exactitud cae hasta el cincuenta por ciento en AND de 2 entradas. En el intervalo de 0.01 a 0.1 el MSE alcanza su mínimo y la exactitud es la mejor de la tabla. Con 0.5 el error final ya es entre tres y cinco veces mayor que el mínimo, señal de que el descenso empieza a oscilar alrededor del óptimo, y con uno el proceso diverge sin remedio, con valores de $10^{123}$ en las compuertas de tres entradas y desbordamiento numérico en las de cuatro.
+La tasa de aprendizaje determina dónde se detiene el descenso, como recoge la Tabla \ref{tab:ada_alpha}. Con 0.001 el paso es tan pequeño que doscientas épocas no bastan para llegar al fondo del paraboloide, el MSE se queda entre 0.0430 y 0.1082 y la exactitud cae hasta el cincuenta por ciento en AND de 2 entradas. En el intervalo de 0.01 a 0.1 el MSE alcanza su mínimo y la exactitud es la mejor de la tabla. Con 0.5 el error final ya es entre dos y cinco veces mayor que el mínimo, señal de que el descenso empieza a oscilar alrededor del óptimo, y con uno el proceso diverge de forma irreversible, con valores de $10^{123}$ en las compuertas de tres entradas y desbordamiento numérico a NaN en las de cuatro.
 
 \begin{table}[!htb]
     \centering
@@ -378,10 +383,10 @@ La tasa de aprendizaje determina dónde se detiene el descenso, como recoge la T
         \midrule
         AND 2 & 0.0842 (50.0) & 0.0334 (100.0) & 0.0346 (100.0) & 0.0386 (100.0) & 0.1250 (75.0) & $10^{3.7}$ (50.0) \\
         AND 3 & 0.0664 (87.5) & 0.0323 (100.0) & 0.0369 (100.0) & 0.0439 (100.0) & 0.1556 (62.5) & $10^{123}$ (87.5) \\
-        AND 4 & 0.0430 (93.8) & 0.0225 (93.8)  & 0.0268 (93.8)  & 0.0332 (100.0) & 0.1129 (56.3) & $\infty$ (93.8) \\
+        AND 4 & 0.0430 (93.8) & 0.0225 (93.8)  & 0.0268 (93.8)  & 0.0332 (100.0) & 0.1129 (56.3) & NaN (93.8) \\
         OR 2  & 0.1082 (75.0) & 0.0329 (100.0) & 0.0346 (100.0) & 0.0386 (100.0) & 0.1250 (75.0) & $10^{3.7}$ (25.0) \\
         OR 3  & 0.0745 (75.0) & 0.0319 (100.0) & 0.0341 (87.5)  & 0.0372 (87.5)  & 0.0764 (87.5) & $10^{123}$ (12.5) \\
-        OR 4  & 0.0471 (100.0)& 0.0218 (93.8)  & 0.0231 (93.8)  & 0.0246 (93.8)  & 0.0409 (93.8) & $\infty$ (6.3) \\
+        OR 4  & 0.0471 (100.0)& 0.0218 (93.8)  & 0.0231 (93.8)  & 0.0246 (93.8)  & 0.0409 (93.8) & NaN (6.3) \\
         \bottomrule
     \end{tabular}
 \end{table}
@@ -391,7 +396,7 @@ El umbral de decisión, que en el Adaline no interviene en el ajuste de los peso
 
 \subsection{Efecto de los pesos iniciales en el Adaline}
 
-El mismo experimento de la Tabla \ref{tab:init} aplicado al Adaline produce el resultado opuesto, que recoge la Tabla \ref{tab:init_ada}. Partiendo de escalas que van de cero a cinco, el modelo termina siempre en los mismos pesos hasta el tercer decimal y con el mismo MSE final. La dispersión entre semillas crece con la escala inicial, pero lo hace de forma marginal, desde cero hasta 0.0102 en el caso más extremo, cuatro órdenes de magnitud por debajo de la dispersión que presentaba el Perceptrón en las mismas condiciones.
+El mismo experimento de la Tabla \ref{tab:init} aplicado al Adaline produce el resultado opuesto, que recoge la Tabla \ref{tab:init_ada}. Partiendo de escalas que van de cero a cinco, el modelo termina siempre en los mismos pesos, con diferencias de una milésima, y con el mismo MSE final. La dispersión entre semillas crece con la escala inicial, pero lo hace de forma marginal, desde cero hasta 0.0102 en el caso más extremo, tres órdenes de magnitud por debajo de la dispersión que presentaba el Perceptrón en las mismas condiciones.
 
 \begin{table}[!htb]
     \centering
@@ -421,7 +426,7 @@ La Figura \ref{fig:dinamica} superpone las dos formas de error sobre la compuert
 
 \begin{figure}[!htb]
     \centering
-    \includegraphics[width=0.60\textwidth]{fig04.png}
+    \includegraphics[width=0.70\textwidth]{fig04.png}
     \caption{Dinámica del error sobre la compuerta AND de dos entradas. El eje izquierdo cuenta los patrones mal clasificados por el Perceptrón y el derecho mide el MSE del Adaline}
     \label{fig:dinamica}
 \end{figure}
@@ -445,7 +450,32 @@ La Tabla \ref{tab:xor} confirma que ninguno de los dos modelos resuelve la compu
     \end{tabular}
 \end{table}
 
-\subsection{Aplicación a datos reales}
+\subsection{Aplicación a los conjuntos que genera \texttt{Dataset\_train\_test}}
+
+Los numerales 4 y 10 piden aplicar los modelos a los conjuntos que produce el script de particiones entregado en clase, que opera sobre Iris. Como la red tiene una sola neurona, el problema se plantea de forma binaria separando la especie \textit{setosa} de las otras dos, que es el caso linealmente separable de ese conjunto. La Tabla \ref{tab:iris} recoge el resultado de los dos modelos sobre las cuatro proporciones.
+
+\begin{table}[!htb]
+    \centering
+    \small
+    \caption{Iris, \textit{setosa} contra el resto, con las entradas escaladas. El Perceptrón usa la regla 3 y el MSE del Adaline corresponde a la tasa 0.01}
+    \label{tab:iris}
+    \begin{tabular}{lrrrrr}
+        \toprule
+        \textbf{Partición} & \multicolumn{2}{c}{\textbf{Perceptrón}} & \multicolumn{3}{c}{\textbf{Adaline}} \\
+        \cmidrule(lr){2-3} \cmidrule(lr){4-6}
+         & \textbf{Épocas} & \textbf{Prueba (\%)} & \textbf{MSE final} & \textbf{Prueba, $\alpha$ = 0.0001 (\%)} & \textbf{Prueba, $\alpha$ = 0.01 (\%)} \\
+        \midrule
+        60-40 & 2 & 100.0 & 0.0097 & 98.3  & 100.0 \\
+        70-30 & 2 & 100.0 & 0.0106 & 97.8  & 100.0 \\
+        80-20 & 2 & 100.0 & 0.0119 & 100.0 & 100.0 \\
+        90-10 & 2 & 100.0 & 0.0116 & 100.0 & 100.0 \\
+        \bottomrule
+    \end{tabular}
+\end{table}
+
+El Perceptrón converge en dos épocas y clasifica sin error, tanto en entrenamiento como en prueba, en las cuatro particiones y con los tres valores de tasa probados. Es la confirmación más limpia del teorema de convergencia sobre un problema real, ya que las dos épocas corresponden a una pasada de correcciones y una segunda de verificación. El Adaline también alcanza el cien por ciento con tasas de 0.01 y 0.05, y con tasas menores deja uno o dos patrones mal clasificados porque doscientas épocas no bastan para llegar al fondo del paraboloide. El contraste con el conjunto de billetes de la subsección siguiente es instructivo, allí ningún modelo converge porque las clases se traslapan, mientras que aquí el problema se agota en dos épocas.
+
+\subsection{Aplicación al conjunto de billetes}
 
 La Tabla \ref{tab:bank} y la Figura \ref{fig:bank} recogen el desempeño de los dos modelos sobre el conjunto de billetes con las entradas escaladas. El Perceptrón agota el tope de cien épocas en las cuatro particiones, lo cual indica que las dos clases no son perfectamente separables por un hiperplano, pero aun así alcanza entre 94.4 y 98.9 por ciento de exactitud sobre el conjunto de prueba. El Adaline se mueve en un intervalo algo más bajo y más estrecho, entre 94.9 y 97.3 por ciento. La distancia entre entrenamiento y prueba no supera los 2.5 puntos porcentuales en ninguna de las ocho combinaciones.
 
@@ -470,7 +500,7 @@ La Tabla \ref{tab:bank} y la Figura \ref{fig:bank} recogen el desempeño de los 
 
 \begin{figure}[!htb]
     \centering
-    \includegraphics[width=0.50\textwidth]{fig05.png}
+    \includegraphics[width=0.60\textwidth]{fig05.png}
     \caption{Exactitud sobre el conjunto de prueba de los dos modelos según la proporción de partición}
     \label{fig:bank}
 \end{figure}
@@ -492,7 +522,7 @@ La exactitud global oculta de qué lado se equivoca cada modelo. La Tabla \ref{t
     \end{tabular}
 \end{table}
 
-Los pesos con que terminan los dos modelos sobre esa misma partición, recogidos en la Tabla \ref{tab:pesos_bank}, muestran que ambos encuentran esencialmente la misma dirección de separación. Los tres primeros coeficientes del Perceptrón son aproximadamente 3.5 veces los del Adaline, proporción que se mantiene también en el sesgo, de modo que los dos hiperplanos son casi paralelos y solo difieren en la escala del vector normal, que no afecta la decisión. Los dos modelos coinciden además en asignar a la entropía un peso entre sesenta y ciento treinta veces menor que a las demás variables, lo cual sugiere que ese atributo aporta poco a la discriminación entre billetes auténticos y falsos.
+Los pesos con que terminan los dos modelos sobre esa misma partición, recogidos en la Tabla \ref{tab:pesos_bank}, muestran que ambos encuentran esencialmente la misma dirección de separación. Los tres primeros coeficientes del Perceptrón son entre 3.3 y 3.6 veces los del Adaline, y el sesgo guarda una proporción parecida de 3.1, de modo que los dos hiperplanos son casi paralelos y solo difieren en la escala del vector normal, que no afecta la decisión. Los dos modelos coinciden además en asignar a la entropía un peso entre sesenta y ciento treinta veces menor que a las demás variables, lo cual sugiere que ese atributo aporta poco a la discriminación entre billetes auténticos y falsos.
 
 \begin{table}[!htb]
     \centering
@@ -512,16 +542,16 @@ Los pesos con que terminan los dos modelos sobre esa misma partición, recogidos
     \end{tabular}
 \end{table}
 
-El escalado de las entradas resultó indiferente para el Perceptrón y determinante para el Adaline. Sin escalar, el Adaline con la tasa base diverge en las cuatro particiones y la exactitud cae a valores cercanos al azar, entre 56.6 y 60.6 por ciento. Con una tasa de 0.01 el error ya no diverge pero el resultado es errático, entre 72.3 y 96.4 por ciento, y solo con tasas iguales o menores a 0.001 se recuperan valores comparables a los de la Tabla \ref{tab:bank}. Con las entradas escaladas, en cambio, cualquier tasa entre 0.001 y 0.05 produce resultados equivalentes. El detalle completo está en la Tabla \ref{tab:anexo_bank} del anexo.
+Los dos modelos se entrenaron además con las entradas sin escalar, y el resultado separa con claridad sus comportamientos. El Perceptrón no solo tolera la falta de escalado sino que mejora ligeramente, con exactitudes de prueba entre 97.1 y 99.3 por ciento frente a 94.4 y 98.9 con las entradas escaladas, y su mejor resultado global, 99.3 por ciento en la partición 90-10, se obtiene precisamente sin escalar. El Adaline hace lo contrario. Sin escalar y con la tasa base diverge en las cuatro particiones, y la exactitud cae a valores entre 56.6 y 60.6 por ciento, que no son azar sino la proporción de la clase mayoritaria en cada conjunto de prueba, porque los pesos no finitos hacen que el escalón devuelva siempre la misma clase. Con una tasa de 0.01 el error ya no diverge pero el resultado es errático, entre 72.3 y 96.4 por ciento, y solo con tasas iguales o menores a 0.001 se recuperan valores comparables a los de la Tabla \ref{tab:bank}. Con las entradas escaladas, en cambio, cualquier tasa entre 0.001 y 0.05 produce resultados equivalentes. Las Tablas \ref{tab:anexo_perc_bank} y \ref{tab:anexo_bank} del anexo recogen el detalle de los dos modelos.
 
 % ============================================================
 \section{Análisis y discusión}
 
 \subsection{Convergencia de las tres reglas de aprendizaje}
 
-Dos de las tres reglas convergieron en todos los casos y la más rápida fue la regla \eqref{eq:perc}, con un intervalo de 4.0 a 12.3 épocas frente a 13.0 a 30.4 de la regla \eqref{eq:alpha}. La razón es directa. La regla \eqref{eq:perc} equivale a la \eqref{eq:alpha} con la tasa fijada en uno, de modo que cada corrección tiene el tamaño de la entrada, mientras que con una tasa de 0.1 la corrección es diez veces menor y se necesitan diez veces más correcciones para recorrer la misma distancia desde unos pesos iniciales de escala 0.5. Esa relación se aprecia en la Tabla \ref{tab:alpha}, donde la columna de tasa uno reproduce los valores de la regla \eqref{eq:perc}.
+Dos de las tres reglas convergieron en todos los casos y la más rápida fue la regla 2, con un intervalo de 4.0 a 12.3 épocas frente a 13.0 a 30.4 de la regla 3. La razón es directa. La regla 2 equivale a la regla 3 con la tasa fijada en uno, de modo que cada corrección tiene el tamaño de la entrada, mientras que con una tasa de 0.1 la corrección es diez veces menor y se necesitan diez veces más correcciones para recorrer la misma distancia desde unos pesos iniciales de escala 0.5. Esa relación se aprecia en la Tabla \ref{tab:alpha}, donde la columna de tasa uno reproduce los valores de la regla 2.
 
-El caso interesante es el de la regla hebbiana, que no converge en AND, sí converge en OR y además en OR es la más rápida de las tres. La explicación está en la ausencia del término de error combinada con la estructura de cada compuerta. Como el incremento vale $d(x)\,x_i$, la regla suma un valor positivo cada vez que encuentra un patrón de clase positiva, aunque la neurona ya lo clasifique correctamente, y no hace nada con los patrones de clase negativa. La compuerta AND tiene un solo patrón positivo, el de todas las entradas en uno, de manera que los pesos crecen sin límite en esa dirección y el sesgo, que se corrige con el término de error y con paso unitario, no alcanza a compensar ese crecimiento, hasta llegar a los valores cercanos a cien de la Tabla \ref{tab:pesos} y a una neurona que se activa ante casi cualquier entrada. En la compuerta OR ocurre lo contrario, tres de los cuatro patrones son positivos y el único negativo se resuelve con el sesgo, de modo que el crecimiento no estorba. La regla hebbiana no es entonces una regla de corrección de error y su utilidad depende por completo de la distribución de clases del problema.
+El caso interesante es el de la regla hebbiana, que no converge en AND, sí converge en OR y además en OR es la más rápida de las tres. La explicación está en la ausencia del término de error combinada con la estructura de cada compuerta. Como el incremento vale $d(x)\,x_i$, la regla suma un valor positivo cada vez que encuentra un patrón de clase positiva, aunque la neurona ya lo clasifique correctamente, y no hace nada con los patrones de clase negativa. La compuerta AND tiene un solo patrón positivo, el de todas las entradas en uno, de manera que los pesos crecen sin límite en esa dirección y el sesgo, que se corrige con el término de error y con paso unitario, no alcanza a compensar ese crecimiento, hasta llegar a los valores cercanos a cien de la Tabla \ref{tab:pesos} y a una neurona que se activa ante casi cualquier entrada. En la compuerta OR ocurre lo contrario, tres de los cuatro patrones son positivos y el único negativo se resuelve con el sesgo, de modo que el crecimiento no compromete la solución. La regla hebbiana no es entonces una regla de corrección de error y su utilidad depende por completo de la distribución de clases del problema.
 
 \subsection{Comportamiento ante cambios del umbral y de la tasa de aprendizaje}
 
@@ -539,18 +569,18 @@ De ahí se desprende una observación sobre la calidad de las soluciones. El Per
 
 Este fue el resultado más marcado del trabajo y separa claramente a los dos modelos. En el Perceptrón, partir de pesos muy cercanos a cero es la mejor condición inicial de las probadas. Con pesos nulos la suma ponderada vale cero para todos los patrones, queda por debajo del umbral y la neurona empieza apagada, de modo que solo recibe correcciones de los patrones cuya salida deseada es uno y construye los pesos a partir de la evidencia de los datos. El resultado es una convergencia en cinco épocas para AND y doce para OR, con el mismo hiperplano final en todas las semillas. Con pesos grandes frente a la tasa de aprendizaje ocurre lo contrario, pues hacen falta muchas correcciones pequeñas para vencer el punto de partida, el modelo tarda más de cuarenta épocas, algunas semillas no alcanzan a converger dentro del tope y cada semilla termina en un separador distinto. Conviene matizar que el caso de pesos exactamente nulos elimina la aleatoriedad por construcción, así que el hallazgo verdaderamente informativo es el de escala 0.001, donde las semillas siguen siendo distintas y aun así convergen al mismo sitio y en el mismo número de épocas.
 
-El Adaline se comporta de manera opuesta y llega a los mismos pesos con tres decimales de coincidencia desde cualquiera de las cuatro escalas iniciales, incluida la más grande. La razón es que la función de costo de la ecuación \eqref{eq:costo} es cuadrática en los pesos y por lo tanto convexa, con un único mínimo global, de modo que el punto de partida solo determina la longitud del camino y no el destino. Ese contraste ilustra bien la diferencia de fondo entre optimizar una función continua y corregir errores de clasificación, y también matiza la afirmación de la plantilla según la cual la inicialización no es crítica en un modelo de una sola neurona. Para el Adaline la afirmación es exacta. Para el Perceptrón la inicialización no compromete la convergencia, que el teorema garantiza, pero sí afecta de manera apreciable la velocidad, la reproducibilidad y la solución concreta que se obtiene.
+El Adaline se comporta de manera opuesta y llega a los mismos pesos, con diferencias de una milésima, desde cualquiera de las cuatro escalas iniciales, incluida la más grande. La razón es que la función de costo de la ecuación \eqref{eq:costo} es cuadrática en los pesos y por lo tanto convexa, con un único mínimo global, de modo que el punto de partida solo determina la longitud del camino y no el destino. Ese contraste ilustra bien la diferencia de fondo entre optimizar una función continua y corregir errores de clasificación, y también matiza la afirmación de la plantilla según la cual la inicialización no es crítica en un modelo de una sola neurona. Para el Adaline la afirmación es exacta. Para el Perceptrón la inicialización no compromete la convergencia, que el teorema garantiza, pero sí afecta de manera apreciable la velocidad, la reproducibilidad y la solución concreta que se obtiene.
 
 \subsection{Comportamiento sobre datos reales}
 
-La exactitud de prueba varió entre 94.4 y 98.9 por ciento de una partición a otra sin seguir una tendencia clara, y las diferencias entre entrenamiento y prueba se mantuvieron dentro de 2.5 puntos porcentuales. No hay indicios de sobreajuste, algo esperable en un modelo de cinco parámetros que debe describir hasta 1235 patrones de entrenamiento, pues su capacidad es insuficiente para memorizar los datos. Sí existe, en cambio, un subajuste de origen estructural, ya que las clases no son linealmente separables y ningún hiperplano puede clasificarlas por completo, lo cual se manifiesta en el hecho de que el Perceptrón nunca converge y deja entre uno y cinco por ciento de error tanto en entrenamiento como en prueba.
+La exactitud de prueba varió entre 94.4 y 98.9 por ciento de una partición a otra sin seguir una tendencia clara, y las diferencias entre entrenamiento y prueba se mantuvieron dentro de 2.5 puntos porcentuales. No hay indicios de sobreajuste, algo esperable en un modelo de cinco parámetros que debe describir hasta 1235 patrones de entrenamiento, pues su capacidad es insuficiente para memorizar los datos. Sí existe, en cambio, un subajuste de origen estructural, ya que las clases no son linealmente separables y ningún hiperplano puede clasificarlas por completo, lo cual se manifiesta en el hecho de que el Perceptrón nunca converge y deja entre 0.7 y 5.7 por ciento de error tanto en entrenamiento como en prueba.
 
-La partición 90-10 merece una advertencia, pues su conjunto de prueba tiene solo 137 billetes y cada error individual pesa 0.73 puntos porcentuales, de modo que sus cifras son las menos estables. Ese es el compromiso que la comparación entre proporciones permite visualizar. El contraste en el efecto del escalado, por último, es coherente con la teoría. El Perceptrón decide por el signo de la suma ponderada y un cambio de escala en las entradas se compensa con un cambio de escala en los pesos, mientras que en el Adaline la corrección es proporcional al valor de la entrada, de modo que un atributo con valores hasta 17.93 amplifica el paso efectivo y empuja al algoritmo por encima de su límite de estabilidad.
+La partición 90-10 merece una advertencia, pues su conjunto de prueba tiene solo 137 billetes y cada error individual pesa 0.73 puntos porcentuales, de modo que sus cifras son las menos estables. Ese es el compromiso que la comparación entre proporciones permite visualizar. El contraste en el efecto del escalado, por último, es coherente con la teoría y quedó medido en los dos modelos. El Perceptrón decide por el signo de la suma ponderada, de modo que un cambio de escala en las entradas se compensa con un cambio de escala en los pesos y la frontera resultante es la misma. Por eso sus cifras sin escalar no solo no empeoran sino que mejoran un punto, ya que con entradas grandes cada corrección avanza más y cien épocas rinden más trabajo efectivo. En el Adaline la corrección es proporcional al valor de la entrada y entra directamente en el paso de gradiente, así que un atributo con valores hasta 17.93 amplifica ese paso y empuja al algoritmo por encima de su límite de estabilidad. El escalado, en consecuencia, no es un trámite de preparación sino una condición necesaria para que la Regla Delta opere con una tasa razonable.
 
 % ============================================================
 \section{Conclusiones}
 
-Las reglas \eqref{eq:perc} y \eqref{eq:alpha} resolvieron las seis compuertas AND y OR de 2, 3 y 4 entradas en menos de treinta y una épocas promedio y con la totalidad de las semillas, mientras que la regla hebbiana solo resolvió la compuerta OR. La causa no es la implementación sino la ausencia del término de error, que hace crecer los pesos sin límite cuando la clase positiva está poco representada, hasta valores cercanos a cien en la compuerta AND.
+Las reglas 2 y 3 resolvieron las seis compuertas AND y OR de 2, 3 y 4 entradas en menos de treinta y una épocas promedio y con la totalidad de las semillas, mientras que la regla hebbiana solo resolvió la compuerta OR. La causa no es la implementación sino la ausencia del término de error, que hace crecer los pesos sin límite cuando la clase positiva está poco representada, hasta valores cercanos a cien en la compuerta AND.
 
 El Adaline clasificó correctamente AND de 2 y 3 entradas y OR de 2 entradas, y dejó un patrón mal clasificado en AND de 4 y en OR de 3 y 4. Minimizar el error cuadrático de la salida lineal no equivale a minimizar el error de clasificación, y por eso el modelo puede fallar en problemas que el Perceptrón resuelve sin error. Mover el umbral de decisión sobre el modelo ya entrenado recuperó esos patrones en dos de los tres casos.
 
@@ -558,11 +588,13 @@ La tasa de aprendizaje cumple funciones opuestas en los dos modelos. En el Perce
 
 Empezar con pesos muy cercanos a cero fue la mejor condición inicial para el Perceptrón en estos problemas. Convergió en cinco épocas en AND y doce en OR, con el mismo hiperplano en todas las semillas, frente a más de cuarenta épocas, un diez por ciento de ejecuciones sin converger y un separador distinto por semilla cuando los pesos iniciales fueron grandes respecto de la tasa de aprendizaje.
 
-El Adaline resultó insensible al punto de partida y terminó en los mismos pesos con tres decimales de coincidencia desde escalas iniciales que van de cero a cinco. Ese resultado confirma de forma empírica que el descenso de gradiente sobre una función convexa converge a un mínimo único, y establece la diferencia práctica más importante entre los dos modelos en cuanto a reproducibilidad de los experimentos.
+El Adaline resultó insensible al punto de partida y terminó en los mismos pesos, con diferencias de una milésima, desde escalas iniciales que van de cero a cinco. Ese resultado confirma de forma empírica que el descenso de gradiente sobre una función convexa converge a un mínimo único, y establece la diferencia práctica más importante entre los dos modelos en cuanto a reproducibilidad de los experimentos.
 
 Sobre el conjunto de billetes los dos modelos alcanzaron entre 94.4 y 98.9 por ciento de exactitud de prueba, sin sobreajuste y sin una tendencia clara respecto de la proporción de partición. La matriz de confusión reveló perfiles de error distintos, con el Perceptrón repartiendo sus seis errores entre ambas clases y el Adaline concentrando los diecisiete suyos en una sola, sin dejar pasar ningún billete falso.
 
-El escalado de las entradas no alteró el desempeño del Perceptrón y resultó imprescindible para el Adaline, que sin escalar divergió con su tasa base en las cuatro particiones. El control negativo con la compuerta XOR confirmó, por último, que ninguno de los dos modelos supera el límite de la separabilidad lineal.
+Sobre los conjuntos de Iris que genera el script de particiones de clase, el Perceptrón resolvió el problema de \textit{setosa} contra el resto en dos épocas y con cero errores en las cuatro proporciones, lo que confirma el teorema de convergencia sobre datos reales separables y delimita por contraste el caso de los billetes.
+
+El escalado de las entradas no perjudicó al Perceptrón, que incluso mejoró un punto sin escalar, y resultó imprescindible para el Adaline, que sin escalar divergió con su tasa base en las cuatro particiones. El control negativo con la compuerta XOR confirmó, por último, que ninguno de los dos modelos supera el límite de la separabilidad lineal.
 
 % ============================================================
 \section{Referencias}
@@ -584,18 +616,40 @@ El escalado de las entradas no alteró el desempeño del Perceptrón y resultó 
 \begin{table}[!htb]
     \centering
     \small
-    \caption{Perceptrón sobre el conjunto de billetes con las entradas escaladas. Exactitud según la tasa de aprendizaje}
+    \caption{Perceptrón con la regla 3 sobre el conjunto de billetes. Exactitud de prueba en porcentaje según la tasa de aprendizaje}
     \label{tab:anexo_perc_bank}
-    \begin{tabular}{lrrrrrr}
+    \begin{tabular}{llrrr}
         \toprule
-        \textbf{Partición} & \multicolumn{3}{c}{\textbf{Entrenamiento (\%)}} & \multicolumn{3}{c}{\textbf{Prueba (\%)}} \\
-        \cmidrule(lr){2-4} \cmidrule(lr){5-7}
-         & \textbf{$\alpha$ = 0.01} & \textbf{0.1} & \textbf{1} & \textbf{$\alpha$ = 0.01} & \textbf{0.1} & \textbf{1} \\
+        \textbf{Entradas} & \textbf{Partición} & \textbf{$\alpha$ = 0.01} & \textbf{0.1} & \textbf{1} \\
         \midrule
-        60-40 & 96.2 & 95.0 & 96.8 & 96.9 & 94.4 & 97.3 \\
-        70-30 & 98.0 & 99.3 & 99.2 & 97.1 & 98.5 & 98.8 \\
-        80-20 & 98.2 & 98.8 & 98.5 & 97.1 & 98.9 & 98.2 \\
-        90-10 & 98.1 & 99.1 & 98.6 & 96.4 & 97.8 & 95.6 \\
+        Sin escalar & 60-40 & 97.3 & 98.4 & 98.2 \\
+        Sin escalar & 70-30 & 98.5 & 98.5 & 98.5 \\
+        Sin escalar & 80-20 & 98.9 & 98.5 & 98.9 \\
+        Sin escalar & 90-10 & 99.3 & 98.5 & 97.1 \\
+        \midrule
+        Escaladas & 60-40 & 96.9 & 94.4 & 97.3 \\
+        Escaladas & 70-30 & 97.1 & 98.5 & 98.8 \\
+        Escaladas & 80-20 & 97.1 & 98.9 & 98.2 \\
+        Escaladas & 90-10 & 96.4 & 97.8 & 95.6 \\
+        \bottomrule
+    \end{tabular}
+\end{table}
+
+\begin{table}[!htb]
+    \centering
+    \small
+    \caption{Perceptrón con la regla 3 y tasa 0.1. Épocas promedio de diez semillas según el umbral de la función escalón}
+    \label{tab:anexo_umbral}
+    \begin{tabular}{lrrr}
+        \toprule
+        \textbf{Compuerta} & \textbf{$\theta$ = 0} & \textbf{0.5} & \textbf{1} \\
+        \midrule
+        AND 2 & 15.4 & 13.7 & 14.7 \\
+        AND 3 & 16.6 & 17.7 & 17.1 \\
+        AND 4 & 12.0 & 15.6 & 13.2 \\
+        OR 2  & 12.6 & 13.0 & 12.5 \\
+        OR 3  & 19.9 & 16.8 & 19.5 \\
+        OR 4  & 15.8 & 30.4 & 15.0 \\
         \bottomrule
     \end{tabular}
 \end{table}
@@ -622,6 +676,7 @@ El escalado de las entradas no alteró el desempeño del Perceptrón y resultó 
     \end{tabular}
 \end{table}
 
+\clearpage
 \lstset{basicstyle=\ttfamily\scriptsize}
 \section{Código de los bloques completados}
 \label{anexo:codigo}
