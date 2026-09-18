@@ -2,7 +2,7 @@
 
 ## Versión 2, sobre la plantilla del profesor
 
-En `v2/` está la entrega definitiva. El profesor entregó un live script base con las funciones `init_perceptron`, `compute_delta`, `train_adaline` y `split_dataset` por completar y un formato de informe en LaTeX, y pidió que se conservaran los nombres y argumentos de las funciones. `v2/Taller1_Perceptron_Adaline_LiveScript.mlx` es ese script completado y ejecutado, con los reportes de aprendizaje (tres reglas, alpha, umbral, pesos iniciales) y las particiones de billetes para los dos modelos. El informe está en `v2/informe/main.pdf` y la carpeta `v2/entrega_v2/` con el zip `Taller1_v2_SergioDuarte.zip` trae lo que se sube, el mlx, el dataset y el PDF.
+En `v2/` está la entrega definitiva. El profesor entregó un live script base con las funciones `init_perceptron`, `compute_delta`, `train_adaline` y `split_dataset` por completar y un formato de informe en LaTeX, y pidió que se conservaran los nombres y argumentos de las funciones. `v2/Taller1_Perceptron_Adaline_LiveScript.mlx` es ese script completado y ejecutado, con los reportes de aprendizaje (tres reglas, alpha, umbral, pesos iniciales) y las particiones de billetes para los dos modelos. El informe está en `v2/informe/main.pdf`. Lo que se sube está en `v2/entrega_v2/`, que tiene solo dos archivos, `Informe_Taller1.pdf` y `Taller1_SergioDuarte.rar`. El RAR trae el mlx ejecutado, `data_banknote_authentication.txt` e `iris.dat`, que el script lee desde su propia carpeta.
 
 Para regenerar figuras y mlx desde la carpeta del taller
 
