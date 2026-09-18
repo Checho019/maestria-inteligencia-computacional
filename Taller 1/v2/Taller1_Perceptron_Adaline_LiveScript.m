@@ -80,7 +80,6 @@ cfg.datos_iris    = 'iris.dat';
 cfg_base          = cfg;              % copia de referencia, cada barrido vuelve a ella
 
 paleta = [0.00 0.35 0.64; 0.85 0.37 0.01; 0.00 0.55 0.40; 0.45 0.20 0.55; 0.80 0.65 0.10; 0.40 0.45 0.50];
-set(groot, 'defaultAxesColorOrder', paleta)
 
 rng(cfg.seed);
 %% 3. Generación de datos: compuertas lógicas AND / OR
@@ -515,7 +514,7 @@ cfgA.max_epochs = n_ep;  rng(cfgA.seed);
 [~, ~, mse_and] = train_adaline(X, D, cfgA);
 cfgA.max_epochs = 200;
 
-figure('Name', 'dinamica')
+figure
 subplot(2, 1, 1)
 stairs(errores, 'LineWidth', 1.3, 'Color', paleta(1, :))
 ylabel('patrones mal clasificados'); ylim([-0.2 3.2]); xlim([1 n_ep]); grid on
