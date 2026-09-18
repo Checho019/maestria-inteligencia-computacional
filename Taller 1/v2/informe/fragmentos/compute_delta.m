@@ -1,7 +1,7 @@
 function delta = compute_delta(cfg, d, y, x)
-    % Calcula el incremento de pesos Delta_W segun la regla seleccionada
-    % en cfg.learning_rule. `x` es un patron (vector fila), `d` la
-    % salida deseada y `y` la salida actual del Perceptron (ya
+    % Calcula el incremento de pesos Delta_W según la regla seleccionada
+    % en cfg.learning_rule. `x` es un patrón (vector fila), `d` la
+    % salida deseada y `y` la salida actual del Perceptrón (ya
     % escalonada).
     switch cfg.learning_rule
         case 'hebb'

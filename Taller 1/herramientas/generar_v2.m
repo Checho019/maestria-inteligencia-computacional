@@ -12,15 +12,16 @@ figs = findobj('Type', 'figure');
 [~, orden] = sort([figs.Number]);
 figs = figs(orden);
 if ~exist('informe/figuras', 'dir'), mkdir('informe/figuras'); end
+% Cada figura se exporta al mismo ancho con que entra al informe, asi la letra
+% de 9 puntos se ve a 9 puntos en el PDF, cerca de los 11 del cuerpo del texto
+tam = [13 6.5; 15 6; 12 6.5; 12 8.5; 11 6];
 for k = 1:numel(figs)
     figs(k).Theme = 'light';
-    if strcmp(figs(k).Name, 'dinamica')
-        figs(k).Position = [50 50 760 620];   % dos paneles apilados necesitan mas alto
-    else
-        figs(k).Position = [50 50 760 440];
-    end
-    set(findall(figs(k), '-property', 'FontSize'), 'FontSize', 13)
-    exportgraphics(figs(k), fullfile('informe', 'figuras', sprintf('fig%02d.png', k)), 'Resolution', 150)
+    set(findall(figs(k), '-property', 'FontSize'), 'FontSize', 9)
+    % en modo batch la Position de la figura solo se respeta en la primera,
+    % por eso el tamano se fija en la exportacion
+    exportgraphics(figs(k), fullfile('informe', 'figuras', sprintf('fig%02d.png', k)), ...
+        'Resolution', 300, 'Width', tam(k, 1), 'Height', tam(k, 2), 'Units', 'centimeters')
 end
 close all
 mlx = fullfile(pwd, 'Taller1_Perceptron_Adaline_LiveScript.mlx');

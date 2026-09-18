@@ -8,7 +8,7 @@ function [W, b, mse_hist] = train_adaline(X, D, cfgA)
             x = X(p, :);
             d = D(p);
 
-            net = W * x' + b;   % salida LINEAL (sin escalon)
+            net = W * x' + b;   % salida LINEAL (sin escalón)
             y = net;
 
             delta = cfgA.alpha * (d - y) * x;

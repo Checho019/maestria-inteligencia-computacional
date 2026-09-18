@@ -12,6 +12,8 @@
 \usepackage{booktabs}
 \usepackage{array}
 \usepackage{multirow}
+\usepackage{siunitx}
+\sisetup{output-decimal-marker={.}, group-digits=false, detect-weight=true, table-number-alignment=center}
 \usepackage{amsmath,amssymb}
 \usepackage{listings}
 \usepackage{xcolor}
@@ -28,6 +30,10 @@
 \setcounter{topnumber}{3}
 \setcounter{totalnumber}{5}
 \captionsetup{font=small,labelfont=bf}
+\makeatletter
+\setlength{\@fptop}{0pt}
+\setlength{\@fpsep}{12pt}
+\makeatother
 
 % ============================================================
 % ESTILO DE CÓDIGO (MATLAB / Python)
@@ -45,6 +51,9 @@
     tabsize=2,
     backgroundcolor=\color{gray!5},
     extendedchars=true,
+    columns=fullflexible,
+    keepspaces=true,
+    upquote=true,
     literate={á}{{\'a}}1 {é}{{\'e}}1 {í}{{\'i}}1 {ó}{{\'o}}1 {ú}{{\'u}}1
              {Á}{{\'A}}1 {É}{{\'E}}1 {Í}{{\'I}}1 {Ó}{{\'O}}1 {Ú}{{\'U}}1
              {ñ}{{\~n}}1 {Ñ}{{\~N}}1 {¿}{{?`}}1 {¡}{{!`}}1
@@ -133,7 +142,7 @@ El taller pide dejar el modelo parametrizable para elegir entre tres formas de c
     \Delta w_i &= \left[d(x) - Y(x)\right] x_i \label{eq:perc} \\
     \Delta w_i &= \alpha \left[d(x) - Y(x)\right] x_i \label{eq:alpha}
 \end{align}
-La diferencia conceptual entre ellas es más grande de lo que sugiere su parecido. La regla 1 es de tipo hebbiano y no consulta la salida actual de la red, de manera que aplica el mismo incremento cada vez que ve un patrón, acierte o no. Es una regla de asociación, no de corrección de error, y carece de un mecanismo que la detenga. La regla 2 es la formulación original del Perceptrón y sí usa el error, por lo cual el incremento se anula exactamente cuando la clasificación es correcta. La regla 3 es la misma con una tasa de aprendizaje explícita que gradúa el tamaño del paso. Para las dos últimas, el teorema de convergencia del Perceptrón garantiza que si las clases son linealmente separables el algoritmo encuentra un hiperplano separador tras un número finito de correcciones, sin importar el punto de partida.
+La diferencia conceptual entre ellas es más grande de lo que sugiere su parecido. La plantilla del curso llama a la regla 1 regla tipo hebbiana, nombre que viene del psicólogo Donald Hebb, quien propuso en 1949 que la conexión entre dos neuronas se refuerza cada vez que ambas se activan al mismo tiempo. Trasladada a la fórmula, la idea es que el peso $w_i$ crece cuando la entrada $x_i$ y la salida deseada $d(x)$ valen uno a la vez, sin importar lo que haya respondido la red. La regla no consulta entonces la salida actual, aplica el mismo incremento cada vez que ve un patrón, acierte o no, y por eso carece de un mecanismo que la detenga. Es una regla de asociación, no de corrección de error. La regla 2 es la formulación original del Perceptrón y sí usa el error, por lo cual el incremento se anula exactamente cuando la clasificación es correcta. La regla 3 es la misma con una tasa de aprendizaje explícita que gradúa el tamaño del paso. Para las dos últimas, el teorema de convergencia del Perceptrón garantiza que si las clases son linealmente separables el algoritmo encuentra un hiperplano separador tras un número finito de correcciones, sin importar el punto de partida.
 
 \subsection{El Adaline, la Regla Delta y la función de costo continua}
 
@@ -148,7 +157,7 @@ Derivando esa función respecto de cada peso y avanzando en sentido contrario al
     \label{eq:delta}
 \end{equation}
 
-La expresión \eqref{eq:delta} es idéntica a la de la regla 3, y sin embargo los dos algoritmos se comportan de forma distinta porque $Y(x)$ significa cosas diferentes en cada una. En el Perceptrón $Y(x)$ es la salida del escalón, una función que solo toma dos valores y cuya derivada es cero en casi todo el dominio e indefinida en el umbral. No existe entonces una superficie de error sobre la cual descender, y lo único que el algoritmo puede hacer es contar patrones mal clasificados, un número entero que cambia a saltos. En el Adaline $Y(x)$ es la salida lineal, de modo que $E$ es una función cuadrática de los pesos, continua, diferenciable y convexa, con un paraboloide como superficie de error y un único mínimo global.
+La expresión \eqref{eq:delta} es idéntica a la de la regla 3, y sin embargo los dos algoritmos se comportan de forma distinta porque $Y(x)$ significa cosas diferentes en cada una. En el Perceptrón $Y(x)$ es la salida del escalón, una función que solo toma dos valores y cuya derivada es cero en casi todo el dominio e indefinida en el umbral. No existe entonces una superficie de error sobre la cual descender, y lo único que el algoritmo puede hacer es contar patrones mal clasificados, un número entero que cambia a saltos. En el Adaline $Y(x)$ es la salida lineal, de modo que $E$ es una función cuadrática de los pesos, continua y diferenciable, cuya gráfica tiene forma de cuenco con un único punto más bajo. Descender por esa superficie lleva siempre al mismo mínimo.
 
 De esa distinción se derivan tres consecuencias que aparecen una y otra vez en los resultados. El Perceptrón se detiene en cuanto clasifica bien y el Adaline sigue ajustando aunque la clasificación ya sea correcta, el mínimo de $E$ no coincide necesariamente con el hiperplano que separa las clases, y el descenso de gradiente tiene un límite de estabilidad para la tasa de aprendizaje que el Perceptrón no puede presentar.
 
@@ -203,14 +212,14 @@ El tercer conjunto es \texttt{data\_banknote\_authentication.txt}, que contiene 
     \small
     \caption{Estadísticos descriptivos de los atributos del conjunto de billetes}
     \label{tab:desc}
-    \begin{tabular}{lrrrr}
+    \begin{tabular}{l S[table-format=-2.2] S[table-format=2.2] S[table-format=-1.2] S[table-format=1.2]}
         \toprule
-        \textbf{Atributo} & \textbf{Mínimo} & \textbf{Máximo} & \textbf{Media} & \textbf{Desviación} \\
+        \textbf{Atributo} & {\textbf{Mínimo}} & {\textbf{Máximo}} & {\textbf{Media}} & {\textbf{Desviación}} \\
         \midrule
-        Varianza  & $-7.04$  & 6.82  & 0.43     & 2.84 \\
-        Asimetría & $-13.77$ & 12.95 & 1.92     & 5.87 \\
-        Curtosis  & $-5.29$  & 17.93 & 1.40     & 4.31 \\
-        Entropía  & $-8.55$  & 2.45  & $-1.19$  & 2.10 \\
+        Varianza  & -7.04  & 6.82  & 0.43  & 2.84 \\
+        Asimetría & -13.77 & 12.95 & 1.92  & 5.87 \\
+        Curtosis  & -5.29  & 17.93 & 1.40  & 4.31 \\
+        Entropía  & -8.55  & 2.45  & -1.19 & 2.10 \\
         \bottomrule
     \end{tabular}
 \end{table}
@@ -232,27 +241,27 @@ La Tabla \ref{tab:reglas} y la Figura \ref{fig:reglas} comparan las tres reglas 
 \begin{table}[!htb]
     \centering
     \small
-    \caption{Perceptrón sobre compuertas lógicas. Promedio de diez semillas con los parámetros base}
+    \caption{Perceptrón sobre compuertas lógicas con los parámetros base. Promedio de diez semillas}
     \label{tab:reglas}
-    \begin{tabular}{llrrrrrr}
+    \begin{tabular}{l *{6}{S[table-format=3.1]}}
         \toprule
-        \multicolumn{2}{c}{\textbf{Compuerta}} & \multicolumn{3}{c}{\textbf{Épocas}} & \multicolumn{3}{c}{\textbf{Exactitud (\%)}} \\
-        \cmidrule(lr){1-2} \cmidrule(lr){3-5} \cmidrule(lr){6-8}
-        \textbf{Tipo} & \textbf{Entradas} & \textbf{Regla 1} & \textbf{Regla 2} & \textbf{Regla 3} & \textbf{Regla 1} & \textbf{Regla 2} & \textbf{Regla 3} \\
+         & \multicolumn{3}{c}{\textbf{Épocas promedio}} & \multicolumn{3}{c}{\textbf{Exactitud (\%)}} \\
+        \cmidrule(lr){2-4} \cmidrule(lr){5-7}
+        \textbf{Compuerta} & {\textbf{Regla 1}} & {\textbf{Regla 2}} & {\textbf{Regla 3}} & {\textbf{Regla 1}} & {\textbf{Regla 2}} & {\textbf{Regla 3}} \\
         \midrule
-        AND & 2 & 100.0 & 5.9  & 13.7 & 67.5  & 100.0 & 100.0 \\
-        AND & 3 & 100.0 & 12.1 & 17.7 & 62.5  & 100.0 & 100.0 \\
-        AND & 4 & 100.0 & 12.3 & 15.6 & 75.0  & 100.0 & 100.0 \\
-        OR  & 2 & 3.2   & 4.0  & 13.0 & 100.0 & 100.0 & 100.0 \\
-        OR  & 3 & 3.3   & 4.3  & 16.8 & 100.0 & 100.0 & 100.0 \\
-        OR  & 4 & 3.6   & 6.3  & 30.4 & 100.0 & 100.0 & 100.0 \\
+        AND 2 & 100.0 & 5.9  & 13.7 & 67.5  & 100.0 & 100.0 \\
+        AND 3 & 100.0 & 12.1 & 17.7 & 62.5  & 100.0 & 100.0 \\
+        AND 4 & 100.0 & 12.3 & 15.6 & 75.0  & 100.0 & 100.0 \\
+        OR 2  & 3.2   & 4.0  & 13.0 & 100.0 & 100.0 & 100.0 \\
+        OR 3  & 3.3   & 4.3  & 16.8 & 100.0 & 100.0 & 100.0 \\
+        OR 4  & 3.6   & 6.3  & 30.4 & 100.0 & 100.0 & 100.0 \\
         \bottomrule
     \end{tabular}
 \end{table}
 
 \begin{figure}[!htb]
     \centering
-    \includegraphics[width=0.62\textwidth]{fig01.png}
+    \includegraphics[width=13cm]{fig01.png}
     \caption{Épocas promedio hasta la convergencia con las tres reglas de ajuste. Las barras de la regla hebbiana en AND alcanzan el tope de cien épocas porque nunca convergen}
     \label{fig:reglas}
 \end{figure}
@@ -264,16 +273,18 @@ Los pesos finales explican ese contraste mejor que las épocas. En la Tabla \ref
     \small
     \caption{Pesos finales del Perceptrón en compuertas de dos entradas con la semilla uno}
     \label{tab:pesos}
-    \begin{tabular}{llrrrrr}
+    \begin{tabular}{ll S[table-format=2.3] S[table-format=3.3] S[table-format=-2.3] S[table-format=3.0] S[table-format=3.1]}
         \toprule
-        \textbf{Regla} & \textbf{Compuerta} & \textbf{$w_1$} & \textbf{$w_2$} & \textbf{$b$} & \textbf{Épocas} & \textbf{Exactitud (\%)} \\
+        \textbf{Regla} & \textbf{Compuerta} & {$\boldsymbol{w_1}$} & {$\boldsymbol{w_2}$} & {$\boldsymbol{b}$} & {\textbf{Épocas}} & {\textbf{Exactitud (\%)}} \\
         \midrule
-        Regla 1 & AND & 99.675 & 100.590 & $-99.379$ & 100 & 75.0  \\
-        Regla 1 & OR  & 7.676  & 8.591   & $-0.379$  & 4   & 100.0 \\
-        Regla 2 & AND & 1.676  & 0.591   & $-1.379$  & 4   & 100.0 \\
-        Regla 2 & OR  & 1.676  & 1.591   & $-0.379$  & 5   & 100.0 \\
-        Regla 3 & AND & 1.176  & 0.791   & $-1.379$  & 17  & 100.0 \\
-        Regla 3 & OR  & 0.975  & 0.891   & $-0.379$  & 18  & 100.0 \\
+        \multirow{2}{*}{Regla 1} & AND & 99.675 & 100.590 & -99.379 & 100 & 75.0  \\
+                                 & OR  & 7.676  & 8.591   & -0.379  & 4   & 100.0 \\
+        \midrule
+        \multirow{2}{*}{Regla 2} & AND & 1.676  & 0.591   & -1.379  & 4   & 100.0 \\
+                                 & OR  & 1.676  & 1.591   & -0.379  & 5   & 100.0 \\
+        \midrule
+        \multirow{2}{*}{Regla 3} & AND & 1.176  & 0.791   & -1.379  & 17  & 100.0 \\
+                                 & OR  & 0.975  & 0.891   & -0.379  & 18  & 100.0 \\
         \bottomrule
     \end{tabular}
 \end{table}
@@ -287,9 +298,11 @@ La Tabla \ref{tab:alpha} muestra que con la regla 3 el número de épocas dismin
     \small
     \caption{Perceptrón con la regla 3. Épocas promedio de diez semillas según la tasa de aprendizaje}
     \label{tab:alpha}
-    \begin{tabular}{lrrrrr}
+    \begin{tabular}{l *{5}{S[table-format=2.1]}}
         \toprule
-        \textbf{Compuerta} & \textbf{$\alpha$ = 0.01} & \textbf{0.05} & \textbf{0.1} & \textbf{0.5} & \textbf{1} \\
+         & \multicolumn{5}{c}{\textbf{Tasa de aprendizaje $\boldsymbol{\alpha}$}} \\
+        \cmidrule(lr){2-6}
+        \textbf{Compuerta} & {\textbf{0.01}} & {\textbf{0.05}} & {\textbf{0.1}} & {\textbf{0.5}} & {\textbf{1}} \\
         \midrule
         AND 2 & 71.3 & 24.2 & 13.7 & 7.4  & 5.9  \\
         AND 3 & 79.2 & 29.0 & 17.7 & 10.7 & 12.1 \\
@@ -312,28 +325,28 @@ A medida que la escala crece el comportamiento se degrada de forma progresiva. C
 \begin{table}[!htb]
     \centering
     \small
-    \caption{Efecto de la escala de los pesos iniciales en el Perceptrón con la regla 3. Promedio de diez semillas. El rango es la diferencia entre el mayor y el menor valor final de $w_1$}
+    \caption{Efecto de la escala de los pesos iniciales en el Perceptrón con la regla 3. Promedio de diez semillas. El rango es la diferencia entre el mayor y el menor valor final de $w_1$ entre semillas}
     \label{tab:init}
-    \begin{tabular}{lrrrrr}
+    \begin{tabular}{l S[table-format=1.3] S[table-format=2.1] S[table-format=3.1] S[table-format=3.1] S[table-format=2.3]}
         \toprule
-        \textbf{Compuerta} & \textbf{Escala inicial} & \textbf{Épocas} & \textbf{Convergió (\%)} & \textbf{Exactitud (\%)} & \textbf{Rango de $w_1$} \\
+        \textbf{Compuerta} & {\textbf{Escala inicial}} & {\textbf{Épocas}} & {\textbf{Convergió (\%)}} & {\textbf{Exactitud (\%)}} & {\textbf{Rango de $\boldsymbol{w_1}$}} \\
         \midrule
-        AND 2 & 0     & 5.0  & 100.0 & 100.0 & 0.000  \\
-        AND 2 & 0.001 & 5.0  & 100.0 & 100.0 & 0.004  \\
-        AND 2 & 0.5   & 13.7 & 100.0 & 100.0 & 1.041  \\
-        AND 2 & 5     & 44.2 & 90.0  & 95.0  & 10.314 \\
+        \multirow{4}{*}{AND 2} & 0     & 5.0  & 100.0 & 100.0 & 0.000  \\
+                               & 0.001 & 5.0  & 100.0 & 100.0 & 0.004  \\
+                               & 0.5   & 13.7 & 100.0 & 100.0 & 1.041  \\
+                               & 5     & 44.2 & 90.0  & 95.0  & 10.314 \\
         \midrule
-        OR 2  & 0     & 12.0 & 100.0 & 100.0 & 0.000  \\
-        OR 2  & 0.001 & 12.7 & 100.0 & 100.0 & 0.100  \\
-        OR 2  & 0.5   & 13.0 & 100.0 & 100.0 & 1.048  \\
-        OR 2  & 5     & 41.3 & 90.0  & 97.5  & 11.375 \\
+        \multirow{4}{*}{OR 2}  & 0     & 12.0 & 100.0 & 100.0 & 0.000  \\
+                               & 0.001 & 12.7 & 100.0 & 100.0 & 0.100  \\
+                               & 0.5   & 13.0 & 100.0 & 100.0 & 1.048  \\
+                               & 5     & 41.3 & 90.0  & 97.5  & 11.375 \\
         \bottomrule
     \end{tabular}
 \end{table}
 
 \begin{figure}[!htb]
     \centering
-    \includegraphics[width=0.82\textwidth]{fig02.png}
+    \includegraphics[width=15cm]{fig02.png}
     \caption{Efecto de la escala de los pesos iniciales en el Perceptrón con la regla 3. A la izquierda las épocas promedio hasta converger y a la derecha la dispersión de los pesos finales entre semillas}
     \label{fig:init}
 \end{figure}
@@ -345,48 +358,59 @@ La Tabla \ref{tab:ada} resume el Adaline sobre las seis compuertas con la tasa b
 \begin{table}[!htb]
     \centering
     \small
-    \caption{Adaline sobre compuertas lógicas con la tasa de aprendizaje base. El umbral se aplica sobre el modelo ya entrenado, de modo que las tres últimas columnas corresponden al mismo entrenamiento}
+    \caption{Adaline sobre compuertas lógicas con la tasa base de 0.05 y doscientas épocas. El umbral se aplica sobre un mismo modelo ya entrenado, así que las tres columnas de exactitud provienen de un único entrenamiento}
     \label{tab:ada}
-    \begin{tabular}{llrrrrr}
+    \begin{tabular}{l S[table-format=1.4] *{3}{S[table-format=3.1, table-column-width=1.9cm]}}
         \toprule
-        \multicolumn{2}{c}{\textbf{Compuerta}} & \multirow{2}{*}{\textbf{Épocas}} & \multirow{2}{*}{\textbf{MSE final}} & \multicolumn{3}{c}{\textbf{Exactitud según el umbral (\%)}} \\
-        \cmidrule(lr){1-2} \cmidrule(lr){5-7}
-        \textbf{Tipo} & \textbf{Entradas} & & & \textbf{$\theta$ = 0.3} & \textbf{0.5} & \textbf{0.7} \\
+         & & \multicolumn{3}{c}{\textbf{Exactitud (\%) según el umbral $\boldsymbol{\theta}$}} \\
+        \cmidrule(lr){3-5}
+        \textbf{Compuerta} & {\textbf{MSE final}} & {\textbf{0.3}} & {\textbf{0.5}} & {\textbf{0.7}} \\
         \midrule
-        AND & 2 & 200 & 0.0346 & 100.0 & 100.0 & 100.0 \\
-        AND & 3 & 200 & 0.0369 & 100.0 & 100.0 & 87.5  \\
-        AND & 4 & 200 & 0.0268 & 100.0 & 93.8  & 93.8  \\
-        OR  & 2 & 200 & 0.0346 & 100.0 & 100.0 & 100.0 \\
-        OR  & 3 & 200 & 0.0341 & 87.5  & 87.5  & 100.0 \\
-        OR  & 4 & 200 & 0.0231 & 93.8  & 93.8  & 93.8  \\
+        AND 2 & 0.0346 & 100.0 & 100.0 & 100.0 \\
+        AND 3 & 0.0369 & 100.0 & 100.0 & 87.5  \\
+        AND 4 & 0.0268 & 100.0 & 93.8  & 93.8  \\
+        OR 2  & 0.0346 & 100.0 & 100.0 & 100.0 \\
+        OR 3  & 0.0341 & 87.5  & 87.5  & 100.0 \\
+        OR 4  & 0.0231 & 93.8  & 93.8  & 93.8  \\
         \bottomrule
     \end{tabular}
 \end{table}
 
 \begin{figure}[!htb]
     \centering
-    \includegraphics[width=0.66\textwidth]{fig03.png}
+    \includegraphics[width=12cm]{fig03.png}
     \caption{Curva de error de entrenamiento del Adaline sobre las seis compuertas con la tasa de aprendizaje base. La escala vertical es logarítmica}
     \label{fig:mse}
 \end{figure}
 
-La tasa de aprendizaje determina dónde se detiene el descenso, como recoge la Tabla \ref{tab:ada_alpha}. Con 0.001 el paso es tan pequeño que doscientas épocas no bastan para llegar al fondo del paraboloide, el MSE se queda entre 0.0430 y 0.1082 y la exactitud cae hasta el cincuenta por ciento en AND de 2 entradas. En el intervalo de 0.01 a 0.1 el MSE alcanza su mínimo y la exactitud es la mejor de la tabla. Con 0.5 el error final ya es entre dos y cinco veces mayor que el mínimo, señal de que el descenso empieza a oscilar alrededor del óptimo, y con uno el proceso diverge de forma irreversible, con valores de $10^{123}$ en las compuertas de tres entradas y desbordamiento numérico a NaN en las de cuatro.
+La tasa de aprendizaje determina dónde se detiene el descenso, como recoge la Tabla \ref{tab:ada_alpha}. Con 0.001 el paso es tan pequeño que doscientas épocas no bastan para llegar al mínimo del error, el MSE se queda entre 0.0430 y 0.1082 y la exactitud cae hasta el cincuenta por ciento en AND de 2 entradas. En el intervalo de 0.01 a 0.1 el MSE alcanza su mínimo y la exactitud es la mejor de la tabla. Con 0.5 el error final ya es entre dos y cinco veces mayor que el mínimo, señal de que el descenso empieza a oscilar alrededor del óptimo, y con uno el proceso diverge, es decir que el error crece de una época a la siguiente sin detenerse, hasta que los pesos dejan de representar un modelo útil. Por eso la tabla marca esa columna como divergente en lugar de reportar un valor.
 
 \begin{table}[!htb]
     \centering
     \small
-    \caption{Adaline según la tasa de aprendizaje. MSE final tras doscientas épocas y exactitud entre paréntesis}
+    \caption{Adaline según la tasa de aprendizaje, tras doscientas épocas. La marca diverge indica que el error creció sin control y los pesos dejaron de representar un modelo entrenado}
     \label{tab:ada_alpha}
-    \begin{tabular}{lrrrrrr}
+    \begin{tabular}{l *{5}{S[table-format=3.4]} c}
         \toprule
-        \textbf{Compuerta} & \textbf{$\alpha$ = 0.001} & \textbf{0.01} & \textbf{0.05} & \textbf{0.1} & \textbf{0.5} & \textbf{1} \\
+         & \multicolumn{6}{c}{\textbf{Tasa de aprendizaje $\boldsymbol{\alpha}$}} \\
+        \cmidrule(lr){2-7}
+        \textbf{Compuerta} & {\textbf{0.001}} & {\textbf{0.01}} & {\textbf{0.05}} & {\textbf{0.1}} & {\textbf{0.5}} & \textbf{1} \\
         \midrule
-        AND 2 & 0.0842 (50.0) & 0.0334 (100.0) & 0.0346 (100.0) & 0.0386 (100.0) & 0.1250 (75.0) & $10^{3.7}$ (50.0) \\
-        AND 3 & 0.0664 (87.5) & 0.0323 (100.0) & 0.0369 (100.0) & 0.0439 (100.0) & 0.1556 (62.5) & $10^{123}$ (87.5) \\
-        AND 4 & 0.0430 (93.8) & 0.0225 (93.8)  & 0.0268 (93.8)  & 0.0332 (100.0) & 0.1129 (56.3) & NaN (93.8) \\
-        OR 2  & 0.1082 (75.0) & 0.0329 (100.0) & 0.0346 (100.0) & 0.0386 (100.0) & 0.1250 (75.0) & $10^{3.7}$ (25.0) \\
-        OR 3  & 0.0745 (75.0) & 0.0319 (100.0) & 0.0341 (87.5)  & 0.0372 (87.5)  & 0.0764 (87.5) & $10^{123}$ (12.5) \\
-        OR 4  & 0.0471 (100.0)& 0.0218 (93.8)  & 0.0231 (93.8)  & 0.0246 (93.8)  & 0.0409 (93.8) & NaN (6.3) \\
+        \multicolumn{7}{l}{\textit{MSE final}} \\
+        AND 2 & 0.0842 & 0.0334 & 0.0346 & 0.0386 & 0.1250 & diverge \\
+        AND 3 & 0.0664 & 0.0323 & 0.0369 & 0.0439 & 0.1556 & diverge \\
+        AND 4 & 0.0430 & 0.0225 & 0.0268 & 0.0332 & 0.1129 & diverge \\
+        OR 2  & 0.1082 & 0.0329 & 0.0346 & 0.0386 & 0.1250 & diverge \\
+        OR 3  & 0.0745 & 0.0319 & 0.0341 & 0.0372 & 0.0764 & diverge \\
+        OR 4  & 0.0471 & 0.0218 & 0.0231 & 0.0246 & 0.0409 & diverge \\
+        \midrule
+        \multicolumn{7}{l}{\textit{Exactitud (\%)}} \\
+        AND 2 & 50.0  & 100.0 & 100.0 & 100.0 & 75.0 & diverge \\
+        AND 3 & 87.5  & 100.0 & 100.0 & 100.0 & 62.5 & diverge \\
+        AND 4 & 93.8  & 93.8  & 93.8  & 100.0 & 56.3 & diverge \\
+        OR 2  & 75.0  & 100.0 & 100.0 & 100.0 & 75.0 & diverge \\
+        OR 3  & 75.0  & 100.0 & 87.5  & 87.5  & 87.5 & diverge \\
+        OR 4  & 100.0 & 93.8  & 93.8  & 93.8  & 93.8 & diverge \\
         \bottomrule
     \end{tabular}
 \end{table}
@@ -401,32 +425,32 @@ El mismo experimento de la Tabla \ref{tab:init} aplicado al Adaline produce el r
 \begin{table}[!htb]
     \centering
     \small
-    \caption{Efecto de la escala de los pesos iniciales en el Adaline. Promedio de diez semillas sobre compuertas de dos entradas}
+    \caption{Efecto de la escala de los pesos iniciales en el Adaline sobre compuertas de dos entradas. Promedio de diez semillas. El rango se define igual que en la Tabla~\ref{tab:init}}
     \label{tab:init_ada}
-    \begin{tabular}{lrrrrrr}
+    \begin{tabular}{l S[table-format=1.3] S[table-format=1.3] S[table-format=1.3] S[table-format=-1.3] S[table-format=1.4] S[table-format=1.4]}
         \toprule
-        \textbf{Compuerta} & \textbf{Escala inicial} & \textbf{$w_1$} & \textbf{$w_2$} & \textbf{$b$} & \textbf{MSE final} & \textbf{Rango de $w_1$} \\
+        \textbf{Compuerta} & {\textbf{Escala inicial}} & {$\boldsymbol{w_1}$} & {$\boldsymbol{w_2}$} & {$\boldsymbol{b}$} & {\textbf{MSE final}} & {\textbf{Rango de $\boldsymbol{w_1}$}} \\
         \midrule
-        AND 2 & 0     & 0.526 & 0.513 & $-0.262$ & 0.0346 & 0.0000 \\
-        AND 2 & 0.001 & 0.526 & 0.513 & $-0.262$ & 0.0346 & 0.0000 \\
-        AND 2 & 0.5   & 0.526 & 0.513 & $-0.262$ & 0.0346 & 0.0010 \\
-        AND 2 & 5     & 0.526 & 0.513 & $-0.263$ & 0.0346 & 0.0102 \\
+        \multirow{4}{*}{AND 2} & 0     & 0.526 & 0.513 & -0.262 & 0.0346 & 0.0000 \\
+                               & 0.001 & 0.526 & 0.513 & -0.262 & 0.0346 & 0.0000 \\
+                               & 0.5   & 0.526 & 0.513 & -0.262 & 0.0346 & 0.0010 \\
+                               & 5     & 0.526 & 0.513 & -0.263 & 0.0346 & 0.0102 \\
         \midrule
-        OR 2  & 0     & 0.473 & 0.487 & 0.264    & 0.0346 & 0.0000 \\
-        OR 2  & 0.001 & 0.473 & 0.487 & 0.264    & 0.0346 & 0.0000 \\
-        OR 2  & 0.5   & 0.473 & 0.487 & 0.263    & 0.0346 & 0.0010 \\
-        OR 2  & 5     & 0.474 & 0.487 & 0.263    & 0.0346 & 0.0102 \\
+        \multirow{4}{*}{OR 2}  & 0     & 0.473 & 0.487 & 0.264  & 0.0346 & 0.0000 \\
+                               & 0.001 & 0.473 & 0.487 & 0.264  & 0.0346 & 0.0000 \\
+                               & 0.5   & 0.473 & 0.487 & 0.263  & 0.0346 & 0.0010 \\
+                               & 5     & 0.474 & 0.487 & 0.263  & 0.0346 & 0.0102 \\
         \bottomrule
     \end{tabular}
 \end{table}
 
 \subsection{Dinámica del error de los dos modelos}
 
-La Figura \ref{fig:dinamica} presenta las dos formas de error sobre la compuerta AND de dos entradas en paneles separados, porque un conteo entero de patrones y un error cuadrático medio no comparten unidad ni escala y no deben leerse sobre el mismo eje. Lo que se compara entre ambos paneles es la forma de la trayectoria, no su magnitud. La curva del Adaline es continua y decreciente en todo momento, tal como corresponde a un descenso de gradiente sobre una función convexa. El conteo de errores del Perceptrón, en cambio, avanza a saltos y no es monótono, pues sube de dos a tres patrones mal clasificados en la tercera época, baja a uno, vuelve a subir a dos en la época trece y solo alcanza cero en la época dieciséis. La función declara la convergencia en la época diecisiete, una más, porque necesita recorrer una época completa sin aplicar ninguna corrección para poder afirmar que el hiperplano ya separa los datos.
+La Figura \ref{fig:dinamica} presenta las dos formas de error sobre la compuerta AND de dos entradas en paneles separados, porque un conteo entero de patrones y un error cuadrático medio no comparten unidad ni escala y no deben leerse sobre el mismo eje. Lo que se compara entre ambos paneles es la forma de la trayectoria, no su magnitud. La curva del Adaline es continua y decreciente en todo momento, tal como corresponde a un descenso de gradiente sobre una función con un único mínimo. El conteo de errores del Perceptrón, en cambio, avanza a saltos y no es monótono, pues sube de dos a tres patrones mal clasificados en la tercera época, baja a uno, vuelve a subir a dos en la época trece y solo alcanza cero en la época dieciséis. La función declara la convergencia en la época diecisiete, una más, porque necesita recorrer una época completa sin aplicar ninguna corrección para poder afirmar que el hiperplano ya separa los datos.
 
 \begin{figure}[!htb]
     \centering
-    \includegraphics[width=0.70\textwidth]{fig04.png}
+    \includegraphics[width=12cm]{fig04.png}
     \caption{Dinámica del error sobre la compuerta AND de dos entradas. Arriba, patrones mal clasificados por el Perceptrón en cada época. Abajo, error cuadrático medio del Adaline en cada época}
     \label{fig:dinamica}
 \end{figure}
@@ -440,9 +464,9 @@ La Tabla \ref{tab:xor} confirma que ninguno de los dos modelos resuelve la compu
     \small
     \caption{Control negativo sobre la compuerta XOR de dos entradas}
     \label{tab:xor}
-    \begin{tabular}{lrrr}
+    \begin{tabular}{l S[table-format=3.0] c S[table-format=2.1]}
         \toprule
-        \textbf{Modelo} & \textbf{Épocas} & \textbf{MSE final} & \textbf{Exactitud (\%)} \\
+        \textbf{Modelo} & {\textbf{Épocas}} & \textbf{MSE final} & {\textbf{Exactitud (\%)}} \\
         \midrule
         Perceptrón & 100 & no aplica & 25.0 \\
         Adaline    & 200 & 0.1385    & 25.0 \\
@@ -457,23 +481,23 @@ Los numerales 4 y 10 piden aplicar los modelos a los conjuntos que produce el sc
 \begin{table}[!htb]
     \centering
     \small
-    \caption{Iris, \textit{setosa} contra el resto, con las entradas escaladas. El Perceptrón usa la regla 3 y el MSE del Adaline corresponde a la tasa 0.01}
+    \caption{Iris, \textit{setosa} contra el resto, con las entradas escaladas. Perceptrón con la regla 3 y $\alpha$ igual a 0.1, Adaline con $\alpha$ igual a 0.01}
     \label{tab:iris}
-    \begin{tabular}{lrrrrr}
+    \begin{tabular}{l S[table-format=1.0] S[table-format=3.1] S[table-format=1.4] S[table-format=3.1]}
         \toprule
-        \textbf{Partición} & \multicolumn{2}{c}{\textbf{Perceptrón}} & \multicolumn{3}{c}{\textbf{Adaline}} \\
-        \cmidrule(lr){2-3} \cmidrule(lr){4-6}
-         & \textbf{Épocas} & \textbf{Prueba (\%)} & \textbf{MSE final} & \textbf{Prueba, $\alpha$ = 0.0001 (\%)} & \textbf{Prueba, $\alpha$ = 0.01 (\%)} \\
+         & \multicolumn{2}{c}{\textbf{Perceptrón}} & \multicolumn{2}{c}{\textbf{Adaline}} \\
+        \cmidrule(lr){2-3} \cmidrule(lr){4-5}
+        \textbf{Partición} & {\textbf{Épocas}} & {\textbf{Prueba (\%)}} & {\textbf{MSE final}} & {\textbf{Prueba (\%)}} \\
         \midrule
-        60-40 & 2 & 100.0 & 0.0097 & 98.3  & 100.0 \\
-        70-30 & 2 & 100.0 & 0.0106 & 97.8  & 100.0 \\
-        80-20 & 2 & 100.0 & 0.0119 & 100.0 & 100.0 \\
-        90-10 & 2 & 100.0 & 0.0116 & 100.0 & 100.0 \\
+        60-40 & 2 & 100.0 & 0.0097 & 100.0 \\
+        70-30 & 2 & 100.0 & 0.0106 & 100.0 \\
+        80-20 & 2 & 100.0 & 0.0119 & 100.0 \\
+        90-10 & 2 & 100.0 & 0.0116 & 100.0 \\
         \bottomrule
     \end{tabular}
 \end{table}
 
-El Perceptrón converge en dos épocas y clasifica sin error, tanto en entrenamiento como en prueba, en las cuatro particiones y con los tres valores de tasa probados. Es la confirmación más limpia del teorema de convergencia sobre un problema real, ya que las dos épocas corresponden a una pasada de correcciones y una segunda de verificación. El Adaline también alcanza el cien por ciento con tasas de 0.01 y 0.05, y con tasas menores deja uno o dos patrones mal clasificados porque doscientas épocas no bastan para llegar al fondo del paraboloide. El contraste con el conjunto de billetes de la subsección siguiente es instructivo, allí ningún modelo converge porque las clases se traslapan, mientras que aquí el problema se agota en dos épocas.
+El Perceptrón converge en dos épocas y clasifica sin error, tanto en entrenamiento como en prueba, en las cuatro particiones y con los tres valores de tasa probados. Es la confirmación más limpia del teorema de convergencia sobre un problema real, ya que las dos épocas corresponden a una pasada de correcciones y una segunda de verificación. El Adaline también alcanza el cien por ciento con tasas de 0.01 y 0.05. Con tasas de 0.001 o menores baja a 98.3 y 97.8 por ciento en las particiones 60-40 y 70-30, que corresponden a un solo patrón mal clasificado en cada caso, porque doscientas épocas no bastan para llegar al mínimo del error con un paso tan pequeño. El contraste con el conjunto de billetes de la subsección siguiente es instructivo, allí ningún modelo converge porque las clases se traslapan, mientras que aquí el problema se agota en dos épocas.
 
 \subsection{Aplicación al conjunto de billetes}
 
@@ -482,13 +506,13 @@ La Tabla \ref{tab:bank} y la Figura \ref{fig:bank} recogen el desempeño de los 
 \begin{table}[!htb]
     \centering
     \small
-    \caption{Exactitud según la proporción de partición con las entradas escaladas. Perceptrón con $\alpha$ igual a 0.1 y Adaline con $\alpha$ igual a 0.01}
+    \caption{Exactitud según la proporción de partición con las entradas escaladas. Perceptrón con la regla 3 y $\alpha$ igual a 0.1, Adaline con $\alpha$ igual a 0.01}
     \label{tab:bank}
-    \begin{tabular}{lrrrr}
+    \begin{tabular}{l *{4}{S[table-format=2.1]}}
         \toprule
-        \textbf{Partición} & \multicolumn{2}{c}{\textbf{Perceptrón (\%)}} & \multicolumn{2}{c}{\textbf{Adaline (\%)}} \\
+         & \multicolumn{2}{c}{\textbf{Perceptrón (\%)}} & \multicolumn{2}{c}{\textbf{Adaline (\%)}} \\
         \cmidrule(lr){2-3} \cmidrule(lr){4-5}
-         & \textbf{Entrenamiento} & \textbf{Prueba} & \textbf{Entrenamiento} & \textbf{Prueba} \\
+        \textbf{Partición} & {\textbf{Entrenamiento}} & {\textbf{Prueba}} & {\textbf{Entrenamiento}} & {\textbf{Prueba}} \\
         \midrule
         60-40 & 95.0 & 94.4 & 97.9 & 97.3 \\
         70-30 & 99.3 & 98.5 & 97.5 & 95.9 \\
@@ -500,7 +524,7 @@ La Tabla \ref{tab:bank} y la Figura \ref{fig:bank} recogen el desempeño de los 
 
 \begin{figure}[!htb]
     \centering
-    \includegraphics[width=0.60\textwidth]{fig05.png}
+    \includegraphics[width=11cm]{fig05.png}
     \caption{Exactitud sobre el conjunto de prueba de los dos modelos según la proporción de partición}
     \label{fig:bank}
 \end{figure}
@@ -510,11 +534,11 @@ La exactitud global oculta de qué lado se equivoca cada modelo. La Tabla \ref{t
 \begin{table}[!htb]
     \centering
     \small
-    \caption{Matriz de confusión sobre el conjunto de prueba de la partición 70-30 con 412 billetes}
+    \caption{Matriz de confusión sobre los 412 billetes de prueba de la partición 70-30. La clase positiva es el billete falso. VN son auténticos reconocidos, FP auténticos marcados como falsos, FN falsos que pasaron como auténticos y VP falsos detectados. La sensibilidad es la fracción de falsos detectados y la especificidad la fracción de auténticos reconocidos}
     \label{tab:confusion}
-    \begin{tabular}{lrrrrrr}
+    \begin{tabular}{l *{4}{S[table-format=3.0]} S[table-format=3.1] S[table-format=2.1]}
         \toprule
-        \textbf{Modelo} & \textbf{VN} & \textbf{FP} & \textbf{FN} & \textbf{VP} & \textbf{Sensibilidad (\%)} & \textbf{Especificidad (\%)} \\
+        \textbf{Modelo} & {\textbf{VN}} & {\textbf{FP}} & {\textbf{FN}} & {\textbf{VP}} & {\textbf{Sensibilidad (\%)}} & {\textbf{Especificidad (\%)}} \\
         \midrule
         Perceptrón & 236 & 4  & 2 & 170 & 98.8  & 98.3 \\
         Adaline    & 223 & 17 & 0 & 172 & 100.0 & 92.9 \\
@@ -522,27 +546,27 @@ La exactitud global oculta de qué lado se equivoca cada modelo. La Tabla \ref{t
     \end{tabular}
 \end{table}
 
-Los pesos con que terminan los dos modelos sobre esa misma partición, recogidos en la Tabla \ref{tab:pesos_bank}, muestran que ambos encuentran esencialmente la misma dirección de separación. Los tres primeros coeficientes del Perceptrón son entre 3.3 y 3.6 veces los del Adaline, y el sesgo guarda una proporción parecida de 3.1, de modo que los dos hiperplanos son casi paralelos y solo difieren en la escala del vector normal, que no afecta la decisión. Los dos modelos coinciden además en asignar a la entropía un peso entre sesenta y ciento treinta veces menor que a las demás variables, lo cual sugiere que ese atributo aporta poco a la discriminación entre billetes auténticos y falsos.
+Los pesos con que terminan los dos modelos sobre esa misma partición, recogidos en la Tabla \ref{tab:pesos_bank}, muestran que ambos encuentran esencialmente la misma dirección de separación. Los tres primeros coeficientes del Perceptrón son entre 3.3 y 3.6 veces los del Adaline, y el sesgo guarda una proporción parecida de 3.1, de modo que los pesos de un modelo son aproximadamente un múltiplo de los del otro. Multiplicar todos los pesos y el sesgo por una misma cantidad positiva no cambia el signo de la suma ponderada, así que las dos fronteras de decisión son casi la misma. Los dos modelos coinciden además en asignar a la entropía un peso entre sesenta y ciento treinta veces menor que a las demás variables, lo cual sugiere que ese atributo aporta poco a la discriminación entre billetes auténticos y falsos.
 
 \begin{table}[!htb]
     \centering
     \small
     \caption{Pesos finales sobre la partición 70-30 con las entradas escaladas}
     \label{tab:pesos_bank}
-    \begin{tabular}{lrr}
+    \begin{tabular}{l S[table-format=-2.3] S[table-format=-1.3]}
         \toprule
-        \textbf{Entrada} & \textbf{Perceptrón} & \textbf{Adaline} \\
+        \textbf{Entrada} & {\textbf{Perceptrón}} & {\textbf{Adaline}} \\
         \midrule
-        Varianza  & $-7.124$ & $-1.960$ \\
-        Asimetría & $-7.541$ & $-2.090$ \\
-        Curtosis  & $-7.825$ & $-2.375$ \\
-        Entropía  & $-0.110$ & $-0.018$ \\
-        Sesgo     & 10.577   & 3.461    \\
+        Varianza  & -7.124 & -1.960 \\
+        Asimetría & -7.541 & -2.090 \\
+        Curtosis  & -7.825 & -2.375 \\
+        Entropía  & -0.110 & -0.018 \\
+        Sesgo     & 10.577 & 3.461  \\
         \bottomrule
     \end{tabular}
 \end{table}
 
-Los dos modelos se entrenaron además con las entradas sin escalar, y el resultado separa con claridad sus comportamientos. El Perceptrón no solo tolera la falta de escalado sino que mejora ligeramente, con exactitudes de prueba entre 97.1 y 99.3 por ciento frente a 94.4 y 98.9 con las entradas escaladas, y su mejor resultado global, 99.3 por ciento en la partición 90-10, se obtiene precisamente sin escalar. El Adaline hace lo contrario. Sin escalar y con la tasa base diverge en las cuatro particiones, y la exactitud cae a valores entre 56.6 y 60.6 por ciento, que no son azar sino la proporción de la clase mayoritaria en cada conjunto de prueba, porque los pesos no finitos hacen que el escalón devuelva siempre la misma clase. Con una tasa de 0.01 el error ya no diverge pero el resultado es errático, entre 72.3 y 96.4 por ciento, y solo con tasas iguales o menores a 0.001 se recuperan valores comparables a los de la Tabla \ref{tab:bank}. Con las entradas escaladas, en cambio, cualquier tasa entre 0.001 y 0.05 produce resultados equivalentes. Las Tablas \ref{tab:anexo_perc_bank} y \ref{tab:anexo_bank} del anexo recogen el detalle de los dos modelos.
+Los dos modelos se entrenaron además con las entradas sin escalar, y el resultado separa con claridad sus comportamientos. El Perceptrón no solo tolera la falta de escalado sino que mejora ligeramente, con exactitudes de prueba entre 97.1 y 99.3 por ciento frente a 94.4 y 98.9 con las entradas escaladas, y su mejor resultado global, 99.3 por ciento en la partición 90-10, se obtiene precisamente sin escalar. El Adaline hace lo contrario. Sin escalar y con la tasa base diverge en las cuatro particiones, y la red termina asignando todos los billetes a la misma clase, de modo que su exactitud, entre 56.6 y 60.6 por ciento, es solo la proporción de billetes auténticos en cada conjunto de prueba. Con una tasa de 0.01 el error ya no diverge pero el resultado es errático, entre 72.3 y 96.4 por ciento, y solo con tasas iguales o menores a 0.001 se recuperan valores comparables a los de la Tabla \ref{tab:bank}. Con las entradas escaladas, en cambio, cualquier tasa entre 0.001 y 0.05 produce resultados equivalentes. Las Tablas \ref{tab:anexo_perc_bank} y \ref{tab:anexo_bank} del anexo recogen el detalle de los dos modelos.
 
 % ============================================================
 \section{Análisis y discusión}
@@ -557,7 +581,7 @@ El caso interesante es el de la regla hebbiana, que no converge en AND, sí conv
 
 El umbral tuvo un efecto menor en los dos modelos, pero por razones distintas. En el Perceptrón el umbral y el sesgo son intercambiables, de modo que las primeras correcciones absorben cualquier valor del umbral. En el Adaline el umbral no participa en el ajuste y solo interviene al convertir la salida lineal en una clase, papel tardío que permite recuperar patrones sin volver a entrenar.
 
-La tasa de aprendizaje, en cambio, desempeña papeles opuestos en los dos modelos. En el Perceptrón un valor alto solo acelera la convergencia y en ningún caso produjo inestabilidad, porque la corrección se aplica únicamente cuando hay error y siempre apunta en la dirección que lo reduce, de manera que un paso grande a lo sumo sobrepasa la frontera y se corrige en el patrón siguiente. En el Adaline existe un límite de estabilidad propio del descenso de gradiente, que depende de la magnitud de las entradas. Por debajo de ese límite el error desciende hacia el mínimo, cerca de él el descenso oscila y el error final se estabiliza por encima del óptimo, como ocurre con la tasa 0.5, y por encima del límite cada paso sobrepasa el mínimo y amplifica el error de forma exponencial, que es lo que produce los valores de $10^{123}$ y el desbordamiento numérico de la Tabla \ref{tab:ada_alpha}.
+La tasa de aprendizaje, en cambio, desempeña papeles opuestos en los dos modelos. En el Perceptrón un valor alto solo acelera la convergencia y en ningún caso produjo inestabilidad, porque la corrección se aplica únicamente cuando hay error y siempre apunta en la dirección que lo reduce, de manera que un paso grande a lo sumo sobrepasa la frontera y se corrige en el patrón siguiente. En el Adaline existe un límite de estabilidad propio del descenso de gradiente, que depende de la magnitud de las entradas. Por debajo de ese límite el error desciende hacia el mínimo, cerca de él el descenso oscila y el error final se estabiliza por encima del óptimo, como ocurre con la tasa 0.5, y por encima del límite cada paso sobrepasa el mínimo y cae más lejos que el anterior, de modo que el error crece época tras época, que es lo que ocurre con la tasa uno en la Tabla \ref{tab:ada_alpha}.
 
 \subsection{Diferencias en la forma de la curva de error}
 
@@ -569,7 +593,7 @@ De ahí se desprende una observación sobre la calidad de las soluciones. El Per
 
 Este fue el resultado más marcado del trabajo y separa claramente a los dos modelos. En el Perceptrón, partir de pesos muy cercanos a cero es la mejor condición inicial de las probadas. Con pesos nulos la suma ponderada vale cero para todos los patrones, queda por debajo del umbral y la neurona empieza apagada, de modo que solo recibe correcciones de los patrones cuya salida deseada es uno y construye los pesos a partir de la evidencia de los datos. El resultado es una convergencia en cinco épocas para AND y doce para OR, con el mismo hiperplano final en todas las semillas. Con pesos grandes frente a la tasa de aprendizaje ocurre lo contrario, pues hacen falta muchas correcciones pequeñas para vencer el punto de partida, el modelo tarda más de cuarenta épocas, algunas semillas no alcanzan a converger dentro del tope y cada semilla termina en un separador distinto. Conviene matizar que el caso de pesos exactamente nulos elimina la aleatoriedad por construcción, así que el hallazgo verdaderamente informativo es el de escala 0.001, donde las semillas siguen siendo distintas y aun así convergen al mismo sitio y en el mismo número de épocas.
 
-El Adaline se comporta de manera opuesta y llega a los mismos pesos, con diferencias de una milésima, desde cualquiera de las cuatro escalas iniciales, incluida la más grande. La razón es que la función de costo de la ecuación \eqref{eq:costo} es cuadrática en los pesos y por lo tanto convexa, con un único mínimo global, de modo que el punto de partida solo determina la longitud del camino y no el destino. Ese contraste ilustra bien la diferencia de fondo entre optimizar una función continua y corregir errores de clasificación, y también matiza la afirmación de la plantilla según la cual la inicialización no es crítica en un modelo de una sola neurona. Para el Adaline la afirmación es exacta. Para el Perceptrón la inicialización no compromete la convergencia, que el teorema garantiza, pero sí afecta de manera apreciable la velocidad, la reproducibilidad y la solución concreta que se obtiene.
+El Adaline se comporta de manera opuesta y llega a los mismos pesos, con diferencias de una milésima, desde cualquiera de las cuatro escalas iniciales, incluida la más grande. La razón es que la función de costo de la ecuación \eqref{eq:costo} es cuadrática en los pesos y tiene un único mínimo, de modo que el punto de partida solo determina la longitud del camino y no el destino. Ese contraste ilustra bien la diferencia de fondo entre optimizar una función continua y corregir errores de clasificación, y también matiza la afirmación de la plantilla según la cual la inicialización no es crítica en un modelo de una sola neurona. Para el Adaline la afirmación es exacta. Para el Perceptrón la inicialización no compromete la convergencia, que el teorema garantiza, pero sí afecta de manera apreciable la velocidad, la reproducibilidad y la solución concreta que se obtiene.
 
 \subsection{Comportamiento sobre datos reales}
 
@@ -584,11 +608,11 @@ Las reglas 2 y 3 resolvieron las seis compuertas AND y OR de 2, 3 y 4 entradas e
 
 El Adaline clasificó correctamente AND de 2 y 3 entradas y OR de 2 entradas, y dejó un patrón mal clasificado en AND de 4 y en OR de 3 y 4. Minimizar el error cuadrático de la salida lineal no equivale a minimizar el error de clasificación, y por eso el modelo puede fallar en problemas que el Perceptrón resuelve sin error. Mover el umbral de decisión sobre el modelo ya entrenado recuperó esos patrones en dos de los tres casos.
 
-La tasa de aprendizaje cumple funciones opuestas en los dos modelos. En el Perceptrón un valor mayor solo reduce el número de épocas y nunca produjo inestabilidad. En el Adaline existe un límite de estabilidad, de modo que con 0.5 el error final quedó por encima del mínimo y con uno el proceso divergió hasta el desbordamiento numérico.
+La tasa de aprendizaje cumple funciones opuestas en los dos modelos. En el Perceptrón un valor mayor solo reduce el número de épocas y nunca produjo inestabilidad. En el Adaline existe un límite de estabilidad, de modo que con 0.5 el error final quedó por encima del mínimo y con uno el error creció sin control.
 
 Empezar con pesos muy cercanos a cero fue la mejor condición inicial para el Perceptrón en estos problemas. Convergió en cinco épocas en AND y doce en OR, con el mismo hiperplano en todas las semillas, frente a más de cuarenta épocas, un diez por ciento de ejecuciones sin converger y un separador distinto por semilla cuando los pesos iniciales fueron grandes respecto de la tasa de aprendizaje.
 
-El Adaline resultó insensible al punto de partida y terminó en los mismos pesos, con diferencias de una milésima, desde escalas iniciales que van de cero a cinco. Ese resultado confirma de forma empírica que el descenso de gradiente sobre una función convexa converge a un mínimo único, y establece la diferencia práctica más importante entre los dos modelos en cuanto a reproducibilidad de los experimentos.
+El Adaline resultó insensible al punto de partida y terminó en los mismos pesos, con diferencias de una milésima, desde escalas iniciales que van de cero a cinco. Ese resultado confirma de forma empírica que el descenso de gradiente sobre un error cuadrático llega siempre al mismo mínimo, y establece la diferencia práctica más importante entre los dos modelos en cuanto a reproducibilidad de los experimentos.
 
 Sobre el conjunto de billetes los dos modelos alcanzaron entre 94.4 y 98.9 por ciento de exactitud de prueba, sin sobreajuste y sin una tendencia clara respecto de la proporción de partición. La matriz de confusión reveló perfiles de error distintos, con el Perceptrón repartiendo sus seis errores entre ambas clases y el Adaline concentrando los diecisiete suyos en una sola, sin dejar pasar ningún billete falso.
 
@@ -599,6 +623,7 @@ El escalado de las entradas no perjudicó al Perceptrón, que incluso mejoró un
 % ============================================================
 \section{Referencias}
 \begin{itemize}
+    \item Hebb, D. O. (1949). \textit{The Organization of Behavior}. Wiley.
     \item Rosenblatt, F. (1958). The perceptron: A probabilistic model for information storage and organization in the brain. \textit{Psychological Review}, 65(6), 386--408.
     \item Novikoff, A. B. (1962). On convergence proofs for perceptrons. \textit{Proceedings of the Symposium on the Mathematical Theory of Automata}, 12, 615--622.
     \item Widrow, B., \& Hoff, M. E. (1960). Adaptive switching circuits. \textit{IRE WESCON Convention Record}, 4, 96--104.
@@ -618,19 +643,21 @@ El escalado de las entradas no perjudicó al Perceptrón, que incluso mejoró un
     \small
     \caption{Perceptrón con la regla 3 sobre el conjunto de billetes. Exactitud de prueba en porcentaje según la tasa de aprendizaje}
     \label{tab:anexo_perc_bank}
-    \begin{tabular}{llrrr}
+    \begin{tabular}{ll *{3}{S[table-format=2.1, table-column-width=1.4cm]}}
         \toprule
-        \textbf{Entradas} & \textbf{Partición} & \textbf{$\alpha$ = 0.01} & \textbf{0.1} & \textbf{1} \\
+         & & \multicolumn{3}{c}{\textbf{Tasa de aprendizaje $\boldsymbol{\alpha}$}} \\
+        \cmidrule(lr){3-5}
+        \textbf{Entradas} & \textbf{Partición} & {\textbf{0.01}} & {\textbf{0.1}} & {\textbf{1}} \\
         \midrule
-        Sin escalar & 60-40 & 97.3 & 98.4 & 98.2 \\
-        Sin escalar & 70-30 & 98.5 & 98.5 & 98.5 \\
-        Sin escalar & 80-20 & 98.9 & 98.5 & 98.9 \\
-        Sin escalar & 90-10 & 99.3 & 98.5 & 97.1 \\
+        \multirow{4}{*}{Sin escalar} & 60-40 & 97.3 & 98.4 & 98.2 \\
+                                     & 70-30 & 98.5 & 98.5 & 98.5 \\
+                                     & 80-20 & 98.9 & 98.5 & 98.9 \\
+                                     & 90-10 & 99.3 & 98.5 & 97.1 \\
         \midrule
-        Escaladas & 60-40 & 96.9 & 94.4 & 97.3 \\
-        Escaladas & 70-30 & 97.1 & 98.5 & 98.8 \\
-        Escaladas & 80-20 & 97.1 & 98.9 & 98.2 \\
-        Escaladas & 90-10 & 96.4 & 97.8 & 95.6 \\
+        \multirow{4}{*}{Escaladas}   & 60-40 & 96.9 & 94.4 & 97.3 \\
+                                     & 70-30 & 97.1 & 98.5 & 98.8 \\
+                                     & 80-20 & 97.1 & 98.9 & 98.2 \\
+                                     & 90-10 & 96.4 & 97.8 & 95.6 \\
         \bottomrule
     \end{tabular}
 \end{table}
@@ -640,9 +667,11 @@ El escalado de las entradas no perjudicó al Perceptrón, que incluso mejoró un
     \small
     \caption{Perceptrón con la regla 3 y tasa 0.1. Épocas promedio de diez semillas según el umbral de la función escalón}
     \label{tab:anexo_umbral}
-    \begin{tabular}{lrrr}
+    \begin{tabular}{l *{3}{S[table-format=2.1]}}
         \toprule
-        \textbf{Compuerta} & \textbf{$\theta$ = 0} & \textbf{0.5} & \textbf{1} \\
+         & \multicolumn{3}{c}{\textbf{Umbral $\boldsymbol{\theta}$}} \\
+        \cmidrule(lr){2-4}
+        \textbf{Compuerta} & {\textbf{0}} & {\textbf{0.5}} & {\textbf{1}} \\
         \midrule
         AND 2 & 15.4 & 13.7 & 14.7 \\
         AND 3 & 16.6 & 17.7 & 17.1 \\
@@ -657,34 +686,51 @@ El escalado de las entradas no perjudicó al Perceptrón, que incluso mejoró un
 \begin{table}[!htb]
     \centering
     \small
-    \caption{Adaline sobre el conjunto de billetes. Exactitud de prueba en porcentaje según la tasa de aprendizaje. La marca NaN señala la divergencia del MSE}
+    \caption{Adaline sobre el conjunto de billetes. Exactitud de prueba en porcentaje según la tasa de aprendizaje. La marca diverge indica que el error creció sin control durante el entrenamiento}
     \label{tab:anexo_bank}
-    \begin{tabular}{llrrrr}
+    \begin{tabular}{ll *{3}{S[table-format=2.1]} c}
         \toprule
-        \textbf{Entradas} & \textbf{Partición} & \textbf{$\alpha$ = 0.0001} & \textbf{0.001} & \textbf{0.01} & \textbf{0.05} \\
+         & & \multicolumn{4}{c}{\textbf{Tasa de aprendizaje $\boldsymbol{\alpha}$}} \\
+        \cmidrule(lr){3-6}
+        \textbf{Entradas} & \textbf{Partición} & {\textbf{0.0001}} & {\textbf{0.001}} & {\textbf{0.01}} & \textbf{0.05} \\
         \midrule
-        Sin escalar & 60-40 & 96.5 & 97.5 & 96.4 & 56.6 (NaN) \\
-        Sin escalar & 70-30 & 96.1 & 95.9 & 72.3 & 58.3 (NaN) \\
-        Sin escalar & 80-20 & 96.7 & 96.7 & 96.4 & 57.7 (NaN) \\
-        Sin escalar & 90-10 & 94.9 & 95.6 & 91.2 & 60.6 (NaN) \\
+        \multirow{4}{*}{Sin escalar} & 60-40 & 96.5 & 97.5 & 96.4 & diverge \\
+                                     & 70-30 & 96.1 & 95.9 & 72.3 & diverge \\
+                                     & 80-20 & 96.7 & 96.7 & 96.4 & diverge \\
+                                     & 90-10 & 94.9 & 95.6 & 91.2 & diverge \\
         \midrule
-        Escaladas & 60-40 & 81.1 & 95.6 & 97.3 & 96.5 \\
-        Escaladas & 70-30 & 82.3 & 96.6 & 95.9 & 95.9 \\
-        Escaladas & 80-20 & 83.2 & 96.7 & 96.7 & 96.7 \\
-        Escaladas & 90-10 & 88.3 & 95.6 & 94.9 & 94.2 \\
+        \multirow{4}{*}{Escaladas}   & 60-40 & 81.1 & 95.6 & 97.3 & 96.5 \\
+                                     & 70-30 & 82.3 & 96.6 & 95.9 & 95.9 \\
+                                     & 80-20 & 83.2 & 96.7 & 96.7 & 96.7 \\
+                                     & 90-10 & 88.3 & 95.6 & 94.9 & 94.2 \\
         \bottomrule
     \end{tabular}
 \end{table}
 
-\clearpage
 \lstset{basicstyle=\ttfamily\scriptsize}
 \section{Código de los bloques completados}
 \label{anexo:codigo}
 
-Se reproducen los dos bloques que implementan los algoritmos del taller, tal como quedaron en el \textit{live script} entregado. Los otros dos bloques completados, la inicialización de los pesos y la partición del conjunto, son utilidades de una y cinco líneas respectivamente. Ningún nombre ni argumento de función fue modificado.
+Se reproducen completos los cuatro bloques que la plantilla dejaba pendientes, tal como quedaron en el \textit{live script} entregado. Ningún nombre ni argumento de función fue modificado.
 
-\lstinputlisting[language=Matlab,caption={Las tres reglas de ajuste de pesos del Perceptrón},firstline=1,lastline=16]{fragmentos/compute_delta.m}
+\noindent\begin{minipage}{\linewidth}
+\lstinputlisting[language=Matlab,caption={Inicialización de los pesos y el sesgo del Perceptrón}]{fragmentos/init_perceptron.m}
+\end{minipage}
+\vspace{0.6em}
 
-\lstinputlisting[language=Matlab,caption={Regla Delta dentro de \texttt{train\_adaline}, sobre la salida lineal},firstline=8,lastline=19]{fragmentos/train_adaline.m}
+\noindent\begin{minipage}{\linewidth}
+\lstinputlisting[language=Matlab,caption={Las tres reglas de ajuste de pesos del Perceptrón}]{fragmentos/compute_delta.m}
+\end{minipage}
+\vspace{0.6em}
+
+\noindent\begin{minipage}{\linewidth}
+\lstinputlisting[language=Matlab,caption={Entrenamiento del Adaline con la Regla Delta sobre la salida lineal}]{fragmentos/train_adaline.m}
+\end{minipage}
+\vspace{0.6em}
+
+\noindent\begin{minipage}{\linewidth}
+\lstinputlisting[language=Matlab,caption={Partición aleatoria en entrenamiento y prueba}]{fragmentos/split_dataset.m}
+\end{minipage}
+\vspace{0.6em}
 
 \end{document}
