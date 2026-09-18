@@ -2,7 +2,10 @@
 % Versión análoga al script Dataset_train_test del Taller 1, para los dos
 % conjuntos del numeral 5. Mezcla con semilla fija y corta en 60-40, 70-30,
 % 80-20 y 90-10. Deja las particiones en la estructura |S| y muestra los
-% tamaños y el reparto de clases de cada una.
+% tamaños y el reparto de clases de cada una. Usa la semilla 1, la misma de
+% split_dataset en el live script principal, así que los cortes de
+% entrenamiento y prueba son idénticos a los evaluados allí. El live script
+% aparta después una quinta parte del entrenamiento como validación.
 clear; close all; clc
 
 archivos = {'wine.data', 'wdbc.data'};
@@ -12,7 +15,7 @@ proporciones = [0.6 0.7 0.8 0.9];
 for d = 1:2
     [X, y] = leer_conjunto(archivos{d});
     No_examples = size(X, 1);
-    rng(2021)
+    rng(1)
     ind = randperm(No_examples);
     fprintf('\n%s, %d ejemplos, %d atributos, %d clases\n', nombres{d}, No_examples, size(X, 2), numel(unique(y)));
     for k = 1:4

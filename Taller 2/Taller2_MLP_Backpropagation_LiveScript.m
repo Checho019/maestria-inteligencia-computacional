@@ -102,6 +102,11 @@ cfg.init_scale    = 0.5;          % escala de los pesos iniciales, W = randn * i
 cfg.seed          = 1;
 cfg.datos         = struct('iris', 'iris.dat', 'wine', 'wine.data', 'wdbc', 'wdbc.data', ...
                            'banknote', 'data_banknote_authentication.txt');
+% Perceptrón y Adaline del Taller 1, con sus mismos parámetros, para las comparaciones.
+cfgP = struct('threshold', 0.5, 'learning_rule', 'perceptron_alpha', 'alpha', 0.1, ...
+              'max_epochs', 100, 'init_scale', 0.5, 'n_inputs', 2, 'seed', 1);
+cfgA = struct('threshold', 0.5, 'alpha', 0.05, 'max_epochs', 200, 'target_mse', 1e-3, ...
+              'init_scale', 0.5, 'n_inputs', 2, 'seed', 1);
 cfg_base = cfg;
 
 paleta = [0.00 0.35 0.64; 0.85 0.37 0.01; 0.00 0.55 0.40; 0.45 0.20 0.55; 0.80 0.65 0.10; 0.40 0.45 0.50];
@@ -209,47 +214,45 @@ end
 %% 9.1 Numeral 3, XOR de 2 y 3 entradas frente al Perceptrón y el Adaline del Taller 1
 % La XOR de 3 entradas vale 1 cuando un número impar de entradas vale 1. Se
 % entrena el MLP con tres tamaños de capa oculta y se repite con cinco semillas.
-% El Perceptrón y el Adaline usan las mismas funciones del Taller 1.
+% El Perceptrón y el Adaline usan las mismas funciones y parámetros del Taller 1,
+% definidos en la sección 2.
 
-cfgP = struct('threshold', 0.5, 'learning_rule', 'perceptron_alpha', 'alpha', 0.1, ...
-              'max_epochs', 100, 'init_scale', 0.5, 'n_inputs', 2, 'seed', 1);
-cfgA = struct('threshold', 0.5, 'alpha', 0.05, 'max_epochs', 200, 'target_mse', 1e-3, ...
-              'init_scale', 0.5, 'n_inputs', 2, 'seed', 1);
 semillas = 1:5;
+cv = false(numel(semillas), 1);
 ocultas_xor = {[2], [4], [8]};
 R3 = table();
 for n_in = [2 3]
     [X, D] = xor_data(n_in);
     cfgP.n_inputs = n_in;  cfgA.n_inputs = n_in;
     ep = zeros(numel(semillas), 1);  acc = ep;
-    for s = semillas
-        rng(s);  [W, b, ep(s)] = train_perceptron(X, D, cfgP);
-        acc(s) = accuracy_of(X, D, W, b, cfgP.threshold);
+    for i = 1:numel(semillas), s = semillas(i);
+        rng(s);  [W, b, ep(i)] = train_perceptron(X, D, cfgP);
+        acc(i) = accuracy_of(X, D, W, b, cfgP.threshold);
     end
     R3 = [R3; table(n_in, {'Perceptrón'}, {'ninguna'}, mean(ep), 100*mean(ep < cfgP.max_epochs), mean(acc), ...
           'VariableNames', {'Entradas', 'Modelo', 'Ocultas', 'Epocas', 'Convergio', 'Exactitud'})];
-    for s = semillas
+    for i = 1:numel(semillas), s = semillas(i);
         rng(s);  [W, b, mse_hist] = train_adaline(X, D, cfgA);
-        ep(s) = numel(mse_hist);  acc(s) = accuracy_of(X, D, W, b, cfgA.threshold);
+        ep(i) = numel(mse_hist);  acc(i) = accuracy_of(X, D, W, b, cfgA.threshold);
     end
     R3 = [R3; table(n_in, {'Adaline'}, {'ninguna'}, mean(ep), 100*mean(ep < cfgA.max_epochs), mean(acc), ...
           'VariableNames', {'Entradas', 'Modelo', 'Ocultas', 'Epocas', 'Convergio', 'Exactitud'})];
     for h = 1:numel(ocultas_xor)
         cfg = cfg_base;  cfg.n_inputs = n_in;  cfg.hidden_layers = ocultas_xor{h};
-        for s = semillas
+        for i = 1:numel(semillas), s = semillas(i);
             cfg.seed = s;
             [net, hist] = train_mlp(X, D, [], [], cfg);
-            ep(s) = hist.epochs;  acc(s) = accuracy_mlp(net, X, D, cfg);
+            ep(i) = hist.epochs;  cv(i) = hist.convergio;  acc(i) = accuracy_mlp(net, X, D, cfg);
         end
-        R3 = [R3; table(n_in, {'MLP'}, {mat2str(ocultas_xor{h})}, mean(ep), 100*mean(ep < cfg.max_epochs), mean(acc), ...
+        R3 = [R3; table(n_in, {'MLP'}, {mat2str(ocultas_xor{h})}, mean(ep), 100*mean(cv), mean(acc), ...
               'VariableNames', {'Entradas', 'Modelo', 'Ocultas', 'Epocas', 'Convergio', 'Exactitud'})];
     end
     cfg = cfg_base;  cfg.n_inputs = n_in;  cfg.hidden_layers = [4];  cfg.momentum = 0.9;
-    for s = semillas
+    for i = 1:numel(semillas), s = semillas(i);
         cfg.seed = s;  [net, hist] = train_mlp(X, D, [], [], cfg);
-        ep(s) = hist.epochs;  acc(s) = accuracy_mlp(net, X, D, cfg);
+        ep(i) = hist.epochs;  cv(i) = hist.convergio;  acc(i) = accuracy_mlp(net, X, D, cfg);
     end
-    R3 = [R3; table(n_in, {'MLP, momento 0.9'}, {'4'}, mean(ep), 100*mean(ep < cfg.max_epochs), mean(acc), ...
+    R3 = [R3; table(n_in, {'MLP, momento 0.9'}, {'4'}, mean(ep), 100*mean(cv), mean(acc), ...
           'VariableNames', {'Entradas', 'Modelo', 'Ocultas', 'Epocas', 'Convergio', 'Exactitud'})];
 end
 cfg = cfg_base;
@@ -267,30 +270,30 @@ for n_in = [2 3]
     for m = momentos
         cfg = cfg_base;  cfg.n_inputs = n_in;  cfg.hidden_layers = [4];  cfg.momentum = m;
         ep = zeros(numel(semillas), 1);  acc = ep;
-        for s = semillas
+        for i = 1:numel(semillas), s = semillas(i);
             cfg.seed = s;  [net, hist] = train_mlp(X, D, [], [], cfg);
-            ep(s) = hist.epochs;  acc(s) = accuracy_mlp(net, X, D, cfg);
+            ep(i) = hist.epochs;  cv(i) = hist.convergio;  acc(i) = accuracy_mlp(net, X, D, cfg);
         end
-        R3b = [R3b; table(n_in, {'sigmoid'}, m, mean(ep), 100*mean(ep < cfg.max_epochs), mean(acc), ...
+        R3b = [R3b; table(n_in, {'sigmoid'}, m, mean(ep), 100*mean(cv), mean(acc), ...
                'VariableNames', {'Entradas', 'Activacion', 'Momento', 'Epocas', 'Convergio', 'Exactitud'})];
     end
     for a = 2:3
         cfg = cfg_base;  cfg.n_inputs = n_in;  cfg.hidden_layers = [4];  cfg.act_hidden = activaciones{a};
         ep = zeros(numel(semillas), 1);  acc = ep;
-        for s = semillas
+        for i = 1:numel(semillas), s = semillas(i);
             cfg.seed = s;  [net, hist] = train_mlp(X, D, [], [], cfg);
-            ep(s) = hist.epochs;  acc(s) = accuracy_mlp(net, X, D, cfg);
+            ep(i) = hist.epochs;  cv(i) = hist.convergio;  acc(i) = accuracy_mlp(net, X, D, cfg);
         end
-        R3b = [R3b; table(n_in, activaciones(a), 0, mean(ep), 100*mean(ep < cfg.max_epochs), mean(acc), ...
+        R3b = [R3b; table(n_in, activaciones(a), 0, mean(ep), 100*mean(cv), mean(acc), ...
                'VariableNames', {'Entradas', 'Activacion', 'Momento', 'Epocas', 'Convergio', 'Exactitud'})];
     end
     cfg = cfg_base;  cfg.n_inputs = n_in;  cfg.hidden_layers = [4 4];  cfg.act_hidden = {'tanh', 'sigmoid'};  cfg.momentum = 0.9;
     ep = zeros(numel(semillas), 1);  acc = ep;
-    for s = semillas
+    for i = 1:numel(semillas), s = semillas(i);
         cfg.seed = s;  [net, hist] = train_mlp(X, D, [], [], cfg);
-        ep(s) = hist.epochs;  acc(s) = accuracy_mlp(net, X, D, cfg);
+        ep(i) = hist.epochs;  cv(i) = hist.convergio;  acc(i) = accuracy_mlp(net, X, D, cfg);
     end
-    R3b = [R3b; table(n_in, {'[4 4], tanh y sigmoid'}, 0.9, mean(ep), 100*mean(ep < cfg.max_epochs), mean(acc), ...
+    R3b = [R3b; table(n_in, {'[4 4], tanh y sigmoid'}, 0.9, mean(ep), 100*mean(cv), mean(acc), ...
            'VariableNames', {'Entradas', 'Activacion', 'Momento', 'Epocas', 'Convergio', 'Exactitud'})];
 end
 cfg = cfg_base;
@@ -316,18 +319,19 @@ cfg = cfg_base;
 
 [X_iris, D_iris] = load_dataset('iris', cfg);
 [Xtr, Dtr, Xva, Dva, Xte, Dte] = split_train_val_test(X_iris, D_iris, 0.7, cfg);
-Ttr = onehot(Dtr, 3);  Tva = onehot(Dva, 3);
+n_cls = numel(unique(D_iris));
+Ttr = onehot(Dtr, n_cls);  Tva = onehot(Dva, n_cls);
 ocultas_iris = {[3], [6], [12], [8 4]};
 etas_iris = [0.05 0.1 0.3];
-cfg = cfg_base;  cfg.n_inputs = 4;  cfg.n_outputs = 3;  cfg.max_epochs = 1000;
-n_arq = numel(ocultas_iris);
-R4 = table();  curvas = cell(n_arq, 3);  confusiones = cell(n_arq, 3);
+cfg = cfg_base;  cfg.n_inputs = size(X_iris, 2);  cfg.n_outputs = n_cls;  cfg.max_epochs = 1000;
+n_arq = numel(ocultas_iris);  n_eta = numel(etas_iris);
+R4 = table();  curvas = cell(n_arq, n_eta);  confusiones = cell(n_arq, n_eta);
 for h = 1:n_arq
-    for e = 1:3
+    for e = 1:n_eta
         cfg.hidden_layers = ocultas_iris{h};  cfg.eta = etas_iris(e);
         tic;  [net, hist] = train_mlp(Xtr, Ttr, Xva, Tva, cfg);  t = toc;
         pred = predict_mlp(net, Xte, cfg);
-        confusiones{h, e} = confusionmat(Dte, pred);
+        confusiones{h, e} = accumarray([Dte(:) pred(:)], 1, [n_cls n_cls]);
         curvas{h, e} = hist;
         R4 = [R4; table({mat2str(ocultas_iris{h})}, etas_iris(e), hist.epochs, t, hist.train(end), hist.val(end), 100*mean(pred == Dte), ...
               'VariableNames', {'Ocultas', 'Eta', 'Epocas', 'Segundos', 'MSE_entrenamiento', 'MSE_validacion', 'Exactitud'})];
@@ -337,8 +341,8 @@ R4
 
 figure; colororder(paleta)
 for h = 1:n_arq
-    for e = 1:3
-        subplot(n_arq, 3, (h-1)*3 + e); hold on
+    for e = 1:n_eta
+        subplot(n_arq, n_eta, (h-1)*n_eta + e); hold on
         plot(curvas{h, e}.train, 'LineWidth', 1.1); plot(curvas{h, e}.val, 'LineWidth', 1.1)
         title(sprintf('ocultas %s, \\eta = %g', mat2str(ocultas_iris{h}), etas_iris(e)), 'FontSize', 8)
         grid on; xlim([1 cfg.max_epochs]); ylim([0 0.4])
@@ -348,14 +352,15 @@ for h = 1:n_arq
     end
 end
 
-[~, mejor] = max(R4.Exactitud);
-hm = ceil(mejor / 3);  em = mod(mejor - 1, 3) + 1;
+% La mejor configuración se elige por el error de validación, no por la prueba.
+[~, mejor] = min(R4.MSE_validacion);
+hm = ceil(mejor / n_eta);  em = mod(mejor - 1, n_eta) + 1;
 Confusion_mejor = array2table(confusiones{hm, em}, 'RowNames', {'setosa', 'versicolor', 'virginica'}, ...
     'VariableNames', {'pred_setosa', 'pred_versicolor', 'pred_virginica'})
 
 R4_confusiones = table();
 for h = 1:n_arq
-    for e = 1:3
+    for e = 1:n_eta
         C = confusiones{h, e};
         R4_confusiones = [R4_confusiones; table({mat2str(ocultas_iris{h})}, etas_iris(e), C(1,1), C(1,2), C(1,3), C(2,1), C(2,2), C(2,3), C(3,1), C(3,2), C(3,3), ...
             'VariableNames', {'Ocultas', 'Eta', 'se_se', 'se_ve', 'se_vi', 've_se', 've_ve', 've_vi', 'vi_se', 'vi_ve', 'vi_vi'})];
@@ -394,7 +399,7 @@ for c = 1:numel(conjuntos)
         tic;  [acc_p, ep_p] = one_vs_rest(Xtr_lineal, Dtr_lineal, Xte, Dte, cfgP, 'perceptron');  t_p = toc;
         tic;  [acc_a, ep_a] = one_vs_rest(Xtr_lineal, Dtr_lineal, Xte, Dte, cfgA, 'adaline');     t_a = toc;
 
-        R5 = [R5; table(conjuntos(c), r, acc_mlp, hist.epochs, t_mlp, acc_p, ep_p, t_p, acc_a, ep_a, t_a, ...
+        R5 = [R5; table(conjuntos(c), r, acc_mlp, hist.best_epoch, t_mlp, acc_p, ep_p, t_p, acc_a, ep_a, t_a, ...
               'VariableNames', {'Conjunto', 'Proporcion', 'MLP', 'Epocas_MLP', 'Seg_MLP', 'Perceptron', 'Epocas_P', 'Seg_P', 'Adaline', 'Epocas_A', 'Seg_A'})];
     end
 end
@@ -402,17 +407,20 @@ cfg = cfg_base;
 R5
 
 figure; colororder(paleta)
-for c = 1:3
-    subplot(1, 3, c); hold on
+tl = tiledlayout(1, numel(conjuntos), 'TileSpacing', 'compact');
+for c = 1:numel(conjuntos)
+    nexttile; hold on
     m = strcmp(R5.Conjunto, conjuntos{c});
     plot(proporciones, R5.MLP(m), '-o', 'LineWidth', 1.3)
     plot(proporciones, R5.Perceptron(m), '-s', 'LineWidth', 1.3)
     plot(proporciones, R5.Adaline(m), '-^', 'LineWidth', 1.3)
-    xticks(proporciones); xticklabels({'60-40', '70-30', '80-20', '90-10'})
-    title(nombres_conjuntos{c}); grid on; xlabel('partición')
+    xticks(proporciones); xticklabels(compose('%d-%d', round(100*proporciones'), round(100 - 100*proporciones')))
+    title(nombres_conjuntos{c}); grid on
     if c == 1, ylabel('exactitud de prueba (%)'); end
 end
-legend('MLP', 'Perceptrón', 'Adaline', 'Location', 'southeast')
+lg = legend('MLP', 'Perceptrón', 'Adaline', 'Orientation', 'horizontal');
+lg.Layout.Tile = 'south';
+xlabel(tl, 'partición')
 %% 12. Numeral 6, sobreajuste y parada temprana
 % Sobre Breast Cancer Wisconsin con la partición 70-30, y una quinta parte del
 % entrenamiento reservada como validación, se entrena con distinto número de
@@ -425,8 +433,9 @@ legend('MLP', 'Perceptrón', 'Adaline', 'Location', 'southeast')
 [Xtr, Dtr, Xva, Dva, Xte, Dte] = split_train_val_test(Xd, Dd, 0.7, cfg_base);
 ocultas_sobre = {[2], [8], [32], [64]};
 cfg = cfg_base;  cfg.n_inputs = size(Xtr, 2);  cfg.n_outputs = 1;  cfg.max_epochs = 1500;  cfg.eta = 0.1;  cfg.target_error = 0;
-R6 = table();  curvas_sobre = cell(1, 4);
-for h = 1:4
+n_sobre = numel(ocultas_sobre);
+R6 = table();  curvas_sobre = cell(1, n_sobre);
+for h = 1:n_sobre
     cfg.hidden_layers = ocultas_sobre{h};
     cfg.patience = 0;
     [net, hist] = train_mlp(Xtr, Dtr, Xva, Dva, cfg);
@@ -454,8 +463,8 @@ cfg = cfg_base;
 R6b
 
 figure; colororder(paleta)
-for h = 1:4
-    subplot(2, 2, h); hold on
+for h = 1:n_sobre
+    subplot(2, ceil(n_sobre/2), h); hold on
     plot(curvas_sobre{h}.train, 'LineWidth', 1.2); plot(curvas_sobre{h}.val, 'LineWidth', 1.2)
     xline(R6.Epoca_val_minimo(h), '--', 'Color', paleta(6, :))
     title(sprintf('%s neuronas ocultas', mat2str(ocultas_sobre{h}))); grid on
@@ -558,10 +567,14 @@ end
 function [net, hist] = train_mlp(Xtr, Dtr, Xva, Dva, cfg)
     % Mismo ciclo de la sección 8, con error de validación por época y parada
     % temprana cuando la validación lleva cfg.patience épocas sin mejorar.
+    % Sin conjunto de validación la paciencia vigila el error de entrenamiento.
+    if iscell(cfg.act_hidden)
+        assert(numel(cfg.act_hidden) == numel(cfg.hidden_layers), 'act_hidden debe tener una activación por capa oculta');
+    end
     rng(cfg.seed);
     net = init_mlp(cfg);
     hist.train = zeros(cfg.max_epochs, 1);  hist.val = hist.train;
-    mejor = Inf;  sin_mejora = 0;  mejor_net = net;
+    mejor = Inf;  sin_mejora = 0;  mejor_net = net;  mejor_epoca = 0;
     for epoch = 1:cfg.max_epochs
         for p = randperm(size(Xtr, 1))
             [~, cache] = forward_mlp(net, Xtr(p, :)', cfg);
@@ -570,16 +583,24 @@ function [net, hist] = train_mlp(Xtr, Dtr, Xva, Dva, cfg)
         hist.train(epoch) = mse_mlp(net, Xtr, Dtr, cfg);
         if ~isempty(Xva), hist.val(epoch) = mse_mlp(net, Xva, Dva, cfg); end
         if hist.train(epoch) <= cfg.target_error, break; end
-        if cfg.patience > 0 && ~isempty(Xva)
-            if hist.val(epoch) < mejor
-                mejor = hist.val(epoch);  sin_mejora = 0;  mejor_net = net;
+        if cfg.patience > 0
+            if isempty(Xva), vigilado = hist.train(epoch); else, vigilado = hist.val(epoch); end
+            if vigilado < mejor
+                mejor = vigilado;  sin_mejora = 0;  mejor_net = net;  mejor_epoca = epoch;
             else
                 sin_mejora = sin_mejora + 1;
-                if sin_mejora >= cfg.patience, net = mejor_net; break; end
+                if sin_mejora >= cfg.patience, break; end
             end
         end
     end
-    hist.train = hist.train(1:epoch);  hist.val = hist.val(1:epoch);  hist.epochs = epoch;
+    hist.convergio = hist.train(epoch) <= cfg.target_error;
+    if cfg.patience > 0 && ~hist.convergio
+        net = mejor_net;
+    else
+        mejor_epoca = epoch;
+    end
+    hist.train = hist.train(1:epoch);  hist.val = hist.val(1:epoch);
+    hist.epochs = epoch;  hist.best_epoch = mejor_epoca;
 end
 
 function e = mse_mlp(net, X, D, cfg)
@@ -589,7 +610,7 @@ function e = mse_mlp(net, X, D, cfg)
 end
 
 function clase = predict_mlp(net, X, cfg)
-    % Clase predicha, por umbral 0.5 con una salida o por la mayor salida con varias.
+    % Clase predicha, por el umbral de cfg con una salida o por la mayor salida con varias.
     Y = forward_mlp(net, X', cfg);
     if cfg.n_outputs == 1
         clase = double(Y' >= cfg.threshold);
@@ -627,6 +648,8 @@ function [X, D] = load_dataset(nombre, cfg)
             X = T{:, 3:end};  D = double(strcmp(T{:, 2}, 'M'));
         case 'banknote'
             M = readmatrix(cfg.datos.banknote);  X = M(:, 1:4);  D = M(:, 5);
+        otherwise
+            error('Conjunto desconocido: %s', nombre);
     end
 end
 
@@ -645,8 +668,8 @@ function [Xtr, Dtr, Xva, Dva, Xte, Dte] = split_train_val_test(X, D, train_ratio
     % de entrenamiento la fracción de validación y escala todo con el entrenamiento.
     [Xtr, Dtr, Xte, Dte] = split_dataset(X, D, train_ratio, cfg.seed);
     [Xtr, Dtr, Xva, Dva] = split_dataset(Xtr, Dtr, 1 - cfg.val_fraction, cfg.seed + 1);
-    mn = min(Xtr);  mx = max(Xtr);  mx(mx == mn) = mn(mx == mn) + 1;
-    Xtr = (Xtr - mn) ./ (mx - mn);  Xva = (Xva - mn) ./ (mx - mn);  Xte = (Xte - mn) ./ (mx - mn);
+    [~, Xva] = scale_minmax(Xtr, Xva);
+    [Xtr, Xte] = scale_minmax(Xtr, Xte);
 end
 
 function [Xtr, Xte] = scale_minmax(Xtr, Xte)

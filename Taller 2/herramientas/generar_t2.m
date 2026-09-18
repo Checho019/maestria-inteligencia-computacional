@@ -9,7 +9,7 @@ correr('Taller2_MLP_Backpropagation_LiveScript.m')
 figs = findobj('Type', 'figure');
 [~, orden] = sort([figs.Number]);
 figs = figs(orden);
-tam = [12 6.5; 12 6.5; 15 15; 15 6.5; 15 11];
+tam = [12 6.5; 12 6.5; 15 15; 15 7.5; 15 11];
 for k = 1:numel(figs)
     figs(k).Theme = 'light';
     set(findall(figs(k), '-property', 'FontSize'), 'FontSize', 9)
