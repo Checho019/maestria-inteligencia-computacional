@@ -5,6 +5,7 @@ Perceptrón multicapa entrenado por retropropagación, sobre la plantilla del do
 | Sección | Numeral | Qué hace |
 |---|---|---|
 | 9.1 y 9.2 | 3 | XOR de 2 y 3 entradas contra el Perceptrón y el Adaline del Taller 1, efecto del momento y de la activación |
+| 9.3 | 3 | Barrido de la guía de laboratorio sobre la XOR, tasa de 0.1 a 2, momento de 0 a 1 y escala de los pesos iniciales |
 | 10 | 4 | Iris multiclase, cuatro arquitecturas por tres tasas, matrices de confusión y curvas de error |
 | 11 | 5 | Wine, Breast Cancer Wisconsin y billetes en las particiones 60-40, 70-30, 80-20 y 90-10, contra el Taller 1 |
 | 12 | 6 | Sobreajuste en Breast Cancer variando neuronas ocultas y épocas, parada temprana por épocas sin mejora |

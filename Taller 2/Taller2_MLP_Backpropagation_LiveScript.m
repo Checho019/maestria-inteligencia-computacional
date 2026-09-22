@@ -310,6 +310,39 @@ cfgA.n_inputs = 2;  rng(1);  [~, ~, mse_hist] = train_adaline(xor_data(2), [0; 1
 plot(mse_hist, 'LineWidth', 1.3, 'DisplayName', 'Adaline, XOR de 2 entradas')
 set(gca, 'YScale', 'log'); grid on; legend; xlabel('época'); ylabel('error cuadrático medio')
 cfg = cfg_base;
+%% 9.3 Tasa de aprendizaje, momento y escala de los pesos iniciales sobre la XOR
+% La guía de laboratorio del curso pide variar la tasa de aprendizaje de 0.1 a
+% 2 con momento cero, y el momento de 0 a 1 con tasa 0.5, y observar el
+% comportamiento. Se hace sobre la XOR de dos entradas con cuatro neuronas
+% ocultas y cinco semillas, y se agrega la escala de los pesos iniciales, que
+% la plantilla fijaba en 0.5. Se reporta el promedio de épocas hasta el error
+% objetivo, contando el tope de 5000 cuando no se alcanza, y la fracción de
+% semillas que convergen.
+
+[X, D] = xor_data(2);
+etas_guia = 0.1:0.1:2;
+betas_guia = 0:0.1:1;
+escalas = [0.1 0.5 1 2 5];
+barrido = @(campo, valores, base) barrer(X, D, campo, valores, base, semillas);
+base = cfg_base;  base.n_inputs = 2;  base.hidden_layers = [4];
+[ep_eta, cv_eta] = barrido('eta', etas_guia, base);
+base.eta = 0.5;
+[ep_beta, cv_beta] = barrido('momentum', betas_guia, base);
+base = cfg_base;  base.n_inputs = 2;  base.hidden_layers = [4];
+[ep_esc, cv_esc] = barrido('init_scale', escalas, base);
+R3c = table(escalas', ep_esc', 100*cv_esc', 'VariableNames', {'Escala', 'Epocas', 'Convergio'})
+R3c_eta = table(etas_guia', ep_eta', 100*cv_eta', 'VariableNames', {'Eta', 'Epocas', 'Convergio'});
+R3c_beta = table(betas_guia', ep_beta', 100*cv_beta', 'VariableNames', {'Momento', 'Epocas', 'Convergio'});
+disp([R3c_eta(1:2:end, :)]);  disp(R3c_beta)
+
+figure; colororder(paleta)
+subplot(1, 3, 1); plot(etas_guia, ep_eta, '-o', 'LineWidth', 1.2, 'MarkerSize', 4); grid on
+xlabel('tasa de aprendizaje, momento 0'); ylabel('épocas hasta el error objetivo'); set(gca, 'YScale', 'log'); ylim([200 6000]); yticks([250 500 1000 2000 5000])
+subplot(1, 3, 2); plot(betas_guia, ep_beta, '-s', 'LineWidth', 1.2, 'MarkerSize', 4); grid on
+xlabel('momento, tasa 0.5'); set(gca, 'YScale', 'log'); ylim([200 6000]); yticks([250 500 1000 2000 5000])
+subplot(1, 3, 3); semilogx(escalas, ep_esc, '-^', 'LineWidth', 1.2, 'MarkerSize', 4); grid on
+xlabel('escala de los pesos iniciales'); set(gca, 'YScale', 'log'); ylim([200 6000]); yticks([250 500 1000 2000 5000]); xticks(escalas)
+cfg = cfg_base;
 %% 10. Numeral 4, clasificación multiclase con Iris
 % Tres salidas con codificación uno contra el resto y decisión por la mayor
 % salida. Partición 70-30, y dentro del 70 se reserva una quinta parte como
@@ -345,7 +378,7 @@ for h = 1:n_arq
         subplot(n_arq, n_eta, (h-1)*n_eta + e); hold on
         plot(curvas{h, e}.train, 'LineWidth', 1.1); plot(curvas{h, e}.val, 'LineWidth', 1.1)
         title(sprintf('ocultas %s, \\eta = %g', mat2str(ocultas_iris{h}), etas_iris(e)), 'FontSize', 8)
-        grid on; xlim([1 cfg.max_epochs]); ylim([0 0.4])
+        grid on; xlim([1 cfg.max_epochs]); set(gca, 'YScale', 'log'); ylim([3e-3 0.5])
         if h == n_arq, xlabel('época'); end
         if e == 1, ylabel('MSE'); end
         if h == 1 && e == 1, legend('entrenamiento', 'validación', 'Location', 'northeast'); end
@@ -416,6 +449,7 @@ for c = 1:numel(conjuntos)
     plot(proporciones, R5.Adaline(m), '-^', 'LineWidth', 1.3)
     xticks(proporciones); xticklabels(compose('%d-%d', round(100*proporciones'), round(100 - 100*proporciones')))
     title(nombres_conjuntos{c}); grid on
+    ylim([92 100])
     if c == 1, ylabel('exactitud de prueba (%)'); end
 end
 lg = legend('MLP', 'Perceptrón', 'Adaline', 'Orientation', 'horizontal');
@@ -483,8 +517,9 @@ function net = init_mlp(cfg)
     net.dW_prev = {};
     net.db_prev = {};
     layer_sizes = [cfg.n_inputs, cfg.hidden_layers, cfg.n_outputs];
+    escala = 0.5;  if isfield(cfg, 'init_scale'), escala = cfg.init_scale; end
     for k = 1:numel(layer_sizes) - 1
-        net.W{k} = randn(layer_sizes(k+1), layer_sizes(k)) * cfg.init_scale;
+        net.W{k} = randn(layer_sizes(k+1), layer_sizes(k)) * escala;
         net.b{k} = zeros(layer_sizes(k+1), 1);
         net.dW_prev{k} = zeros(size(net.W{k}));
         net.db_prev{k} = zeros(size(net.b{k}));
@@ -621,6 +656,20 @@ end
 
 function acc = accuracy_mlp(net, X, D, cfg)
     acc = 100 * mean(predict_mlp(net, X, cfg) == D);
+end
+
+function [ep, cv] = barrer(X, D, campo, valores, base, semillas)
+    % Promedio de épocas y fracción de semillas convergidas al variar un campo de cfg.
+    ep = zeros(size(valores));  cv = ep;
+    for v = 1:numel(valores)
+        cfg = base;  cfg.(campo) = valores(v);
+        e = zeros(numel(semillas), 1);  c = false(numel(semillas), 1);
+        for i = 1:numel(semillas)
+            cfg.seed = semillas(i);  [~, hist] = train_mlp(X, D, [], [], cfg);
+            e(i) = hist.epochs;  c(i) = hist.convergio;
+        end
+        ep(v) = mean(e);  cv(v) = mean(c);
+    end
 end
 
 function [X, D] = xor_data(n_inputs)
