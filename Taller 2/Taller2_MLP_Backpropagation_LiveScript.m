@@ -304,11 +304,11 @@ for n_in = [2 3]
     [X, D] = xor_data(n_in);
     cfg = cfg_base;  cfg.n_inputs = n_in;  cfg.hidden_layers = [4];  cfg.momentum = 0.9;
     [~, hist] = train_mlp(X, D, [], [], cfg);
-    plot(hist.train, 'LineWidth', 1.3, 'DisplayName', sprintf('MLP, XOR de %d entradas, \\beta = 0.9', n_in))
+    plot(hist.train, 'LineWidth', 1.2, 'DisplayName', sprintf('MLP, XOR de %d entradas, \\beta = 0.9', n_in))
 end
 cfgA.n_inputs = 2;  rng(1);  [~, ~, mse_hist] = train_adaline(xor_data(2), [0; 1; 1; 0], cfgA);
-plot(mse_hist, 'LineWidth', 1.3, 'DisplayName', 'Adaline, XOR de 2 entradas')
-set(gca, 'YScale', 'log'); grid on; legend; xlabel('época'); ylabel('error cuadrático medio')
+plot(mse_hist, 'LineWidth', 1.2, 'DisplayName', 'Adaline, XOR de 2 entradas')
+set(gca, 'YScale', 'log'); grid on; legend; xlabel('época'); ylabel('MSE')
 cfg = cfg_base;
 %% 9.3 Tasa de aprendizaje, momento y escala de los pesos iniciales sobre la XOR
 % La guía de laboratorio del curso pide variar la tasa de aprendizaje de 0.1 a
@@ -340,7 +340,7 @@ subplot(1, 3, 1); plot(etas_guia, ep_eta, '-o', 'LineWidth', 1.2, 'MarkerSize', 
 xlabel('tasa de aprendizaje, momento 0'); ylabel('épocas hasta el error objetivo'); set(gca, 'YScale', 'log'); ylim([200 6000]); yticks([250 500 1000 2000 5000])
 subplot(1, 3, 2); plot(betas_guia, ep_beta, '-s', 'LineWidth', 1.2, 'MarkerSize', 4); grid on
 xlabel('momento, tasa 0.5'); set(gca, 'YScale', 'log'); ylim([200 6000]); yticks([250 500 1000 2000 5000])
-subplot(1, 3, 3); semilogx(escalas, ep_esc, '-^', 'LineWidth', 1.2, 'MarkerSize', 4); grid on
+subplot(1, 3, 3); semilogx(escalas, ep_esc, '-^', 'LineWidth', 1.2, 'MarkerSize', 4); grid on; xlim([0.07 7])
 xlabel('escala de los pesos iniciales'); set(gca, 'YScale', 'log'); ylim([200 6000]); yticks([250 500 1000 2000 5000]); xticks(escalas)
 cfg = cfg_base;
 %% 10. Numeral 4, clasificación multiclase con Iris
@@ -376,9 +376,9 @@ figure; colororder(paleta)
 for h = 1:n_arq
     for e = 1:n_eta
         subplot(n_arq, n_eta, (h-1)*n_eta + e); hold on
-        plot(curvas{h, e}.train, 'LineWidth', 1.1); plot(curvas{h, e}.val, 'LineWidth', 1.1)
-        title(sprintf('ocultas %s, \\eta = %g', mat2str(ocultas_iris{h}), etas_iris(e)), 'FontSize', 8)
-        grid on; xlim([1 cfg.max_epochs]); set(gca, 'YScale', 'log'); ylim([3e-3 0.5])
+        plot(curvas{h, e}.train, 'LineWidth', 1.2); plot(curvas{h, e}.val, 'LineWidth', 1.2)
+        title(sprintf('%s neuronas ocultas, \\eta = %g', mat2str(ocultas_iris{h}), etas_iris(e)), 'FontSize', 8)
+        grid on; xlim([0 cfg.max_epochs]); set(gca, 'YScale', 'log'); ylim([3e-3 0.5]); yticks([0.003 0.01 0.03 0.1 0.3])
         if h == n_arq, xlabel('época'); end
         if e == 1, ylabel('MSE'); end
         if h == 1 && e == 1, legend('entrenamiento', 'validación', 'Location', 'northeast'); end
@@ -444,9 +444,9 @@ tl = tiledlayout(1, numel(conjuntos), 'TileSpacing', 'compact');
 for c = 1:numel(conjuntos)
     nexttile; hold on
     m = strcmp(R5.Conjunto, conjuntos{c});
-    plot(proporciones, R5.MLP(m), '-o', 'LineWidth', 1.3)
-    plot(proporciones, R5.Perceptron(m), '-s', 'LineWidth', 1.3)
-    plot(proporciones, R5.Adaline(m), '-^', 'LineWidth', 1.3)
+    plot(proporciones, R5.MLP(m), '-o', 'LineWidth', 1.2)
+    plot(proporciones, R5.Perceptron(m), '-s', 'LineWidth', 1.2)
+    plot(proporciones, R5.Adaline(m), '-^', 'LineWidth', 1.2)
     xticks(proporciones); xticklabels(compose('%d-%d', round(100*proporciones'), round(100 - 100*proporciones')))
     title(nombres_conjuntos{c}); grid on
     ylim([92 100])
@@ -454,7 +454,7 @@ for c = 1:numel(conjuntos)
 end
 lg = legend('MLP', 'Perceptrón', 'Adaline', 'Orientation', 'horizontal');
 lg.Layout.Tile = 'south';
-xlabel(tl, 'partición')
+xlabel(tl, 'partición', 'FontSize', 9)
 %% 12. Numeral 6, sobreajuste y parada temprana
 % Sobre Breast Cancer Wisconsin con la partición 70-30, y una quinta parte del
 % entrenamiento reservada como validación, se entrena con distinto número de
@@ -502,7 +502,7 @@ for h = 1:n_sobre
     plot(curvas_sobre{h}.train, 'LineWidth', 1.2); plot(curvas_sobre{h}.val, 'LineWidth', 1.2)
     xline(R6.Epoca_val_minimo(h), '--', 'Color', paleta(6, :))
     title(sprintf('%s neuronas ocultas', mat2str(ocultas_sobre{h}))); grid on
-    xlabel('época'); ylabel('MSE'); set(gca, 'YScale', 'log'); ylim([1e-3 1e-1])
+    xlabel('época'); ylabel('MSE'); set(gca, 'YScale', 'log'); ylim([1e-3 1e-1]); yticks([0.001 0.003 0.01 0.03 0.1])
     if h == 1, legend('entrenamiento', 'validación', 'mínimo de validación', 'Location', 'northeast'); end
 end
 %% Funciones locales
