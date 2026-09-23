@@ -333,15 +333,15 @@ base = cfg_base;  base.n_inputs = 2;  base.hidden_layers = [4];
 R3c = table(escalas', ep_esc', 100*cv_esc', 'VariableNames', {'Escala', 'Epocas', 'Convergio'})
 R3c_eta = table(etas_guia', ep_eta', 100*cv_eta', 'VariableNames', {'Eta', 'Epocas', 'Convergio'});
 R3c_beta = table(betas_guia', ep_beta', 100*cv_beta', 'VariableNames', {'Momento', 'Epocas', 'Convergio'});
-disp([R3c_eta(1:2:end, :)]);  disp(R3c_beta)
+disp(R3c_eta);  disp(R3c_beta)
 
 figure; colororder(paleta)
 subplot(1, 3, 1); plot(etas_guia, ep_eta, '-o', 'LineWidth', 1.2, 'MarkerSize', 4); grid on
-xlabel('tasa de aprendizaje, momento 0'); ylabel('épocas hasta el error objetivo'); set(gca, 'YScale', 'log'); ylim([200 6000]); yticks([250 500 1000 2000 5000])
+xlabel('tasa de aprendizaje, momento 0'); ylabel('épocas hasta el error objetivo'); xticks(0:0.5:2); set(gca, 'YScale', 'log'); ylim([200 6000]); yticks([250 500 1000 2000 5000])
 subplot(1, 3, 2); plot(betas_guia, ep_beta, '-s', 'LineWidth', 1.2, 'MarkerSize', 4); grid on
-xlabel('momento, tasa 0.5'); set(gca, 'YScale', 'log'); ylim([200 6000]); yticks([250 500 1000 2000 5000])
+xlabel('momento, tasa 0.5'); xticks(0:0.25:1); xtickangle(0); set(gca, 'YScale', 'log'); ylim([200 6000]); yticks([250 500 1000 2000 5000])
 subplot(1, 3, 3); semilogx(escalas, ep_esc, '-^', 'LineWidth', 1.2, 'MarkerSize', 4); grid on; xlim([0.07 7])
-xlabel('escala de los pesos iniciales'); set(gca, 'YScale', 'log'); ylim([200 6000]); yticks([250 500 1000 2000 5000]); xticks(escalas)
+xlabel('escala de los pesos iniciales, tasa 0.3'); set(gca, 'YScale', 'log'); ylim([200 6000]); yticks([250 500 1000 2000 5000]); xticks(escalas)
 cfg = cfg_base;
 %% 10. Numeral 4, clasificación multiclase con Iris
 % Tres salidas con codificación uno contra el resto y decisión por la mayor
@@ -373,17 +373,19 @@ end
 R4
 
 figure; colororder(paleta)
+tl = tiledlayout(n_arq, n_eta, 'TileSpacing', 'compact');
 for h = 1:n_arq
     for e = 1:n_eta
-        subplot(n_arq, n_eta, (h-1)*n_eta + e); hold on
+        nexttile; hold on
         plot(curvas{h, e}.train, 'LineWidth', 1.2); plot(curvas{h, e}.val, 'LineWidth', 1.2)
         title(sprintf('%s neuronas ocultas, \\eta = %g', mat2str(ocultas_iris{h}), etas_iris(e)), 'FontSize', 8)
-        grid on; xlim([0 cfg.max_epochs]); set(gca, 'YScale', 'log'); ylim([3e-3 0.5]); yticks([0.003 0.01 0.03 0.1 0.3])
-        if h == n_arq, xlabel('época'); end
-        if e == 1, ylabel('MSE'); end
-        if h == 1 && e == 1, legend('entrenamiento', 'validación', 'Location', 'northeast'); end
+        grid on; xlim([0 cfg.max_epochs]); xticks(0:250:1000)
+        set(gca, 'YScale', 'log'); ylim([3e-3 0.5]); yticks([0.003 0.01 0.03 0.1 0.3])
     end
 end
+xlabel(tl, 'época', 'FontSize', 9); ylabel(tl, 'MSE', 'FontSize', 9)
+lg = legend('entrenamiento', 'validación', 'Orientation', 'horizontal');
+lg.Layout.Tile = 'south';
 
 % La mejor configuración se elige por el error de validación, no por la prueba.
 [~, mejor] = min(R4.MSE_validacion);

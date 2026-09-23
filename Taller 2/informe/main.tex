@@ -207,7 +207,7 @@ La XOR de $n$ entradas se genera como tabla de verdad completa con salida uno cu
     \end{tabular}
 \end{table}
 
-Las particiones se generan con la misma función del Taller 1, que mezcla los índices con una semilla fija y corta en la proporción pedida, 60-40, 70-30, 80-20 y 90-10. Las entradas se escalan al rango cero a uno con los mínimos y máximos del conjunto de entrenamiento, y esas mismas cotas se aplican al de prueba. Cuando el entrenamiento necesita un conjunto de validación, sea para la curva de error o para la parada temprana, se aparta una quinta parte del conjunto de entrenamiento con una segunda semilla, de modo que la exactitud siempre se mide sobre una prueba que la red no vio durante el entrenamiento. El Perceptrón y el Adaline, que no usan validación, se entrenan con el conjunto de entrenamiento completo. El script \texttt{Dataset\_train\_test\_T2} usa la misma semilla que el experimento y produce exactamente los mismos cortes de entrenamiento y prueba. Wine proviene de Aeberhard y Forina (1991), Breast Cancer de Wolberg et al. (1993) y billetes de Lohweg (2013), todos del repositorio UCI, e Iris es el conjunto clásico de Fisher (1936).
+Las particiones se generan con la misma función del Taller 1, que mezcla los índices con una semilla fija y corta en la proporción pedida, 60-40, 70-30, 80-20 y 90-10. Las entradas se escalan al rango cero a uno con los mínimos y máximos del conjunto de entrenamiento, y esas mismas cotas se aplican al de prueba. Cuando el entrenamiento necesita un conjunto de validación, sea para la curva de error o para la parada temprana, se aparta una quinta parte del conjunto de entrenamiento con una segunda semilla, de modo que la exactitud siempre se mide sobre un conjunto de prueba que la red no vio durante el entrenamiento. El Perceptrón y el Adaline, que no usan validación, se entrenan con el conjunto de entrenamiento completo. El script \texttt{Dataset\_train\_test\_T2} usa la misma semilla que el experimento y produce exactamente los mismos cortes de entrenamiento y prueba. Wine proviene de Aeberhard y Forina (1991), Breast Cancer de Wolberg et al. (1993) y billetes de Lohweg (2013), todos del repositorio UCI, e Iris es el conjunto clásico de Fisher (1936).
 
 % ============================================================
 \section{Resultados}
@@ -242,7 +242,7 @@ La Tabla \ref{tab:xor} compara los tres modelos sobre la XOR de dos y tres entra
     \end{tabular}
 \end{table}
 
-El momento y la función de activación cambian ese panorama, como muestra la Tabla \ref{tab:xor_param}. Con cuatro neuronas ocultas y momento 0.9 la XOR de dos entradas converge en 436 épocas en lugar de 4117, casi diez veces más rápido, y la de tres entradas pasa de converger en dos de cinco semillas a converger en todas. La tangente hiperbólica también acelera, con 880 épocas en dos entradas, mientras que la ReLU resulta poco fiable en este problema, con tres de cinco semillas convergidas en dos entradas y ninguna en tres. La red de dos capas ocultas de cuatro neuronas, con tangente hiperbólica en la primera y sigmoide en la segunda, es la más rápida de todas con momento 0.9, 149 épocas en dos entradas y 260 en tres. Como esa red combina la segunda capa con la tangente hiperbólica y el momento, la tabla no permite separar cuánto aporta cada uno. La Figura \ref{fig:xor} muestra la curva de error del MLP con momento 0.9 frente a la del Adaline, que se estabiliza cerca de 0.139, por encima del piso de 0.125 de la mejor función lineal, que responde 0.5 en los cuatro patrones y deja un error de 0.5 en cada uno, es decir 0.125 con el factor un medio.
+El momento y la función de activación cambian ese panorama, como muestra la Tabla \ref{tab:xor_param}. Con cuatro neuronas ocultas y momento 0.9 la XOR de dos entradas converge en 436 épocas en lugar de 4117, casi diez veces más rápido, y la de tres entradas pasa de converger en dos de cinco semillas a converger en todas. La tangente hiperbólica también acelera, con 880 épocas en dos entradas, mientras que la ReLU resulta poco fiable en este problema, con tres de cinco semillas convergidas en dos entradas y ninguna en tres. La red de dos capas ocultas de cuatro neuronas, con tangente hiperbólica en la primera y sigmoide en la segunda, es la más rápida de todas con momento 0.9, 149 épocas en dos entradas y 260 en tres. Como esa red combina la segunda capa con la tangente hiperbólica y el momento, la tabla no permite separar cuánto aporta cada uno. La Figura \ref{fig:xor} muestra la curva de error del MLP con momento 0.9 frente a la del Adaline. El Adaline se estabiliza cerca de 0.139, por encima del piso de 0.125 de la mejor función lineal. Esa función responde 0.5 en los cuatro patrones y deja un error de 0.5 en cada uno, que con el factor un medio da 0.125.
 
 \begin{table}[!htb]
     \centering
@@ -273,20 +273,20 @@ El momento y la función de activación cambian ese panorama, como muestra la Ta
 \begin{figure}[!htb]
     \centering
     \includegraphics[width=15cm]{fig02.png}
-    \caption{Curva de error de entrenamiento sobre la XOR. Escala logarítmica. El MLP con cuatro neuronas ocultas y momento 0.9 llega al error objetivo, el Adaline se estanca cerca de 0.139, apenas por encima del piso de 0.125 de la mejor función lineal}
+    \caption{Curvas de error de entrenamiento sobre la XOR de dos y tres entradas con una de las cinco semillas, en escala logarítmica. El MLP con cuatro neuronas ocultas y momento 0.9 llega al error objetivo en ambos casos, y el Adaline se estanca cerca de 0.139, apenas por encima del piso de 0.125 de la mejor función lineal}
     \label{fig:xor}
 \end{figure}
 
 \subsection{Tasa de aprendizaje, momento y pesos iniciales sobre la XOR}
 
-La guía de laboratorio del curso (2007) propone variar la tasa de aprendizaje entre 0.1 y 2 con momento cero, y el momento entre 0 y 1 con tasa 0.5, y observar el comportamiento sobre la XOR. La Figura \ref{fig:barrido} reproduce ese barrido con cuatro neuronas ocultas y cinco semillas, y agrega la escala de los pesos iniciales, que la plantilla fijaba en 0.5. Con tasa 0.1 ninguna semilla llega al error objetivo en 5000 épocas. A partir de 0.3 todas convergen y cada vez más rápido, de 4117 épocas con 0.3 a 773 con 1.9. La tasa grande no desestabiliza el entrenamiento en este problema, porque la sigmoide acota las salidas y los cuatro patrones no introducen ruido. El momento reduce las épocas de forma sostenida, de 2565 sin momento a 266 con 0.9. Con momento 1 el incremento anterior nunca se amortigua y ninguna semilla converge.
+La guía de laboratorio del curso (2007) propone variar la tasa de aprendizaje entre 0.1 y 2 con momento cero, y el momento entre 0 y 1 con tasa 0.5, y observar el comportamiento sobre la XOR. La Figura \ref{fig:barrido} reproduce ese barrido con cuatro neuronas ocultas y cinco semillas, y agrega la escala de los pesos iniciales, que la plantilla fijaba en 0.5. Con tasa 0.1 ninguna semilla llega al error objetivo en 5000 épocas. A partir de 0.3 todas convergen y cada vez más rápido, de 4117 épocas con 0.3 a 736 con 2. La tasa grande no desestabiliza el entrenamiento en este problema, porque la sigmoide acota las salidas y los cuatro patrones no introducen ruido. El momento reduce las épocas de forma sostenida, de 2565 sin momento a 266 con 0.9, ambos con tasa 0.5. Con momento 1 el incremento anterior nunca se amortigua y ninguna semilla converge.
 
 La escala inicial tiene un óptimo intermedio, como muestra la Tabla \ref{tab:escala}. Con 0.1 los pesos son tan parecidos entre sí que las neuronas ocultas arrancan casi iguales y el error no baja del objetivo en 5000 épocas. Entre 0.5 y 2 todas las semillas convergen. Con 5 las sumas ponderadas caen en la zona plana de la sigmoide, donde la derivada $f(1-f)$ es casi cero, y solo tres de cinco semillas salen de ahí.
 
 \begin{figure}[!htb]
     \centering
     \includegraphics[width=15cm]{fig03.png}
-    \caption{Épocas hasta el error objetivo sobre la XOR de dos entradas al variar la tasa de aprendizaje, el momento y la escala de los pesos iniciales, cuatro neuronas ocultas y promedio de cinco semillas. Un valor de 5000 indica que no se alcanzó el objetivo. Escala logarítmica en el eje vertical}
+    \caption{Épocas hasta el error objetivo sobre la XOR de dos entradas al variar la tasa de aprendizaje, el momento y la escala de los pesos iniciales, cuatro neuronas ocultas y promedio de cinco semillas. Un valor de 5000 indica que no se alcanzó el objetivo. Escala logarítmica en el eje vertical, y el tercer panel usa tasa 0.3}
     \label{fig:barrido}
 \end{figure}
 
@@ -310,31 +310,31 @@ La escala inicial tiene un óptimo intermedio, como muestra la Tabla \ref{tab:es
 
 \subsection{Clasificación multiclase en Iris}
 
-La Tabla \ref{tab:iris} recoge las doce combinaciones de arquitectura y tasa de aprendizaje sobre la partición 70-30, con 84 flores de entrenamiento, 21 de validación y 45 de prueba. Ninguna configuración alcanza el error objetivo de 0.001 en mil épocas, porque con tres salidas y clases que se traslapan el error cuadrático de entrenamiento termina entre 0.005 y 0.017. La exactitud de prueba es de 97.8 por ciento en nueve de las doce configuraciones, es decir una sola flor mal clasificada, una \textit{versicolor} tomada por \textit{virginica}. Con la tasa 0.05 las tres redes de una capa bajan a 95.6 por ciento, porque a las mil épocas todavía no terminan de ajustar la frontera entre esas dos especies y fallan una flor más.
+La Tabla \ref{tab:iris} recoge las doce combinaciones de arquitectura y tasa de aprendizaje sobre la partición 70-30, con 84 flores de entrenamiento, 21 de validación y 45 de prueba. Ninguna configuración alcanza el error objetivo de 0.001 en 1000 épocas, porque con tres salidas y clases que se traslapan el MSE de entrenamiento termina entre 0.005 y 0.017. La exactitud de prueba es de 97.8 por ciento en nueve de las doce configuraciones, es decir una sola flor mal clasificada, una \textit{versicolor} tomada por \textit{virginica}. Con la tasa 0.05 las tres redes de una capa bajan a 95.6 por ciento, porque a las 1000 épocas todavía no terminan de ajustar la frontera entre esas dos especies y fallan una flor más.
 
 La mejor configuración se elige por el error de validación al final del entrenamiento, sin mirar la prueba, y resulta ser la de doce neuronas con tasa 0.05. La Tabla \ref{tab:iris_conf} muestra su matriz de confusión, con dos \textit{versicolor} tomadas por \textit{virginica}. El menor error de validación no garantizó la mayor exactitud de prueba, porque sobre 45 flores la diferencia entre las configuraciones es de una sola flor. Las nueve configuraciones con 97.8 por ciento comparten una misma matriz, y la Tabla \ref{tab:iris_todas} del Anexo \ref{anexo:tablas} reúne las doce.
 
 \begin{table}[!htb]
     \centering
-    \caption{Iris sobre la partición 70-30. Mil épocas en todas las configuraciones, exactitud sobre las 45 flores de prueba}
+    \caption{Iris sobre la partición 70-30. 1000 épocas en todas las configuraciones, exactitud sobre las 45 flores de prueba}
     \label{tab:iris}
     \footnotesize
     \begin{tabular}{c S[table-format=1.2] S[table-format=1.3] S[table-format=1.4] S[table-format=1.4] S[table-format=3.1]}
         \toprule
         \textbf{Neuronas ocultas} & {$\boldsymbol{\eta}$} & {\textbf{Segundos}} & {\textbf{MSE entrenamiento}} & {\textbf{MSE validación}} & {\textbf{Exactitud (\%)}} \\
         \midrule
-        3       & 0.05 & 1.635 & 0.0159 & 0.0302 & 95.6 \\
-        3       & 0.1  & 1.628 & 0.0114 & 0.0375 & 97.8 \\
-        3       & 0.3  & 1.594 & 0.0106 & 0.0620 & 97.8 \\
-        6       & 0.05 & 1.698 & 0.0166 & 0.0305 & 95.6 \\
-        6       & 0.1  & 2.295 & 0.0115 & 0.0348 & 97.8 \\
-        6       & 0.3  & 2.281 & 0.0066 & 0.0444 & 97.8 \\
-        12      & 0.05 & 2.259 & 0.0167 & 0.0287 & 95.6 \\
-        12      & 0.1  & 2.258 & 0.0117 & 0.0347 & 97.8 \\
-        12      & 0.3  & 2.278 & 0.0095 & 0.0591 & 97.8 \\
-        {[8 4]} & 0.05 & 2.965 & 0.0109 & 0.0343 & 97.8 \\
-        {[8 4]} & 0.1  & 3.068 & 0.0068 & 0.0436 & 97.8 \\
-        {[8 4]} & 0.3  & 3.091 & 0.0053 & 0.0444 & 97.8 \\
+        3       & 0.05 & 1.526 & 0.0159 & 0.0302 & 95.6 \\
+        3       & 0.1  & 1.520 & 0.0114 & 0.0375 & 97.8 \\
+        3       & 0.3  & 1.511 & 0.0106 & 0.0620 & 97.8 \\
+        6       & 0.05 & 1.640 & 0.0166 & 0.0305 & 95.6 \\
+        6       & 0.1  & 1.700 & 0.0115 & 0.0348 & 97.8 \\
+        6       & 0.3  & 1.668 & 0.0066 & 0.0444 & 97.8 \\
+        12      & 0.05 & 1.653 & 0.0167 & 0.0287 & 95.6 \\
+        12      & 0.1  & 1.631 & 0.0117 & 0.0347 & 97.8 \\
+        12      & 0.3  & 1.626 & 0.0095 & 0.0591 & 97.8 \\
+        {[8 4]} & 0.05 & 2.157 & 0.0109 & 0.0343 & 97.8 \\
+        {[8 4]} & 0.1  & 2.196 & 0.0068 & 0.0436 & 97.8 \\
+        {[8 4]} & 0.3  & 2.149 & 0.0053 & 0.0444 & 97.8 \\
         \bottomrule
     \end{tabular}
 \end{table}
@@ -370,7 +370,7 @@ La Tabla \ref{tab:particiones} compara el MLP contra el Perceptrón y el Adaline
 
 \begin{table}[!htb]
     \centering
-    \caption{Exactitud de prueba según proporción de partición, con las épocas y el tiempo de entrenamiento en segundos. El MLP usa ocho neuronas ocultas y para por treinta épocas sin mejora en validación o por error objetivo, y sus épocas son las del mejor punto de validación o las de llegada al error objetivo. Las 200 épocas del Adaline y las 100 del Perceptrón en Breast Cancer y billetes son el tope, sin convergencia. Los tiempos cambian ligeramente en cada ejecución}
+    \caption{Exactitud de prueba según proporción de partición, con las épocas y el tiempo de entrenamiento en segundos. El MLP usa ocho neuronas ocultas y para por 30 épocas sin mejora en validación o por error objetivo, y sus épocas son las del mejor punto de validación o las de llegada al error objetivo. Las 200 épocas del Adaline en los tres conjuntos y las 100 del Perceptrón en Breast Cancer y billetes son el tope, sin convergencia. Los tiempos cambian ligeramente en cada ejecución}
     \label{tab:particiones}
     \footnotesize
     \begin{tabular}{ll S[table-format=3.1] S[table-format=3.0] S[table-format=1.3] S[table-format=3.1] S[table-format=3.0] S[table-format=1.3] S[table-format=3.1] S[table-format=3.0] S[table-format=1.3]}
@@ -379,20 +379,20 @@ La Tabla \ref{tab:particiones} compara el MLP contra el Perceptrón y el Adaline
         \cmidrule(lr){3-5} \cmidrule(lr){6-8} \cmidrule(lr){9-11}
         \textbf{Conjunto} & \textbf{Partición} & {\textbf{\%}} & {\textbf{Épocas}} & {\textbf{s}} & {\textbf{\%}} & {\textbf{Épocas}} & {\textbf{s}} & {\textbf{\%}} & {\textbf{Épocas}} & {\textbf{s}} \\
         \midrule
-        \multirow{4}{*}{Wine}           & 60-40 & 98.6 & 119 & 0.314 & 95.8 & 52 & 0.007 & 97.2 & 200 & 0.017 \\
-                                        & 70-30 & 98.1 & 150 & 0.463 & 92.5 & 32 & 0.004 & 96.2 & 200 & 0.019 \\
-                                        & 80-20 & 100.0 & 118 & 0.939 & 94.4 & 25 & 0.003 & 97.2 & 200 & 0.012 \\
-                                        & 90-10 & 94.4 & 121 & 0.523 & 100.0 & 35 & 0.007 & 94.4 & 200 & 0.044 \\
+        \multirow{4}{*}{Wine}           & 60-40 & 98.6 & 119 & 0.278 & 95.8 & 52 & 0.004 & 97.2 & 200 & 0.014 \\
+                                        & 70-30 & 98.1 & 150 & 0.359 & 92.5 & 32 & 0.003 & 96.2 & 200 & 0.011 \\
+                                        & 80-20 & 100.0 & 118 & 0.326 & 94.4 & 25 & 0.003 & 97.2 & 200 & 0.012 \\
+                                        & 90-10 & 94.4 & 121 & 0.375 & 100.0 & 35 & 0.002 & 94.4 & 200 & 0.013 \\
         \midrule
-        \multirow{4}{*}{Breast Cancer}  & 60-40 & 97.4 & 52 & 0.629 & 96.1 & 100 & 0.021 & 95.2 & 200 & 0.026 \\
-                                        & 70-30 & 97.7 & 64 & 1.127 & 95.3 & 100 & 0.011 & 97.1 & 200 & 0.012 \\
-                                        & 80-20 & 95.6 & 72 & 1.040 & 93.0 & 100 & 0.009 & 96.5 & 200 & 0.014 \\
-                                        & 90-10 & 98.2 & 88 & 1.428 & 98.2 & 100 & 0.009 & 98.2 & 200 & 0.015 \\
+        \multirow{4}{*}{Breast Cancer}  & 60-40 & 97.4 & 52 & 0.450 & 96.1 & 100 & 0.008 & 95.2 & 200 & 0.010 \\
+                                        & 70-30 & 97.7 & 64 & 0.610 & 95.3 & 100 & 0.007 & 97.1 & 200 & 0.012 \\
+                                        & 80-20 & 95.6 & 72 & 1.014 & 93.0 & 100 & 0.008 & 96.5 & 200 & 0.013 \\
+                                        & 90-10 & 98.2 & 88 & 1.193 & 98.2 & 100 & 0.013 & 98.2 & 200 & 0.016 \\
         \midrule
-        \multirow{4}{*}{Billetes}       & 60-40 & 99.5 & 132 & 3.071 & 96.9 & 100 & 0.021 & 96.5 & 200 & 0.026 \\
-                                        & 70-30 & 100.0 & 146 & 4.044 & 99.0 & 100 & 0.029 & 95.9 & 200 & 0.073 \\
-                                        & 80-20 & 99.3 & 125 & 2.952 & 96.7 & 100 & 0.022 & 96.4 & 200 & 0.029 \\
-                                        & 90-10 & 98.5 & 105 & 2.504 & 97.8 & 100 & 0.021 & 95.6 & 200 & 0.044 \\
+        \multirow{4}{*}{Billetes}       & 60-40 & 99.5 & 132 & 1.521 & 96.9 & 100 & 0.014 & 96.5 & 200 & 0.021 \\
+                                        & 70-30 & 100.0 & 146 & 1.993 & 99.0 & 100 & 0.014 & 95.9 & 200 & 0.025 \\
+                                        & 80-20 & 99.3 & 125 & 1.901 & 96.7 & 100 & 0.015 & 96.4 & 200 & 0.027 \\
+                                        & 90-10 & 98.5 & 105 & 1.804 & 97.8 & 100 & 0.017 & 95.6 & 200 & 0.031 \\
         \bottomrule
     \end{tabular}
 \end{table}
@@ -408,11 +408,11 @@ Los tres conjuntos cuentan historias distintas. En Wine las tres bodegas resulta
 
 En Breast Cancer el Perceptrón nunca converge en 100 épocas, señal de que las dos clases se traslapan. El MLP lo supera en las tres primeras particiones y lo iguala en 90-10. Frente al Adaline solo pierde en 80-20, por un tumor de 114. En billetes la ventaja del MLP es clara y consistente, entre 98.5 y 100 por ciento frente a un máximo de 99.0 del Perceptrón y 96.5 del Adaline. El Adaline queda entre los otros dos modelos en tres de las cuatro particiones de Wine, pero en billetes es el último en las cuatro, porque el hiperplano que minimiza el error cuadrático no es el que mejor separa las clases.
 
-El costo de esa ventaja es el tiempo. El MLP tarda entre 0.314 y 4.044 segundos por entrenamiento contra menos de 0.1 segundos del Perceptrón y el Adaline, entre 12 y 270 veces más, porque cada patrón atraviesa dos capas hacia adelante y dos hacia atrás y además la red evalúa su error de validación en cada época. En cuanto a las épocas, en Wine y Breast Cancer el MLP alcanza su mejor punto de validación entre las épocas 52 y 150, y la parada llega 30 épocas después. En billetes, en cambio, el MLP no llega a usar la parada temprana, porque su error de entrenamiento baja del objetivo de 0.001 entre las épocas 105 y 146. El Adaline agota sus 200 épocas en los tres conjuntos y el Perceptrón sus 100 en Breast Cancer y billetes, así que en esos casos sus épocas y su tiempo son los del tope y no los de una convergencia. Sobre la proporción de partición no aparece una tendencia común, y la sección \ref{sec:particiones} discute por qué las particiones 90-10 son las menos estables.
+El costo de esa ventaja es el tiempo. El MLP tarda entre 0.278 y 1.993 segundos por entrenamiento contra menos de 0.1 segundos del Perceptrón y el Adaline, entre 10 y 190 veces más según la partición, porque cada patrón atraviesa dos capas hacia adelante y dos hacia atrás y además la red evalúa su error de validación en cada época. En cuanto a las épocas, en Wine y Breast Cancer el MLP alcanza su mejor punto de validación entre las épocas 52 y 150, y la parada llega 30 épocas después. En billetes, en cambio, el MLP no llega a usar la parada temprana, porque su error de entrenamiento baja del objetivo de 0.001 entre las épocas 105 y 146. El Adaline agota sus 200 épocas en los tres conjuntos y el Perceptrón sus 100 en Breast Cancer y billetes, así que en esos casos sus épocas y su tiempo son los del tope y no los de una convergencia. Sobre la proporción de partición no aparece una tendencia común, y la sección \ref{sec:particiones} discute por qué las particiones 90-10 son las menos estables.
 
 \subsection{Análisis de sobreajuste (overfitting)}
 
-La Figura \ref{fig:sobreajuste} muestra el error de entrenamiento y de validación sobre Breast Cancer durante 1500 épocas para cuatro números de neuronas ocultas, sin parada temprana, y la Tabla \ref{tab:sobreajuste} resume las cifras. Las cuatro curvas tienen la misma forma. El error de validación baja hasta un mínimo entre 0.0068 y 0.0079 en las épocas 85 a 165 y a partir de ahí sube de manera sostenida hasta terminar entre 0.0187 y 0.0220, casi el triple, mientras el error de entrenamiento sigue bajando hasta 0.0036. Esa separación creciente entre las dos curvas es la evidencia del sobreajuste. La red sigue ajustándose a los 318 patrones de entrenamiento y clasifica peor los 80 de validación y los 171 de prueba.
+La Figura \ref{fig:sobreajuste} muestra el error de entrenamiento y de validación sobre Breast Cancer durante 1500 épocas para cuatro números de neuronas ocultas, sin parada temprana, y la Tabla \ref{tab:sobreajuste} resume las cifras. Las cuatro curvas tienen la misma forma. El error de validación baja hasta un mínimo entre 0.0068 y 0.0079, que se alcanza entre las épocas 85 y 165. A partir de ahí sube de manera sostenida y termina entre 0.0187 y 0.0220, casi el triple, mientras el error de entrenamiento sigue bajando hasta 0.0036. Esa separación creciente entre las dos curvas es la evidencia del sobreajuste. La red sigue ajustándose a los 318 patrones de entrenamiento y clasifica peor los 80 de validación y los 171 de prueba.
 
 \begin{figure}[!htb]
     \centering
@@ -423,7 +423,7 @@ La Figura \ref{fig:sobreajuste} muestra el error de entrenamiento y de validaci�
 
 \begin{table}[!htb]
     \centering
-    \caption{Sobreajuste en Breast Cancer, partición 70-30. Sin parada temprana el entrenamiento dura 1500 épocas, con parada temprana se detiene tras cincuenta épocas sin mejora en validación}
+    \caption{Sobreajuste en Breast Cancer, partición 70-30. Sin parada temprana el entrenamiento dura 1500 épocas, con parada temprana se detiene tras 50 épocas sin mejora en validación}
     \label{tab:sobreajuste}
     \scriptsize
     \begin{tabular}{c S[table-format=1.4] S[table-format=1.4] S[table-format=3.0] S[table-format=1.4] S[table-format=2.1] S[table-format=3.0] S[table-format=2.1]}
@@ -472,9 +472,9 @@ La XOR de tres entradas explica por qué el problema crece rápido. Con tres ent
 
 \subsection{Efecto del número de neuronas ocultas y de la tasa de aprendizaje}
 
-La tasa de aprendizaje mostró el mismo compromiso en todos los experimentos. Un valor pequeño produce curvas suaves pero lentas, como la tasa 0.05 en Iris, que a las 1000 épocas todavía no se ha estabilizado. Un valor grande llega antes al vecindario del mínimo pero oscila alrededor de él, como la tasa 0.3 en la Figura \ref{fig:iris}, y en Iris esa oscilación despega el error de validación del de entrenamiento. Por error de validación la mejor configuración de Iris fue la de doce neuronas con tasa 0.05, aunque a las 1000 épocas todavía no termina de ajustar la frontera entre \textit{versicolor} y \textit{virginica}. Por estabilidad de la curva y por exactitud la tasa preferible es 0.1. En la XOR el barrido de la Figura \ref{fig:barrido} muestra que la tasa puede subir hasta 2 sin perder estabilidad, porque el problema no tiene ruido, y que el momento acorta las épocas de forma sostenida hasta 0.9 y con 1 impide converger. La escala de los pesos iniciales es el parámetro que la plantilla no exponía, y resulta tener un rango útil estrecho, entre 0.5 y 2. Por debajo las neuronas ocultas arrancan casi iguales y por encima las sumas ponderadas caen en la zona plana de la sigmoide.
+La tasa de aprendizaje mostró el mismo compromiso en todos los experimentos. Un valor pequeño produce curvas suaves pero lentas, como la tasa 0.05 en Iris, que a las 1000 épocas todavía no se ha estabilizado. Un valor grande llega antes al vecindario del mínimo pero oscila alrededor de él, como la tasa 0.3 en la Figura \ref{fig:iris}, y en Iris, con esa tasa, el error de validación se despega del de entrenamiento, señal de un sobreajuste leve. Por error de validación la mejor configuración de Iris fue la de doce neuronas con tasa 0.05, aunque a las 1000 épocas todavía no termina de ajustar la frontera entre \textit{versicolor} y \textit{virginica}. Por estabilidad de la curva la tasa preferible es 0.1, que iguala la exactitud de 0.3. En la XOR el barrido de la Figura \ref{fig:barrido} muestra que la tasa puede subir hasta 2 sin perder estabilidad, porque el problema no tiene ruido, y que el momento acorta las épocas de forma sostenida hasta 0.9 y con 1 impide converger. La escala de los pesos iniciales es el parámetro que la plantilla no exponía, y resulta tener un rango útil estrecho, entre 0.5 y 2. Por debajo las neuronas ocultas arrancan casi iguales y por encima las sumas ponderadas caen en la zona plana de la sigmoide.
 
-El número de neuronas ocultas tuvo un efecto menor de lo que se podría esperar. En Iris las cuatro arquitecturas dan la misma exactitud con las tasas 0.1 y 0.3, y en Breast Cancer los cuatro números de neuronas probados caen en el mismo error de validación mínimo, solo que la red más grande llega antes. Solo en la XOR, donde la geometría exige un número mínimo de hiperplanos, el número de neuronas marca la diferencia entre converger o no. En los conjuntos reales las clases se separan con pocas neuronas y las adicionales no mejoran la clasificación, solo agregan pesos que ajustar. El tiempo apenas se mueve entre tres y doce neuronas en la Tabla \ref{tab:iris}, y el salto claro lo produce la segunda capa oculta.
+El número de neuronas ocultas tuvo un efecto menor de lo que se podría esperar. En Iris las cuatro arquitecturas dan la misma exactitud con las tasas 0.1 y 0.3, y en Breast Cancer los cuatro números de neuronas probados caen en un error de validación mínimo muy parecido, entre 0.0068 y 0.0079, solo que la red más grande llega antes. Solo en la XOR, donde la geometría exige un número mínimo de hiperplanos, el número de neuronas marca la diferencia entre converger o no. En los conjuntos reales las clases se separan con pocas neuronas y las adicionales no mejoran la clasificación, solo agregan pesos que ajustar. En la Tabla \ref{tab:iris} el tiempo va de 1.5 a 1.7 segundos entre tres y doce neuronas y sube a entre 2.1 y 2.2 con la segunda capa oculta.
 
 \subsection{Proporción de partición y generalización}
 \label{sec:particiones}
@@ -483,20 +483,20 @@ Ninguna proporción resultó mejor de manera consistente. En Wine el Perceptrón
 
 \subsection{Evidencia de sobreajuste y su mitigación}
 
-La evidencia está en la Figura \ref{fig:sobreajuste} y en la Tabla \ref{tab:epocas}. En los cuatro casos el error de validación toca un mínimo entre las épocas 85 y 165 y después sube de forma sostenida, mientras el de entrenamiento baja sin parar. A las 1500 épocas la red clasifica peor los datos nuevos que a las 200, con una diferencia de 1.2 puntos de exactitud y de 2.9 a 3.5 puntos frente a la red detenida a tiempo, aunque su error sobre los datos que ya vio sea cinco veces menor que el de validación. Ese divorcio entre los dos errores es la definición operativa del sobreajuste.
+La evidencia está en la Figura \ref{fig:sobreajuste} y en la Tabla \ref{tab:epocas}. En los cuatro casos el error de validación toca un mínimo entre las épocas 85 y 165 y después sube de forma sostenida, mientras el de entrenamiento baja sin parar. A las 1500 épocas la red clasifica peor los datos nuevos que a las 200, con 1.2 puntos menos de exactitud. Frente a la red detenida a tiempo pierde entre 3.0 y 3.5 puntos, aunque su error sobre los datos que ya vio sea unas cinco veces menor que el de validación. Ese divorcio entre los dos errores es la definición operativa del sobreajuste.
 
-La parada temprana lo mitigó en los cuatro casos y los llevó al mismo 97.7 por ciento. El criterio es sencillo y no exige ninguna decisión previa sobre el número de épocas, porque es el propio conjunto de validación el que la toma. Lo que sí exige es apartar datos para validar, que aquí fueron 80 de los 398 patrones de entrenamiento, con lo cual la red aprende con menos ejemplos pero la exactitud sobre la prueba mide de verdad lo que la red no vio. Un hallazgo que conviene subrayar es que aumentar las neuronas ocultas de 2 a 64 no agravó el sobreajuste, pues el mínimo de validación y la exactitud final quedan en el mismo rango, aunque lo adelantó de la época 165 a la 85. La causa en este conjunto es el exceso de épocas, y el remedio correcto es detener el entrenamiento a tiempo y no reducir la red.
+La parada temprana lo mitigó en los cuatro casos y los llevó al mismo 97.7 por ciento. El criterio es sencillo y no exige ninguna decisión previa sobre el número de épocas, porque es el propio conjunto de validación el que la toma. Lo que sí exige es apartar datos para validar, que aquí fueron 80 de los 398 patrones de entrenamiento, con lo cual la red aprende con menos ejemplos pero la exactitud sobre el conjunto de prueba mide de verdad lo que la red no vio. Un hallazgo que conviene subrayar es que aumentar las neuronas ocultas de 2 a 64 no agravó el sobreajuste, pues el mínimo de validación y la exactitud final quedan en el mismo rango, aunque lo adelantó de la época 165 a la 85. La causa en este conjunto es el exceso de épocas, y el remedio correcto es detener el entrenamiento a tiempo y no reducir la red.
 
 % ============================================================
 \section{Conclusiones}
 
-El perceptrón multicapa resolvió la XOR de dos entradas con exactitud del 100 por ciento en todas las semillas con cuatro u ocho neuronas ocultas, y la de tres entradas con la misma exactitud al agregar momento 0.9. El Perceptrón y el Adaline del Taller 1 quedaron en 30 por ciento con dos entradas y entre 47.5 y 50 con tres. La capa oculta es la diferencia, y dos neuronas ocultas bastan para clasificar los cuatro patrones, aunque con ellas una de cinco semillas no llega al error objetivo.
+El perceptrón multicapa resolvió la XOR de dos entradas con exactitud del 100 por ciento en todas las semillas con cuatro u ocho neuronas ocultas, y la de tres entradas con la misma exactitud al agregar momento 0.9. El Perceptrón y el Adaline, con los parámetros del Taller 1, quedaron en promedio en 30 por ciento con dos entradas y entre 47.5 y 50 con tres. La capa oculta es la diferencia, y dos neuronas ocultas bastan para clasificar los cuatro patrones, aunque con ellas una de cinco semillas no llega al error objetivo.
 
-El momento fue el parámetro de mayor efecto sobre la velocidad. Con $\beta$ igual a 0.9 la XOR de dos entradas pasó de 4117 a 436 épocas y la de tres entradas pasó de converger en dos semillas a converger en las cinco. La tangente hiperbólica también aceleró la convergencia y la ReLU resultó poco fiable en un problema tan pequeño. El barrido de la guía de laboratorio mostró además que en la XOR la tasa puede llegar a 2 sin desestabilizar el entrenamiento, que el momento 1 impide converger, y que la escala de los pesos iniciales solo funciona entre 0.5 y 2.
+El momento fue el parámetro de mayor efecto sobre la velocidad. Con $\beta$ igual a 0.9 la XOR de dos entradas pasó de 4117 a 436 épocas y la de tres entradas pasó de converger en dos semillas a converger en las cinco. La tangente hiperbólica también aceleró la convergencia y la ReLU resultó poco fiable en un problema tan pequeño. El barrido de la guía de laboratorio mostró además que en la XOR la tasa puede llegar a 2 sin desestabilizar el entrenamiento, que el momento 1 impide converger, y que la escala de los pesos iniciales de los valores probados solo entre 0.5 y 2 lleva todas las semillas al objetivo.
 
 Sobre Iris las doce configuraciones alcanzaron 95.6 o 97.8 por ciento de exactitud, y la tasa de aprendizaje determinó la forma de la curva de error más que el número de neuronas o de capas. Por error de validación la mejor fue la de doce neuronas con tasa 0.05, y por estabilidad de la curva la tasa 0.1, que alcanzó la misma exactitud que la 0.3 con curvas de validación más estables. Sobre 45 flores ninguna tasa se distingue por la exactitud.
 
-En los conjuntos reales el MLP superó al Perceptrón en diez de las doce particiones y al Adaline en nueve, y solo perdió dos veces, en Wine 90-10 frente al Perceptrón y en Breast Cancer 80-20 frente al Adaline, cada vez por un solo patrón de prueba. La ventaja más clara estuvo en billetes, entre 98.5 y 100 por ciento. El precio fue un tiempo de entrenamiento entre 12 y 270 veces mayor.
+En los conjuntos reales el MLP superó al Perceptrón en diez de las doce particiones y al Adaline en nueve, y solo perdió dos veces, en Wine 90-10 frente al Perceptrón y en Breast Cancer 80-20 frente al Adaline, cada vez por un solo patrón de prueba. La ventaja más clara estuvo en billetes, entre 98.5 y 100 por ciento. El precio fue un tiempo de entrenamiento entre 10 y 190 veces mayor.
 
 El sobreajuste apareció en Breast Cancer como una subida sostenida del error de validación desde las épocas 85 a 165 mientras el de entrenamiento seguía bajando. Costó 1.2 puntos de exactitud entre 200 y 1500 épocas, y su magnitud no dependió del número de neuronas ocultas entre 2 y 64, aunque la red más grande llegó antes al mínimo. La parada temprana por 50 épocas sin mejora lo corrigió y elevó la exactitud de prueba de entre 94.2 y 94.7 a 97.7 por ciento en los cuatro casos.
 
