@@ -1,5 +1,7 @@
 function net = init_mlp(cfg)
-    % Inicializa pesos y sesgos de todas las capas en la estructura `net`.
+    % Pesos aleatorios pequeños para que las neuronas de una capa no arranquen
+    % iguales y la sigmoide no sature. Sesgos en cero. Los incrementos anteriores
+    % en cero porque el momento aún no tiene nada que sumar.
     net = struct();
     net.W = {};
     net.b = {};

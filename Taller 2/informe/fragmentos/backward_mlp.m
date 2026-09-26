@@ -1,6 +1,6 @@
 function net = backward_mlp(net, cache, x, d, cfg)
-    % Calcula los delta de cada capa y actualiza los pesos (ver fórmulas
-    % de la Sección 1 de este mismo script).
+    % delta de salida (d - y) f'(net), delta oculta (W' delta_siguiente) f'(net),
+    % y despues dW = eta delta a' + beta dW_anterior, en pesos y sesgos.
     L = numel(net.W);
     delta = cell(1, L);
     delta{L} = (d - cache.a{L+1}) .* activation_deriv(cache.netv{L}, cfg.act_output);

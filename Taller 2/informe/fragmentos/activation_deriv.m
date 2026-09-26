@@ -1,5 +1,5 @@
 function dy = activation_deriv(net_in, tipo)
-    % Derivada de la función de activación, evaluada en net_in.
+    % Derivadas evaluadas en net_in. La ReLU toma derivada cero en net = 0.
     switch tipo
         case 'sigmoid'
             f = 1 ./ (1 + exp(-net_in));

@@ -1,5 +1,6 @@
 function [y, cache] = forward_mlp(net, x, cfg)
-    % Propaga la entrada x a través de todas las capas de la red.
+    % net_k = W_k a_(k-1) + b_k y a_k = f(net_k), capa por capa. Se guardan net y a
+    % de cada capa porque backward_mlp los necesita.
     a{1} = x;
     L = numel(net.W);
     for k = 1:L

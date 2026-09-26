@@ -5,86 +5,11 @@
 %
 % *Estudiante:* Sergio Santiago Duarte Rojas
 %% 1. Fundamento teórico: Perceptrón Multicapa (MLP) y Backpropagation
-% *¿Por qué una sola capa no basta?* En el Taller 1 vimos que el Perceptrón
-% Simple y Adaline solo pueden resolver problemas *linealmente separables*. El
-% problema XOR es el ejemplo clásico de un problema que *no* lo es, y por eso
-% requiere una arquitectura con al menos una *capa oculta*.
-%
-% *Arquitectura del MLP*
-%
-% Una red multicapa se organiza en capas $k = 1,\dots,L$. Cada neurona $j$ de
-% la capa $k$ calcula:
-%
-% $$net_j^{(k)} = \sum_i w_{ji}^{(k)} a_i^{(k-1)} + b_j^{(k)}, \qquad a_j^{(k)}
-% = f\left(net_j^{(k)}\right)$$
-%
-% donde $a^{(0)} = x$ (la entrada) y $f$ es la función de activación de la capa
-% (sigmoidal, tangente hiperbólica o ReLU en este taller).
-%
-% *Algoritmo de Backpropagation*
-%
-% El error se mide típicamente como error cuadrático medio:
-%
-% $$E = \frac{1}{2}\sum \left(d(x) - Y(x)\right)^2$$
-%
-% El algoritmo ajusta los pesos por *descenso de gradiente*, propagando el error
-% desde la salida hacia las capas ocultas:
-%
-% $$\delta^{(L)} = \left(d(x) - Y(x)\right) \odot f'\left(net^{(L)}\right) \qquad
-% \text{(capa de salida)}$$
-%
-% $$\delta^{(k)} = \left(W^{(k+1)T}\delta^{(k+1)}\right) \odot f'\left(net^{(k)}\right)
-% \qquad \text{(capas ocultas)}$$
-%
-% $$W^{(k)} \leftarrow W^{(k)} + \eta\, \delta^{(k)} \left(a^{(k-1)}\right)^T,
-% \qquad b^{(k)} \leftarrow b^{(k)} + \eta\, \delta^{(k)}$$
-%
-% donde $\eta$ es la tasa de aprendizaje. Opcionalmente se agrega un *término
-% de momento* $\beta$ que suaviza la trayectoria de convergencia usando el incremento
-% de la iteración anterior:
-%
-% $$\Delta W^{(k)} \leftarrow \eta\, \delta^{(k)} \left(a^{(k-1)}\right)^T +
-% \beta\, \Delta W^{(k)}_{\text{anterior}}$$
-%
-% *Funciones de activación más comunes*
-%%
-% * *Sigmoidal:* $f(net)=\dfrac{1}{1+e^{-net}}$, con $f'(net)=f(net)(1-f(net))$.
-% Satura para valores extremos, lo que puede ralentizar el aprendizaje (_vanishing
-% gradient_).
-% * *Tangente hiperbólica:* $f(net)=\tanh(net)$, con $f'(net)=1-\tanh^2(net)$.
-% Centrada en cero, suele converger algo más rápido que la sigmoidal.
-% * *ReLU:* $f(net)=\max(0,net)$, con $f'(net)=1$ si $net>0$ y $0$ en caso contrario.
-% Evita la saturación pero puede "apagar" neuronas (_dying ReLU_).
-%%
-% *Referencias y lecturas complementarias*
-%%
-% * Rumelhart, D. E., Hinton, G. E., & Williams, R. J. (1986). Learning representations
-% by back-propagating errors. _Nature_, 323(6088), 533-536.  <https://doi.org/10.1038/323533a0
-% doi.org/10.1038/323533a0>
-% * Haykin, S. (2009). _Neural Networks and Learning Machines_ (3rd ed.), Capítulo
-% 4: Multilayer Perceptrons. Pearson.
-% * Goodfellow, I., Bengio, Y., & Courville, A. (2016). _Deep Learning_, Capítulo
-% 6. <https://www.deeplearningbook.org/ deeplearningbook.org> (disponible gratis
-% en línea)
-% * Nielsen, M. (2015). _Neural Networks and Deep Learning_, Capítulo 2 (backpropagation,
-% con derivación paso a paso).  <http://neuralnetworksanddeeplearning.com/chap2.html
-% neuralnetworksanddeeplearning.com/chap2.html> (libro gratuito en línea)
-% * MathWorks. <https://www.mathworks.com/help/deeplearning/ug/multilayer-shallow-neural-networks-and-backpropagation-training.html
-% Multilayer Shallow Neural Networks and Backpropagation Training>
+% Las fórmulas del MLP y de backpropagation están en el informe, sección 2.
 
 clear; clc; close all;
-%% 2. Parámetros del modelo (totalmente parametrizable)
-% *Qué se espera en esta sección:* una estructura |cfg| editable que controla
-% la arquitectura de la red y el proceso de entrenamiento. No requiere que complete
-% código aquí, pero *sí* deberá modificar estos valores (número de neuronas ocultas,
-% función de activación, tasa de aprendizaje, etc.) en los distintos numerales
-% del taller para comparar arquitecturas.
-%
-% Se agregan a |cfg| el criterio de parada por épocas sin mejora (|patience|),
-% el umbral de decisión, la fracción de validación, la escala de los pesos
-% iniciales y las rutas de los datos. |act_hidden| acepta una celda con una
-% activación por capa oculta. Las tablas de resultados de los numerales 3 a 6
-% se acumulan en |R3| a |R6|.
+%% 2. Parámetros del modelo
+% Todo lo que cambia entre experimentos vive en cfg. act_hidden acepta una celda con una activación por capa oculta.
 
 cfg.n_inputs      = 2;            % número de entradas
 cfg.hidden_layers = [4];          % neuronas por capa oculta, ej. [4 3]
@@ -113,59 +38,20 @@ paleta = [0.00 0.35 0.64; 0.85 0.37 0.01; 0.00 0.55 0.40; 0.45 0.20 0.55; 0.80 0
 
 rng(cfg.seed);
 %% 3. Datos de entrenamiento
-% *Teoría breve:* el problema XOR asigna salida 1 cuando exactamente una de
-% las dos entradas es 1, y 0 en caso contrario. No existe una única línea recta
-% (hiperplano) que separe las clases, por lo que un Perceptrón simple (Taller
-% 1) *no puede* resolverlo; de ahí la necesidad de la capa oculta.
-%
-% *Qué se espera en esta sección:* las matrices |X| (patrones, una fila por
-% patrón) y |D| (salidas deseadas) listas para entrenar.
 
 X = [0 0; 0 1; 1 0; 1 1];   % cada FILA es un patrón de entrada
 D = [0; 1; 1; 0];           % salida deseada d(x)
-%% 4. Inicialización de la red — función |init_mlp|
-% *Teoría:* los pesos se inicializan con valores aleatorios *pequeños* (no en
-% cero) para romper la simetría entre neuronas de una misma capa; si todas partieran
-% del mismo valor, aprenderían siempre lo mismo. Los sesgos (bias) usualmente
-% se inicializan en cero.
-%
-% *Qué se espera en esta sección:* la función debe devolver una estructura |net|
-% con:
-%%
-% * |net.W{k}| : matriz de pesos de la capa $k$ (tamaño: neuronas_k x neuronas_{k-1})
-% * |net.b{k}| : vector de sesgos de la capa $k$
-% * |net.dW_prev{k}|, |net.db_prev{k}| : incrementos anteriores en ceros, para
-% el término de momento
+%% 4. Inicialización de la red
 
 net = init_mlp(cfg);
-%% 5. Propagación hacia adelante — función |forward_mlp|
-% *Teoría:* dado un patrón de entrada, se calcula la salida de cada capa aplicando
-% la fórmula $a^{(k)} = f\left(W^{(k)}a^{(k-1)}+b^{(k)}\right)$ de manera secuencial
-% hasta llegar a la capa de salida.
-%
-% *Qué se espera en esta sección:* la función debe devolver la salida |y| de
-% la red y una estructura |cache| con los valores intermedios (|cache.a| y |cache.netv|
-% de cada capa), necesarios para el paso de backpropagation.
-%% 6. Retropropagación del error — función |backward_mlp|
-% *Teoría:* implemente las fórmulas de la Sección 1 (deltas de salida y de las
-% capas ocultas, y la actualización de pesos con momento opcional).
-%
-% *Qué se espera en esta sección:* la función debe actualizar y devolver |net|
-% con los pesos ya ajustados para el patrón actual.
+%% 5. Propagación hacia adelante
+% Ver forward_mlp al final del script.
+%% 6. Retropropagación del error
+% Ver backward_mlp al final del script.
 %% 7. Funciones de activación y sus derivadas
-% *Qué se espera en esta sección:* |activation| ya está completa; usted debe
-% completar |activation_deriv|, que se usa dentro de |backward_mlp| para calcular
-% $f'(net)$.
+% Ver activation y activation_deriv al final del script.
 %% 8. Entrenamiento (ciclo de épocas)
-% *Teoría:* en el *aprendizaje en línea* (_online_), los pesos se actualizan
-% patrón por patrón (a diferencia del aprendizaje por lotes, donde se acumula
-% el gradiente de todo el conjunto antes de actualizar). Se recorre el conjunto
-% de entrenamiento en orden aleatorio en cada época para evitar sesgos de orden.
-%
-% *Qué se espera en esta sección:* al ejecutar este bloque, el error cuadrático
-% medio (|error_hist|) debe decrecer época a época hasta alcanzar |cfg.target_error|
-% o completar |cfg.max_epochs|. Si el error no baja, revise las fórmulas completadas
-% en las secciones 4-7.
+% Aprendizaje en línea, un patrón a la vez y en orden aleatorio en cada época.
 
 error_hist = zeros(cfg.max_epochs, 1);
 
@@ -195,10 +81,6 @@ for epoch = 1:cfg.max_epochs
     end
 end
 %% 9. Resultados y visualización
-% *Qué se espera en esta sección:* una curva de error decreciente y, para el
-% caso XOR, salidas cercanas a 0 o 1 que coincidan con la columna |d| para cada
-% patrón. Compare estos resultados con los obtenidos en el Taller 1 (Perceptrón/Adaline)
-% para el mismo problema: allí el modelo *no* debía poder converger en XOR.
 
 figure;
 plot(error_hist, 'LineWidth', 1.4);
@@ -212,10 +94,7 @@ for p = 1:size(X, 1)
     fprintf('x = [%s]  ->  y = %.4f   (d = %g)\n', num2str(X(p, :)), y, D(p, :));
 end
 %% 9.1 Numeral 3, XOR de 2 y 3 entradas frente al Perceptrón y el Adaline del Taller 1
-% La XOR de 3 entradas vale 1 cuando un número impar de entradas vale 1. Se
-% entrena el MLP con tres tamaños de capa oculta y se repite con cinco semillas.
-% El Perceptrón y el Adaline usan las mismas funciones y parámetros del Taller 1,
-% definidos en la sección 2.
+% Tres tamaños de capa oculta, cinco semillas. Perceptrón y Adaline con los parámetros del Taller 1.
 
 semillas = 1:5;
 cv = false(numel(semillas), 1);
@@ -258,9 +137,7 @@ end
 cfg = cfg_base;
 R3
 %% 9.2 Momento y función de activación sobre la XOR
-% Con cuatro neuronas ocultas se varía el coeficiente de momento y la función
-% de activación de la capa oculta, cinco semillas por configuración. La última
-% fila de cada bloque usa dos capas ocultas con una activación distinta en cada una.
+% Cuatro neuronas ocultas, cinco semillas. La última fila de cada bloque usa dos capas ocultas con activación distinta.
 
 momentos = [0 0.5 0.9];
 activaciones = {'sigmoid', 'tanh', 'relu'};
@@ -311,13 +188,7 @@ plot(mse_hist, 'LineWidth', 1.2, 'DisplayName', 'Adaline, XOR de 2 entradas')
 set(gca, 'YScale', 'log'); grid on; legend; xlabel('época'); ylabel('MSE')
 cfg = cfg_base;
 %% 9.3 Tasa de aprendizaje, momento y escala de los pesos iniciales sobre la XOR
-% La guía de laboratorio del curso pide variar la tasa de aprendizaje de 0.1 a
-% 2 con momento cero, y el momento de 0 a 1 con tasa 0.5, y observar el
-% comportamiento. Se hace sobre la XOR de dos entradas con cuatro neuronas
-% ocultas y cinco semillas, y se agrega la escala de los pesos iniciales, que
-% la plantilla fijaba en 0.5. Se reporta el promedio de épocas hasta el error
-% objetivo, contando el tope de 5000 cuando no se alcanza, y la fracción de
-% semillas que convergen.
+% Barrido de la guía de laboratorio (tasa 0.1 a 2 con momento 0, momento 0 a 1 con tasa 0.5) más la escala inicial. Cinco semillas.
 
 [X, D] = xor_data(2);
 etas_guia = 0.1:0.1:2;
@@ -343,12 +214,37 @@ xlabel('momento, tasa 0.5'); xticks(0:0.25:1); xtickangle(0); set(gca, 'YScale',
 subplot(1, 3, 3); semilogx(escalas, ep_esc, '-^', 'LineWidth', 1.2, 'MarkerSize', 4); grid on; xlim([0.07 7])
 xlabel('escala de los pesos iniciales, tasa 0.3'); set(gca, 'YScale', 'log'); ylim([200 6000]); yticks([250 500 1000 2000 5000]); xticks(escalas)
 cfg = cfg_base;
+%% 9.4 Activación en la capa oculta frente a la capa de salida
+% Nueve combinaciones de activación oculta y de salida. XOR de dos entradas con
+% momento 0.9 y cinco semillas, y Breast Cancer 70-30 con una semilla.
+
+act_oc = {'sigmoid', 'tanh', 'relu'};
+act_sa = {'sigmoid', 'tanh', 'linear'};
+[X, D] = xor_data(2);
+[Xd, Dd] = load_dataset('wdbc', cfg_base);
+[Xtr, Dtr, Xva, Dva, Xte, Dte] = split_train_val_test(Xd, Dd, 0.7, cfg_base);
+R3d = table();
+for a = 1:numel(act_oc)
+    for b = 1:numel(act_sa)
+        cfg = cfg_base;  cfg.n_inputs = 2;  cfg.hidden_layers = [4];  cfg.momentum = 0.9;
+        cfg.act_hidden = act_oc{a};  cfg.act_output = act_sa{b};
+        ep = zeros(numel(semillas), 1);  cv = false(numel(semillas), 1);
+        for i = 1:numel(semillas)
+            cfg.seed = semillas(i);  [~, hist] = train_mlp(X, D, [], [], cfg);
+            ep(i) = hist.epochs;  cv(i) = hist.convergio;
+        end
+        cfg.n_inputs = size(Xtr, 2);  cfg.hidden_layers = [8];  cfg.momentum = 0;  cfg.seed = cfg_base.seed;
+        cfg.max_epochs = 500;  cfg.patience = 30;
+        [net, hist] = train_mlp(Xtr, Dtr, Xva, Dva, cfg);
+        acc = 100*mean(predict_mlp(net, Xte, cfg) == Dte);
+        R3d = [R3d; table(act_oc(a), act_sa(b), mean(ep), 100*mean(cv), acc, ...
+               'VariableNames', {'Oculta', 'Salida', 'Epocas_XOR', 'Convergio_XOR', 'Exactitud_BreastCancer'})];
+    end
+end
+cfg = cfg_base;
+R3d
 %% 10. Numeral 4, clasificación multiclase con Iris
-% Tres salidas con codificación uno contra el resto y decisión por la mayor
-% salida. Partición 70-30, y dentro del 70 se reserva una quinta parte como
-% validación para la curva de error, de modo que la prueba no interviene en
-% el entrenamiento. Se prueban tres arquitecturas de una capa, una de dos capas
-% y tres tasas de aprendizaje.
+% Partición 70-30, una quinta parte del entrenamiento como validación. Cuatro arquitecturas por tres tasas.
 
 [X_iris, D_iris] = load_dataset('iris', cfg);
 [Xtr, Dtr, Xva, Dva, Xte, Dte] = split_train_val_test(X_iris, D_iris, 0.7, cfg);
@@ -403,12 +299,7 @@ for h = 1:n_arq
 end
 R4_confusiones
 %% 11. Numeral 5, Wine, Breast Cancer Wisconsin y billetes por particiones
-% Se generan las particiones 60-40, 70-30, 80-20 y 90-10 con la misma función
-% del Taller 1 y se entrena el MLP, el Perceptrón y el Adaline sobre cada una.
-% La parada temprana del MLP vigila una quinta parte del entrenamiento y la
-% exactitud se mide sobre la prueba, que no interviene. Wine tiene tres clases,
-% así que el Perceptrón y el Adaline se entrenan con una neurona por clase y
-% deciden por la mayor suma ponderada.
+% Cuatro particiones. El MLP para por validación o error objetivo, la exactitud se mide sobre la prueba. Wine usa una neurona por clase en Perceptrón y Adaline.
 
 proporciones = [0.6 0.7 0.8 0.9];
 conjuntos = {'wine', 'wdbc', 'banknote'};
@@ -458,12 +349,7 @@ lg = legend('MLP', 'Perceptrón', 'Adaline', 'Orientation', 'horizontal');
 lg.Layout.Tile = 'south';
 xlabel(tl, 'partición', 'FontSize', 9)
 %% 12. Numeral 6, sobreajuste y parada temprana
-% Sobre Breast Cancer Wisconsin con la partición 70-30, y una quinta parte del
-% entrenamiento reservada como validación, se entrena con distinto número de
-% neuronas ocultas durante muchas épocas y sin parada temprana, para ver el
-% error de entrenamiento y el de validación en la misma figura. Después se
-% repite con parada temprana por épocas sin mejora en validación, y la
-% exactitud se mide siempre sobre la prueba.
+% Breast Cancer 70-30. Sin parada temprana durante 1500 épocas y después con paciencia 50.
 
 [Xd, Dd] = load_dataset('wdbc', cfg_base);
 [Xtr, Dtr, Xva, Dva, Xte, Dte] = split_train_val_test(Xd, Dd, 0.7, cfg_base);
@@ -508,11 +394,11 @@ for h = 1:n_sobre
     if h == 1, legend('entrenamiento', 'validación', 'mínimo de validación', 'Location', 'northeast'); end
 end
 %% Funciones locales
-% MATLAB permite definir funciones locales al final de un script. No cambie
-% los nombres ni los argumentos de entrada/salida.
 
 function net = init_mlp(cfg)
-    % Inicializa pesos y sesgos de todas las capas en la estructura `net`.
+    % Pesos aleatorios pequeños para que las neuronas de una capa no arranquen
+    % iguales y la sigmoide no sature. Sesgos en cero. Los incrementos anteriores
+    % en cero porque el momento aún no tiene nada que sumar.
     net = struct();
     net.W = {};
     net.b = {};
@@ -529,7 +415,8 @@ function net = init_mlp(cfg)
 end
 
 function [y, cache] = forward_mlp(net, x, cfg)
-    % Propaga la entrada x a través de todas las capas de la red.
+    % net_k = W_k a_(k-1) + b_k y a_k = f(net_k), capa por capa. Se guardan net y a
+    % de cada capa porque backward_mlp los necesita.
     a{1} = x;
     L = numel(net.W);
     for k = 1:L
@@ -551,8 +438,8 @@ function tipo = hidden_act(cfg, k)
 end
 
 function net = backward_mlp(net, cache, x, d, cfg)
-    % Calcula los delta de cada capa y actualiza los pesos (ver fórmulas
-    % de la Sección 1 de este mismo script).
+    % delta de salida (d - y) f'(net), delta oculta (W' delta_siguiente) f'(net),
+    % y despues dW = eta delta a' + beta dW_anterior, en pesos y sesgos.
     L = numel(net.W);
     delta = cell(1, L);
     delta{L} = (d - cache.a{L+1}) .* activation_deriv(cache.netv{L}, cfg.act_output);
@@ -585,7 +472,7 @@ function y = activation(net_in, tipo)
 end
 
 function dy = activation_deriv(net_in, tipo)
-    % Derivada de la función de activación, evaluada en net_in.
+    % Derivadas evaluadas en net_in. La ReLU toma derivada cero en net = 0.
     switch tipo
         case 'sigmoid'
             f = 1 ./ (1 + exp(-net_in));
