@@ -1,9 +1,10 @@
 function [net, hist] = train_mlp(Xtr, Dtr, Xva, Dva, cfg)
-    % Mismo ciclo de la sección 8, con error de validación por época y parada
+    % Ciclo de la sección 8 con el error medido al final de cada época sobre todo
+    % el conjunto, error de validación por época y parada
     % temprana cuando la validación lleva cfg.patience épocas sin mejorar.
     % Sin conjunto de validación la paciencia vigila el error de entrenamiento.
     if iscell(cfg.act_hidden)
-        assert(numel(cfg.act_hidden) == numel(cfg.hidden_layers), 'act_hidden debe tener una activación por capa oculta');
+        assert(numel(cfg.act_hidden) == numel(cfg.hidden_layers), 'act_hidden necesita una activación por capa');
     end
     rng(cfg.seed);
     net = init_mlp(cfg);
@@ -27,8 +28,8 @@ function [net, hist] = train_mlp(Xtr, Dtr, Xva, Dva, cfg)
             end
         end
     end
-    hist.convergio = hist.train(epoch) <= cfg.target_error;
-    if cfg.patience > 0 && ~hist.convergio
+    hist.converged = hist.train(epoch) <= cfg.target_error;
+    if cfg.patience > 0 && ~hist.converged
         net = mejor_net;
     else
         mejor_epoca = epoch;
