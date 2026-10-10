@@ -1,98 +1,241 @@
 \documentclass[11pt,letterpaper]{article}
-\input{glyphtounicode}
-\pdfgentounicode=1
-\usepackage[utf8]{inputenc}
-\usepackage[T1]{fontenc}
-\usepackage{lmodern}
-\usepackage[spanish,es-noindentfirst,es-tabla]{babel}
-\decimalpoint
-\usepackage[margin=2.3cm]{geometry}
-\usepackage{graphicx}
-\usepackage{booktabs}
-\usepackage{siunitx}
-\sisetup{output-decimal-marker={.}, group-digits=false}
-\usepackage{amsmath}
-\usepackage{caption}
-\usepackage{fancyhdr}
-\usepackage[hidelinks]{hyperref}
+\input{preambulo_a3}
+\input{cifras}
 \hypersetup{pdftitle={Actividad 3. Taller resuelto de aprendizaje profundo}, pdfauthor={Sergio Santiago Duarte Rojas}}
-\graphicspath{{figuras/}}
-\captionsetup{font=small,labelfont=bf}
-\pagestyle{fancy}
-\fancyhf{}
 \lhead{Actividad 3, taller resuelto}
-\rhead{Inteligencia Computacional Aplicada}
-\cfoot{\thepage}
 
 \begin{document}
 
-\begin{center}
-    {\Large\bfseries Taller resuelto de aprendizaje profundo\\[2pt] Informe de ejecución}\\[8pt]
-    Sergio Santiago Duarte Rojas, código 20261595002\\
-    Inteligencia Computacional Aplicada, docente Cesar Andrey Perdomo Charry\\
-    Universidad Distrital Francisco José de Caldas, \today
-\end{center}
+\begin{titlepage}
+    \centering
+    \vspace*{2cm}
+    {\LARGE \bfseries Actividad 3. Taller resuelto\\[4pt] Reconocimiento de dígitos manuscritos con redes profundas\par}
+    \vspace{0.5cm}
+    {\large Informe de ejecución\par}
+    \vspace{2cm}
+    \begin{tabular}{ll}
+        \textbf{Asignatura:} & \nombreAsignatura \\
+        \textbf{Docente:}    & \nombreDocente \\
+        \textbf{Estudiante:} & \nombreEstudiante \\
+        \textbf{Código:}     & \codigoEstudiante \\
+        \textbf{Fecha:}      & \today \\
+    \end{tabular}
+    \vfill
+    Universidad Distrital Francisco José de Caldas
+\end{titlepage}
 
-\section{Ejecución}
+\tableofcontents
+\newpage
 
-Se ejecutó completo el cuaderno \texttt{Taller - DeepLearning PYHTON.ipynb} con PyTorch 2.12 sobre una GPU NVIDIA, semilla 42. MNIST se descargó sin recurrir al conjunto de respaldo y quedó partido en 55\,000 imágenes de entrenamiento, 5\,000 de validación y 10\,000 de prueba, normalizadas con la media (0.1307) y la desviación (0.3081) del entrenamiento. Las clases están casi balanceadas, entre 4\,946 y 6\,188 imágenes. Todos los puntos de control dieron \texttt{[OK]}. La Tabla~\ref{tab:resumen} resume los resultados.
+\section{Introducción}
+
+El Taller 2 cerró con un perceptrón multicapa entrenado por retropropagación sobre vectores de pocas entradas. Este taller lleva la misma idea a imágenes. El cuaderno del docente entrena dos redes sobre MNIST, 70\,000 dígitos manuscritos de 28 por 28 píxeles, primero un perceptrón multicapa que trata la imagen como un vector de 784 números y después una red convolucional que la trata como una imagen. El objetivo del informe es documentar la ejecución, confirmar los puntos de control y explicar lo que muestran las curvas, la matriz de confusión y el experimento con la tasa de aprendizaje.
+
+El cuaderno se ejecutó completo y sin modificaciones, con PyTorch 2.12 sobre una GPU NVIDIA y semilla 42. MNIST se descargó con torchvision, sin recurrir al conjunto de respaldo que el cuaderno trae para cuando no hay conexión. Los siete puntos de control dieron \texttt{[OK]}.
+
+\section{Marco teórico (resumen)}
+
+\subsection{De vectores a imágenes}
+
+El MLP del Taller 2 recibe un vector y lo pasa por capas densas, en las que cada neurona se conecta con todas las entradas. Aplicado a una imagen, eso obliga a aplanarla, con lo que se pierde la noción de vecindad entre píxeles y el número de pesos crece con el tamaño de la imagen. Una capa convolucional desliza un filtro pequeño, aquí de 3 por 3, por toda la imagen y calcula en cada posición una suma ponderada con los mismos pesos. Un filtro aprende entonces un rasgo local, un borde o un trazo, y lo detecta en cualquier posición. Una capa con $c_{in}$ canales de entrada, $c_{out}$ filtros y tamaño $k$ tiene $c_{out}(c_{in}k^2+1)$ parámetros, sin importar el tamaño de la imagen. El \emph{max pooling} toma el máximo de cada ventana de 2 por 2 y reduce la imagen a la mitad por lado, lo que da tolerancia a desplazamientos pequeños y abarata las capas siguientes.
+
+\subsection{Pérdida y optimizador}
+
+Con diez clases la salida de la red son diez \emph{logits} $z_k$. La función softmax los convierte en probabilidades, $p_k = e^{z_k}/\sum_j e^{z_j}$, y la pérdida es la entropía cruzada $L = -\ln p_y$, donde $y$ es la clase correcta. Es la misma cadena de retropropagación del Taller 2 con otra función de activación en la salida y otra medida de error, y tiene la propiedad de que su valor para una red que reparte la probabilidad por igual entre diez clases es $\ln 10 = 2.303$, una referencia útil para leer las tablas. Adam es un descenso de gradiente que adapta el paso de cada peso según el historial de sus gradientes, con lo que una misma tasa de aprendizaje sirve para pesos de escalas muy distintas. El \emph{dropout} apaga al azar una fracción de las activaciones en cada paso de entrenamiento y se desactiva al evaluar, lo que obliga a la red a no depender de unas pocas características.
+
+\section{Metodología}
+
+\subsection{Datos y particiones}
+
+MNIST trae 60\,000 imágenes de entrenamiento y 10\,000 de prueba. El cuaderno aparta \nVal{} imágenes del entrenamiento como validación, deja \nTr{} para entrenar y reserva la prueba para una sola evaluación final. Los píxeles se llevan de 0 a 255 al rango 0 a 1 y después se normalizan con la media (\media) y la desviación (\desv) calculadas solo sobre el entrenamiento. Las clases están casi balanceadas, entre \conteoMin{} y \conteoMax{} imágenes por dígito. La Figura~\ref{fig:muestras} muestra las primeras dieciséis.
+
+\begin{figure}[!htb]
+    \centering
+    \includegraphics[width=13cm]{fig01_muestras.png}
+    \caption{Primeras dieciséis imágenes de entrenamiento con su etiqueta}
+    \label{fig:muestras}
+\end{figure}
+
+\subsection{Arquitecturas}
+
+La Tabla~\ref{tab:arq} y la Figura~\ref{fig:arq} describen las dos redes. El MLP aplana la imagen y tiene una capa oculta de 128 neuronas con ReLU, \paramMlp{} parámetros. La CNN tiene dos bloques de convolución 3 por 3 seguida de ReLU y \emph{max pooling}, un \emph{dropout} de 0.25 y una capa lineal, \paramCnn{} parámetros, \razonParam{} veces menos que el MLP. Ambas devuelven diez \emph{logits} y la softmax va dentro de la pérdida.
 
 \begin{table}[!htb]
     \centering
-    \caption{Resultados tras 3 épocas con Adam y tasa $10^{-3}$, exactitud en porcentaje}
-    \label{tab:resumen}
-    \begin{tabular}{l S[table-format=6.0] S[table-format=2.2] S[table-format=2.2] S[table-format=2.2]}
+    \caption{Capas de las dos redes. En la CNN la salida no usa relleno, así que cada convolución quita dos píxeles por lado}
+    \label{tab:arq}
+    \footnotesize
+    \begin{tabular}{llr}
         \toprule
-        \textbf{Modelo} & {\textbf{Parámetros}} & {\textbf{Entrenamiento}} & {\textbf{Validación}} & {\textbf{Prueba}} \\
+        \textbf{Red} & \textbf{Capa} & \textbf{Parámetros} \\
         \midrule
-        MLP 784-128-10 & 101770 & 97.49 & 97.02 & {--} \\
-        CNN de dos bloques & 12810 & 98.09 & 98.64 & 98.70 \\
+        \multirow{3}{*}{MLP} & Aplanar, 784 & 0 \\
+                             & Lineal 784 a 128 con ReLU & 100\,480 \\
+                             & Lineal 128 a 10 & 1\,290 \\
+        \midrule
+        \multirow{6}{*}{CNN} & Convolución 3 por 3, 16 filtros, ReLU, salida 16 por 26 por 26 & 160 \\
+                             & Max pooling 2 por 2, salida 16 por 13 por 13 & 0 \\
+                             & Convolución 3 por 3, 32 filtros, ReLU, salida 32 por 11 por 11 & 4\,640 \\
+                             & Max pooling 2 por 2, salida 32 por 5 por 5 & 0 \\
+                             & Aplanar, 800, y dropout 0.25 & 0 \\
+                             & Lineal 800 a 10 & 8\,010 \\
         \bottomrule
     \end{tabular}
 \end{table}
 
-\section{Análisis}
+\begin{figure}[!htb]
+    \centering
+    \begin{tikzpicture}[node distance=0.35cm]
+        \node[capa, fill=cEntrada] (e) {Entrada\\1 por 28 por 28};
+        \node[capa, fill=cDensa, right=of e] (f) {Aplanar\\784};
+        \node[capa, fill=cDensa, right=of f] (h) {Lineal 128\\ReLU};
+        \node[capa, fill=cDensa, right=of h] (o) {Lineal 10\\logits};
+        \draw[flecha] (e) -- (f); \draw[flecha] (f) -- (h); \draw[flecha] (h) -- (o);
+        \node[tensor, above=0.1cm of f] {MLP, \paramMlp{} parámetros};
+        %
+        \node[capa, fill=cEntrada, below=1.1cm of e] (e2) {Entrada\\1 por 28 por 28};
+        \node[capa, fill=cConv, right=of e2] (c1) {Conv 3 por 3\\16 filtros, ReLU};
+        \node[capa, fill=cPool, right=of c1] (p1) {Max pooling\\2 por 2};
+        \node[capa, fill=cConv, right=of p1] (c2) {Conv 3 por 3\\32 filtros, ReLU};
+        \node[capa, fill=cPool, right=of c2] (p2) {Max pooling\\2 por 2};
+        \node[capa, fill=cReg, below=0.45cm of p2] (dr) {Aplanar 800\\Dropout 0.25};
+        \node[capa, fill=cDensa, left=of dr] (o2) {Lineal 10\\logits};
+        \draw[flecha] (e2) -- (c1); \draw[flecha] (c1) -- (p1); \draw[flecha] (p1) -- (c2); \draw[flecha] (c2) -- (p2);
+        \draw[flecha] (p2) -- (dr); \draw[flecha] (dr) -- (o2);
+        \node[tensor, above=0.02cm of c1] {16 por 26 por 26};
+        \node[tensor, above=0.02cm of p1] {16 por 13 por 13};
+        \node[tensor, above=0.02cm of c2] {32 por 11 por 11};
+        \node[tensor, above=0.02cm of p2] {32 por 5 por 5};
+        \node[tensor, below=0.02cm of e2] {CNN, \paramCnn{} parámetros};
+    \end{tikzpicture}
+    \caption{Las dos redes del cuaderno. Encima de cada bloque de la CNN va el tamaño de su salida, canales por alto por ancho}
+    \label{fig:arq}
+\end{figure}
 
-\textbf{MLP frente a CNN.} La CNN supera al MLP en 1.6 puntos de validación con ocho veces menos parámetros. La convolución reutiliza los mismos nueve pesos en toda la imagen y aprovecha que los píxeles vecinos están relacionados, algo que el MLP pierde al aplanar la imagen en 784 valores. Las cifras de ambos modelos quedan dentro de los rangos orientativos del cuaderno (96 a 98 \% y 98.5 a 99.2 \%).
+\subsection{Entrenamiento y evaluación}
 
-\textbf{Curvas de aprendizaje.} En la CNN la exactitud de validación queda por encima de la de entrenamiento en las tres épocas (Figura~\ref{fig:curvas}). No es un error. Durante el entrenamiento el \emph{dropout} apaga el 25 \% de las características y en la evaluación no, así que la red se mide en condiciones más fáciles. El MLP, sin \emph{dropout}, ya muestra en la tercera época una pequeña brecha a favor del entrenamiento (97.49 frente a 97.02 \%), el primer indicio de sobreajuste.
+Las dos redes se entrenan 3 épocas con Adam, tasa $10^{-3}$, lotes de 64 imágenes en orden aleatorio y entropía cruzada. Al final de cada época se mide la pérdida y la exactitud sobre entrenamiento y validación. La prueba se usa una sola vez con la CNN. Después se repite el entrenamiento de la CNN durante 2 épocas con tasas de $10^{-1}$, $10^{-3}$ y $10^{-5}$, y por último se guardan los pesos en disco y se recargan para comprobar que la exactitud se conserva.
+
+\section{Resultados}
+
+\subsection{Curvas de aprendizaje}
+
+La Tabla~\ref{tab:epocas} y la Figura~\ref{fig:curvas} recogen las tres épocas de cada red. La CNN termina con \vaccCnnC{} por ciento de validación frente a \vaccMlpC{} del MLP, \difVal{} puntos más, y su pérdida de validación es la mitad. Las dos cifras quedan dentro de los rangos orientativos del cuaderno, 96 a 98 por ciento para el MLP y 98.5 a 99.2 para la CNN.
+
+\begin{table}[!htb]
+    \centering
+    \caption{Pérdida y exactitud por época. La exactitud está en porcentaje}
+    \label{tab:epocas}
+    \footnotesize
+    \begin{tabular}{l c S[table-format=1.4] S[table-format=2.2] S[table-format=1.4] S[table-format=2.2]}
+        \toprule
+         & & \multicolumn{2}{c}{\textbf{Entrenamiento}} & \multicolumn{2}{c}{\textbf{Validación}} \\
+        \cmidrule(lr){3-4} \cmidrule(lr){5-6}
+        \textbf{Red} & \textbf{Época} & {\textbf{Pérdida}} & {\textbf{Exactitud}} & {\textbf{Pérdida}} & {\textbf{Exactitud}} \\
+        \midrule
+        \multirow{3}{*}{MLP} & 1 & \lossMlpA & \accMlpA & \vlossMlpA & \vaccMlpA \\
+                             & 2 & \lossMlpB & \accMlpB & \vlossMlpB & \vaccMlpB \\
+                             & 3 & \lossMlpC & \accMlpC & \vlossMlpC & \vaccMlpC \\
+        \midrule
+        \multirow{3}{*}{CNN} & 1 & \lossCnnA & \accCnnA & \vlossCnnA & \vaccCnnA \\
+                             & 2 & \lossCnnB & \accCnnB & \vlossCnnB & \vaccCnnB \\
+                             & 3 & \lossCnnC & \accCnnC & \vlossCnnC & \vaccCnnC \\
+        \bottomrule
+    \end{tabular}
+\end{table}
 
 \begin{figure}[!htb]
     \centering
-    \includegraphics[width=0.92\textwidth]{celda11_2.png}\\[2pt]
-    \includegraphics[width=0.92\textwidth]{celda14_3.png}
-    \caption{Pérdida y exactitud por época del MLP (arriba) y de la CNN (abajo)}
+    \includegraphics[width=15cm]{fig02_curvas.png}
+    \caption{Pérdida y exactitud por época de las dos redes. Línea continua entrenamiento, discontinua validación}
     \label{fig:curvas}
 \end{figure}
 
-\textbf{Errores en prueba.} La CNN falla 130 de las 10\,000 imágenes de prueba, con pérdida 0.0373. Los pares más confundidos son 4 tomado por 9 (11 veces), 7 por 2 (8) y 2 por 7 (7), como muestra la Figura~\ref{fig:confusion}. Son dígitos que difieren en un solo trazo, un 4 con la parte superior cerrada se parece a un 9 y un 7 con trazo curvo o barra inferior se parece a un 2. Los diez primeros errores incluyen además dígitos que una persona también dudaría en clasificar.
+\subsection{Evaluación en prueba}
+
+La CNN acierta \accTe{} por ciento de las \nTe{} imágenes de prueba, \erroresTe{} errores, con pérdida \perdTe. La Figura~\ref{fig:confusion} muestra la matriz de confusión y la Tabla~\ref{tab:clases} el acierto por clase. Los pares más confundidos son \parAA{} tomado por \parAB{} (\parAN{} veces), \parBA{} por \parBB{} (\parBN) y \parCA{} por \parCB{} (\parCN). La clase con más acierto es el \claseMejor{} (\accMejor{} por ciento) y la de menos el \clasePeor{} (\accPeor). La Figura~\ref{fig:errores} muestra los diez primeros errores.
 
 \begin{figure}[!htb]
     \centering
-    \includegraphics[width=0.48\textwidth]{celda18_4.png}
-    \caption{Matriz de confusión de la CNN sobre las 10\,000 imágenes de prueba}
+    \includegraphics[width=9cm]{fig03_confusion.png}
+    \caption{Matriz de confusión de la CNN sobre las \nTe{} imágenes de prueba}
     \label{fig:confusion}
 \end{figure}
 
-\textbf{Tasa de aprendizaje.} La Tabla~\ref{tab:lr} confirma la predicción del cuaderno. Con $10^{-1}$ la red diverge y queda en el 10 \% de exactitud, el azar entre diez clases, con una pérdida de 2.30 que es justo $\ln 10$, es decir que asigna la misma probabilidad a todas las clases. Con $10^{-5}$ la pérdida baja de 1.91 a 1.18 entre las dos épocas, así que la red sí aprende, pero demasiado despacio para dos épocas. Con $10^{-3}$, el valor habitual para Adam, alcanza el 98.0 \%.
+\begin{table}[!htb]
+    \centering
+    \caption{Acierto por clase en prueba. El acierto es la fracción de imágenes de la clase bien clasificadas y la precisión la fracción de predicciones de esa clase que eran correctas}
+    \label{tab:clases}
+    \footnotesize
+    \begin{tabular}{l S[table-format=4.0] S[table-format=4.0] S[table-format=2.1] S[table-format=2.1]}
+        \toprule
+        \textbf{Dígito} & {\textbf{Imágenes}} & {\textbf{Aciertos}} & {\textbf{Acierto (\%)}} & {\textbf{Precisión (\%)}} \\
+        \midrule
+\filasPorClase
+        \bottomrule
+    \end{tabular}
+\end{table}
+
+\begin{figure}[!htb]
+    \centering
+    \includegraphics[width=13cm]{fig04_errores.png}
+    \caption{Los diez primeros errores de la CNN en prueba}
+    \label{fig:errores}
+\end{figure}
+
+\subsection{Tasa de aprendizaje}
+
+La Tabla~\ref{tab:lr} resume el experimento de 2 épocas. Con $10^{-1}$ la red queda en \lrAAcc{} por ciento, el azar entre diez clases, y su pérdida de \lrALoss{} coincide con $\ln 10$. Con $10^{-5}$ llega a \lrCAcc{} por ciento con una pérdida todavía alta. Con $10^{-3}$ alcanza \lrBAcc{} por ciento.
 
 \begin{table}[!htb]
     \centering
     \caption{CNN tras 2 épocas con tres tasas de aprendizaje}
     \label{tab:lr}
+    \footnotesize
     \begin{tabular}{S[table-format=1.0e-1] S[table-format=2.2] S[table-format=1.4]}
         \toprule
-        {\textbf{Tasa}} & {\textbf{Exact. valid. (\%)}} & {\textbf{Pérdida valid.}} \\
+        {\textbf{Tasa}} & {\textbf{Exactitud de validación (\%)}} & {\textbf{Pérdida de validación}} \\
         \midrule
-        1e-1 & 10.42 & 2.3045 \\
-        1e-3 & 98.02 & 0.0586 \\
-        1e-5 & 81.22 & 1.1829 \\
+        1e-1 & \lrAAcc & \lrALoss \\
+        1e-3 & \lrBAcc & \lrBLoss \\
+        1e-5 & \lrCAcc & \lrCLoss \\
         \bottomrule
     \end{tabular}
 \end{table}
 
-\textbf{Modelo guardado.} Los pesos se guardaron en \texttt{cnn\_digitos.pt} y el modelo recargado dio la misma exactitud de prueba.
+\subsection{Modelo guardado}
 
-\textbf{Reproducibilidad.} En GPU algunas operaciones no son deterministas, así que la CNN cambia en la segunda o tercera cifra decimal entre ejecuciones aun con la misma semilla. En una ejecución previa la exactitud de prueba fue 98.62 \%. El MLP dio cifras idénticas.
+Los pesos de la CNN se guardaron en \texttt{cnn\_digitos.pt}, se cargaron en una red nueva y la exactitud de prueba fue la misma, de modo que el modelo se puede reutilizar sin entrenarlo otra vez.
+
+\section{Análisis}
+
+\textbf{Por qué gana la CNN con menos parámetros.} El MLP gasta 100\,480 de sus \paramMlp{} parámetros en conectar cada píxel con cada neurona oculta, y cada uno de esos pesos solo sirve para una posición de la imagen. La CNN tiene 160 parámetros en su primera capa porque sus 16 filtros se reutilizan en las 676 posiciones de la imagen, y el \emph{pooling} hace que un trazo desplazado un píxel active casi lo mismo. Con \razonParam{} veces menos parámetros mejora la validación en \difVal{} puntos y reduce la pérdida a la mitad.
+
+\textbf{Qué dicen las curvas.} En la CNN la validación va por encima del entrenamiento en las tres épocas. No es un error de medición. Durante el entrenamiento el \emph{dropout} apaga el 25 por ciento de las 800 características que entran a la capa lineal, y en la evaluación trabaja con todas, así que la red se mide en condiciones más fáciles de las que entrena. El MLP no tiene \emph{dropout} y en la tercera época su entrenamiento ya supera a la validación por medio punto, el primer indicio del sobreajuste que el Taller 2 mostró en Breast Cancer. Tres épocas son pocas para que crezca, pero la dirección es la misma.
+
+\textbf{Qué dígitos se confunden.} Los tres pares más frecuentes son 4 con 9 y 2 con 7 en los dos sentidos. Son dígitos que difieren en un solo trazo, un 4 con la parte superior cerrada se convierte en un 9 y un 7 con el trazo horizontal curvo se parece a un 2. Los errores de la Figura~\ref{fig:errores} incluyen varios dígitos que una persona también dudaría en clasificar. Que el error se concentre en pares concretos y no se reparta por toda la matriz indica que la red aprendió la forma de cada dígito y falla donde la forma es ambigua.
+
+\textbf{Qué muestra la tasa de aprendizaje.} Con $10^{-1}$ Adam da pasos tan grandes que la red nunca baja de la pérdida inicial, y su valor de $\ln 10$ dice que termina asignando la misma probabilidad a las diez clases. Con $10^{-5}$ la pérdida sí baja época a época, así que la red aprende, pero necesitaría muchas más épocas. El valor intermedio de $10^{-3}$ repite la lección del Taller 2 con la tasa del MLP, demasiado grande oscila o diverge y demasiado pequeña no llega a tiempo.
+
+\section{Conclusiones}
+
+La red convolucional del cuaderno alcanza \accTe{} por ciento en prueba con \paramCnn{} parámetros, y supera al MLP de \paramMlp{} parámetros en \difVal{} puntos de validación, porque reutiliza cada filtro en toda la imagen y tolera desplazamientos pequeños.
+
+Las curvas de la CNN con validación por encima del entrenamiento se explican por el \emph{dropout} y no por un problema del entrenamiento, y las del MLP sin \emph{dropout} ya insinúan sobreajuste en la tercera época.
+
+Los \erroresTe{} errores de prueba se concentran en los pares 4 y 9 y 2 y 7, dígitos que difieren en un trazo, con un acierto por clase entre \accPeor{} y \accMejor{} por ciento.
+
+La tasa de aprendizaje decide entre no aprender, aprender despacio y aprender bien. Con Adam el valor de $10^{-3}$ es el que funciona y $10^{-1}$ deja la red en el azar.
+
+Todos los puntos de control se cumplieron y el modelo guardado reproduce la exactitud de prueba al recargarse. En GPU algunas operaciones no son deterministas, así que la CNN cambia en la segunda cifra decimal entre ejecuciones con la misma semilla, mientras que el MLP repite sus cifras.
+
+\section{Referencias}
+\begin{itemize}
+    \item LeCun, Y., Bottou, L., Bengio, Y., \& Haffner, P. (1998). Gradient-based learning applied to document recognition. \textit{Proceedings of the IEEE}, 86(11), 2278--2324.
+    \item Kingma, D. P., \& Ba, J. (2015). Adam: A method for stochastic optimization. \textit{International Conference on Learning Representations}.
+    \item Srivastava, N., Hinton, G., Krizhevsky, A., Sutskever, I., \& Salakhutdinov, R. (2014). Dropout: A simple way to prevent neural networks from overfitting. \textit{Journal of Machine Learning Research}, 15, 1929--1958.
+    \item Deng, L. (2012). The MNIST database of handwritten digit images for machine learning research. \textit{IEEE Signal Processing Magazine}, 29(6), 141--142.
+    \item Paszke, A. et al. (2019). PyTorch: An imperative style, high-performance deep learning library. \textit{Advances in Neural Information Processing Systems}, 32.
+\end{itemize}
 
 \end{document}
