@@ -106,3 +106,15 @@ Taller 2/informe/*.fls
 Taller 2/informe/*.fdb_latexmk
 Taller 2/informe/*.synctex.gz
 Taller 2/informe/latexmk.log
+
+# Actividad 3. Material del profesor, datos descargados y respuestas del cuestionario
+Actividad 3/1 Quiz videos/
+Actividad 3/**/datos/
+Actividad 3/**/*.pt
+Actividad 3/3 Taller resuelto/Taller - DeepLearning PYHTON.ipynb
+Actividad 3/4 Taller propuesto/Taller - DeepLearning PYHTON (PROPUESTO).ipynb
+Actividad 3/**/informe/*.aux
+Actividad 3/**/informe/*.log
+Actividad 3/**/informe/*.out
+Actividad 3/**/informe/*.fls
+Actividad 3/**/informe/*.fdb_latexmk

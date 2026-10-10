@@ -1,0 +1,123 @@
+\documentclass[11pt,letterpaper]{article}
+\input{glyphtounicode}
+\pdfgentounicode=1
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage[spanish,es-noindentfirst,es-tabla]{babel}
+\decimalpoint
+\usepackage[margin=2.3cm]{geometry}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{siunitx}
+\sisetup{output-decimal-marker={.}, group-digits=false}
+\usepackage{amsmath}
+\usepackage{caption}
+\usepackage{listings}
+\usepackage{xcolor}
+\usepackage{fancyhdr}
+\usepackage[hidelinks]{hyperref}
+\hypersetup{pdftitle={Actividad 3. Taller propuesto de aprendizaje profundo con KMNIST}, pdfauthor={Sergio Santiago Duarte Rojas}}
+\renewcommand{\lstlistingname}{Código}
+\lstset{language=Python, basicstyle=\ttfamily\footnotesize, keywordstyle=\color{blue!60!black}\bfseries,
+    commentstyle=\color{gray}, frame=single, backgroundcolor=\color{gray!5}, columns=fullflexible,
+    keepspaces=true, breaklines=true, showstringspaces=false,
+    literate={á}{{\'a}}1 {é}{{\'e}}1 {í}{{\'i}}1 {ó}{{\'o}}1 {ú}{{\'u}}1 {ñ}{{\~n}}1}
+\graphicspath{{figuras/}}
+\captionsetup{font=small,labelfont=bf}
+\pagestyle{fancy}
+\fancyhf{}
+\lhead{Actividad 3, taller propuesto}
+\rhead{Inteligencia Computacional Aplicada}
+\cfoot{\thepage}
+
+\begin{document}
+
+\begin{center}
+    {\Large\bfseries Taller propuesto de aprendizaje profundo con KMNIST\\[2pt] Informe de ejecución}\\[8pt]
+    Sergio Santiago Duarte Rojas, código 20261595002\\
+    Inteligencia Computacional Aplicada, docente Cesar Andrey Perdomo Charry\\
+    Universidad Distrital Francisco José de Caldas, \today
+\end{center}
+
+\section{Ejecución}
+
+Se completaron los cinco bloques \texttt{TODO} del cuaderno propuesto en Python y se ejecutó completo con KMNIST, caracteres manuscritos japoneses \emph{kuzushiji} de diez clases, 5 épocas, PyTorch 2.12 en GPU y semilla 42. KMNIST se usó real, sin el conjunto de respaldo, con 55\,000 imágenes de entrenamiento, 5\,000 de validación y 10\,000 de prueba. Las diez verificaciones automáticas dieron \texttt{[OK]}. La celda opcional que exporta imágenes para MATLAB no se ejecutó porque el trabajo se hizo en Python.
+
+Se agregaron dos celdas. Una muestra ejemplos del par más confundido junto a ejemplos bien clasificados de cada clase, para responder el paso 4. La otra repite con tres semillas la comparación con y sin aumento de datos, como recomienda el aviso del propio cuaderno.
+
+\section{Resultados por paso}
+
+\textbf{TODO 1, balance de clases.} Las diez clases tienen entre 5\,450 y 5\,533 imágenes de entrenamiento, así que el conjunto está balanceado y la exactitud global no esconde una clase minoritaria.
+
+\textbf{TODO 2, arquitectura.} La red tiene dos bloques convolucionales y 50\,378 parámetros, una cuarta parte del límite de 200\,000 (Código~\ref{cod:red}). Cada componente tiene una razón.
+La convolución 3×3 detecta trazos locales con los mismos pesos en toda la imagen, y el relleno de 1 píxel conserva el tamaño para que el \emph{pooling} decida la reducción.
+La normalización por lotes reescala las activaciones de cada canal en cada lote, lo que estabiliza el entrenamiento con la tasa de $10^{-3}$ desde la primera época.
+La ReLU aporta la no linealidad.
+El \emph{max pooling} 2×2 reduce la imagen de 28 a 14 y luego a 7 píxeles por lado y da tolerancia a desplazamientos pequeños.
+El \emph{dropout} de 0.3 va antes de la capa lineal porque esa capa concentra el 62 \% de los parámetros (31\,370), y es donde más riesgo hay de memorizar.
+
+\begin{lstlisting}[caption={Arquitectura del TODO 2}, label=cod:red]
+self.bloque1 = nn.Sequential(nn.Conv2d(1, 32, 3, padding=1), nn.BatchNorm2d(32), nn.ReLU(), nn.MaxPool2d(2))
+self.bloque2 = nn.Sequential(nn.Conv2d(32, 64, 3, padding=1), nn.BatchNorm2d(64), nn.ReLU(), nn.MaxPool2d(2))
+self.drop = nn.Dropout(0.3)
+self.fc = nn.Linear(64 * 7 * 7, 10)          # forward: fc(drop(bloque2(bloque1(x)).flatten(1)))
+\end{lstlisting}
+
+\textbf{TODO 3, entrenamiento.} El bucle sigue el orden pedido, borrar gradientes, propagar, calcular la entropía cruzada, retropropagar y actualizar con Adam. La pérdida de entrenamiento baja de 0.306 a 0.080 y la exactitud de validación llega a 97.40 \% (Figura~\ref{fig:curvas}). Las curvas de entrenamiento y validación terminan juntas (97.56 y 97.40 \%), sin señal de sobreajuste en 5 épocas.
+
+\begin{figure}[!htb]
+    \centering
+    \includegraphics[width=0.92\textwidth]{celda14_2.png}
+    \caption{Pérdida y exactitud por época de la red propia en KMNIST}
+    \label{fig:curvas}
+\end{figure}
+
+\textbf{TODO 4, prueba y errores.} La exactitud de prueba es 93.25 \%, cuatro puntos por debajo de la de validación. Como la validación es una muestra al azar de las imágenes de entrenamiento y las dos curvas coinciden, la brecha no es sobreajuste, sino que sugiere que las imágenes de prueba difieren de las de entrenamiento, algo que una validación tomada del mismo conjunto no puede detectar.
+
+El par más confundido es \emph{su} tomado por \emph{tsu}, 53 de los 1\,000 \emph{su} de prueba (Figura~\ref{fig:confusion}). La Figura~\ref{fig:ejemplos} explica por qué. La clase \emph{su} reúne varias formas antiguas del mismo carácter muy distintas entre sí, y las que la red falla tienen trazos verticales paralelos con un lazo, muy parecidos a la variante de \emph{tsu} hecha de líneas verticales. La matriz muestra además que la columna \emph{na} recibe errores de casi todas las clases, de modo que la red usa \emph{na} como respuesta por defecto ante formas que no reconoce bien.
+
+\begin{figure}[!htb]
+    \centering
+    \begin{minipage}[t]{0.47\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{celda16_3.png}
+        \caption{Matriz de confusión en prueba}
+        \label{fig:confusion}
+    \end{minipage}\hfill
+    \begin{minipage}[t]{0.5\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{celda17_4.png}
+        \caption{Errores \emph{su} tomado por \emph{tsu} (arriba) y ejemplos bien clasificados de cada clase}
+        \label{fig:ejemplos}
+    \end{minipage}
+\end{figure}
+
+\textbf{TODO 5, aumento de datos.} Cada lote se desplaza al azar hasta 2 píxeles en cada eje con \texttt{torch.roll} (Código~\ref{cod:aumento}). La Tabla~\ref{tab:aumento} resume tres semillas con 5 épocas cada una.
+
+\begin{lstlisting}[caption={Aumento por desplazamiento del TODO 5}, label=cod:aumento]
+dy, dx = (int(v) for v in torch.randint(-max_px, max_px + 1, (2,)))
+return torch.roll(xb, shifts=(dy, dx), dims=(2, 3))
+\end{lstlisting}
+
+\begin{table}[!htb]
+    \centering
+    \caption{Exactitud en porcentaje, media y desviación de tres semillas con 5 épocas}
+    \label{tab:aumento}
+    \begin{tabular}{l c c c}
+        \toprule
+         & \textbf{Entrenamiento} & \textbf{Validación} & \textbf{Prueba} \\
+        \midrule
+        Sin aumento & $97.50 \pm 0.03$ & $97.66 \pm 0.10$ & $93.08 \pm 0.26$ \\
+        Con aumento & $95.20 \pm 0.18$ & $97.89 \pm 0.19$ & $93.07 \pm 0.33$ \\
+        \bottomrule
+    \end{tabular}
+\end{table}
+
+El aumento no mejoró la prueba, que queda igual dentro de la variación entre semillas. La validación sube 0.2 puntos, del orden de una desviación, así que tampoco es una mejora clara. Lo que sí cambia es la brecha. Sin aumento entrenamiento y validación casi coinciden, y con aumento el entrenamiento cae 2.3 puntos porque la red ve imágenes desplazadas más difíciles, de modo que la validación queda 2.7 puntos por encima. Es el efecto de un regularizador, pero en 5 épocas la red no estaba sobreajustando, así que no había brecha que cerrar. Hay además dos razones posibles para que no ayude en la prueba. El \emph{pooling} ya tolera desplazamientos pequeños, y los errores vienen de variantes de forma como \emph{su} y \emph{tsu}, no de la posición del carácter. Por otro lado, \texttt{torch.roll} hace que lo que sale por un borde entre por el opuesto, lo que puede pegar trozos de trazo en el lado contrario.
+
+\section{Conclusión}
+
+La red propia de dos bloques alcanza 97.4 \% de validación y 93.3 \% de prueba en KMNIST con 50\,378 parámetros. La diferencia entre validación y prueba no se explica por sobreajuste y apunta a que el conjunto de prueba es más difícil que una muestra del de entrenamiento. El error dominante, \emph{su} tomado por \emph{tsu}, nace de clases con varias formas de escritura, y el desplazamiento aleatorio de ±2 píxeles no lo corrige.
+
+\end{document}
