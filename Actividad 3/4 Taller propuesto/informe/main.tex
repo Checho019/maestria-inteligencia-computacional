@@ -29,19 +29,19 @@
 
 \section{Introducción}
 
-El cuaderno resuelto del docente clasifica los dígitos de MNIST con una red convolucional ya diseñada. El cuaderno propuesto pide repetir el flujo con otro conjunto de datos y completar cinco bloques \texttt{TODO}, explorar el conjunto, diseñar una red propia con ciertas restricciones, escribir el bucle de entrenamiento, evaluar en prueba y explicar el error más frecuente, e implementar un aumento de datos y medir su efecto. Se eligió KMNIST, caracteres manuscritos japoneses en escritura cursiva antigua, con el mismo formato que MNIST, imágenes de 28 por 28 en escala de grises y diez clases, pero con formas mucho más variables dentro de cada clase.
+El cuaderno resuelto del docente clasifica los dígitos de MNIST con una red convolucional ya diseñada. El cuaderno propuesto pide repetir el flujo con otro conjunto de datos y completar cinco bloques \texttt{TODO}. Esos bloques exploran el conjunto, definen una red propia con ciertas restricciones, escriben el bucle de entrenamiento, evalúan en prueba y explican el error más frecuente, e implementan un aumento de datos y miden su efecto. Se eligió KMNIST (Clanuwat et al., 2018), caracteres manuscritos japoneses en escritura cursiva antigua, con el mismo formato que MNIST, imágenes de $28\times28$ en escala de grises y diez clases, pero con formas mucho más variables dentro de cada clase.
 
-El cuaderno se ejecutó completo con PyTorch 2.12 en GPU, semilla 42 y \epocas{} épocas. KMNIST se descargó real, sin el conjunto de respaldo que el cuaderno usa cuando falla la descarga, y las diez verificaciones automáticas dieron \texttt{[OK]}. La celda opcional que exporta las imágenes a carpetas para MATLAB no se ejecutó porque el trabajo se hizo en Python. Se agregaron dos celdas de análisis, una que muestra imágenes del par de clases más confundido y otra que repite la comparación del aumento de datos con tres semillas, como recomienda el aviso del propio cuaderno.
+El cuaderno se ejecutó completo con PyTorch 2.12 (Paszke et al., 2019) en GPU, semilla 42 y \epocas{} épocas. Se descargó el conjunto real, sin el respaldo que el cuaderno usa cuando falla la descarga, y las once verificaciones automáticas dieron \texttt{[OK]}. La celda opcional que exporta las imágenes a carpetas para MATLAB no se ejecutó porque el trabajo se hizo en Python. Se agregaron tres celdas de análisis, una que muestra imágenes del par de clases más confundido, una que mide la distancia de cada imagen de validación y de prueba a su vecino más cercano en el entrenamiento, y una que repite la comparación del aumento de datos con tres semillas, como recomienda el aviso del propio cuaderno. El código de los cinco bloques está en el Anexo~\ref{anexo:codigo}.
 
 \section{Marco teórico (resumen)}
 
 \subsection{Convolución, pooling y la capa final}
 
-Una capa convolucional desliza filtros de 3 por 3 sobre la imagen y produce un mapa de activación por filtro. Con relleno de un píxel el mapa conserva el tamaño de la entrada, 28 por 28, y es el \emph{max pooling} de 2 por 2 el que reduce a 14 y luego a 7 píxeles por lado, quedándose con el valor más alto de cada ventana. Después de dos bloques quedan 64 mapas de 7 por 7, 3\,136 características, que una capa lineal convierte en diez \emph{logits}. La softmax y la entropía cruzada van dentro de la pérdida, como en el cuaderno resuelto.
+Una capa convolucional desliza filtros de $3\times3$ sobre la imagen y produce un mapa de activación por filtro. Con relleno de un píxel el mapa conserva el tamaño de la entrada, $28\times28$, y es el \emph{max pooling} de $2\times2$ el que reduce a 14 y luego a 7 píxeles por lado, quedándose con el valor más alto de cada ventana. Después de dos bloques quedan 64 mapas de $7\times7$, 3\,136 características, que una capa lineal convierte en diez \emph{logits}. La softmax y la entropía cruzada van dentro de la pérdida, y el optimizador es Adam (Kingma y Ba, 2015), como en el cuaderno resuelto.
 
 \subsection{Normalización por lotes y dropout}
 
-La normalización por lotes (\emph{batch normalization}) reescala las activaciones de cada canal para que en cada lote tengan media cero y varianza uno, y después aplica una escala y un desplazamiento que la red aprende, dos parámetros por canal. Con eso las activaciones no se desplazan de escala a medida que cambian los pesos de las capas anteriores, y el entrenamiento tolera tasas de aprendizaje mayores desde la primera época. El \emph{dropout} apaga al azar una fracción de las características durante el entrenamiento, de modo que la capa siguiente no puede depender de unas pocas, y se desactiva en la evaluación.
+La normalización por lotes (Ioffe y Szegedy, 2015) reescala las activaciones de cada canal para que en cada lote tengan media cero y varianza uno, y después aplica una escala y un desplazamiento que la red aprende, dos parámetros por canal. En evaluación no usa el lote sino promedios móviles de la media y la varianza acumulados durante el entrenamiento, y por eso importa pasar la red a modo de evaluación antes de medirla. Sus autores la explicaron como un remedio al cambio de escala de las activaciones entre capas, aunque trabajos posteriores atribuyen su efecto a que suaviza la superficie de la pérdida (Santurkar et al., 2018). En la práctica permite entrenar con tasas de aprendizaje mayores y converger en menos épocas. El \emph{dropout} (Srivastava et al., 2014) apaga al azar una fracción $p$ de las características durante el entrenamiento y reescala las restantes por $1/(1-p)$, de modo que la capa siguiente no puede depender de unas pocas, y se desactiva en la evaluación.
 
 \subsection{Aumento de datos}
 
@@ -51,7 +51,7 @@ El aumento de datos crea variantes de las imágenes de entrenamiento, aquí desp
 
 \subsection{Conjunto de datos}
 
-KMNIST tiene 60\,000 imágenes de entrenamiento y 10\,000 de prueba, con una clase por cada uno de diez caracteres del silabario \emph{hiragana} en su escritura antigua, \emph{o}, \emph{ki}, \emph{su}, \emph{tsu}, \emph{na}, \emph{ha}, \emph{ma}, \emph{ya}, \emph{re} y \emph{wo}. Cada clase agrupa varias formas de escribir el mismo carácter, porque antes de la reforma de 1900 un sonido podía escribirse con distintos caracteres de origen, y eso se ve en la Figura~\ref{fig:muestras}. El cuaderno aparta \nVal{} imágenes como validación, entrena con \nTr{} y normaliza con la media (\media) y la desviación (\desv) del entrenamiento.
+KMNIST tiene 60\,000 imágenes de entrenamiento y 10\,000 de prueba, con una clase por cada uno de diez caracteres del silabario \emph{hiragana} en su escritura antigua, \emph{o}, \emph{ki}, \emph{su}, \emph{tsu}, \emph{na}, \emph{ha}, \emph{ma}, \emph{ya}, \emph{re} y \emph{wo}. Cada clase agrupa varias formas de escribir el mismo sonido, porque antes de la reforma de 1900 un sonido podía escribirse con caracteres de distinto origen, y eso se ve en la Figura~\ref{fig:muestras}. Según sus autores las imágenes de entrenamiento y de prueba salen de los mismos 35 libros impresos. El cuaderno aparta \nVal{} imágenes como validación, entrena con \nTr{} y normaliza con la media (\media) y la desviación (\desv) del entrenamiento.
 
 \begin{figure}[!htb]
     \centering
@@ -62,7 +62,7 @@ KMNIST tiene 60\,000 imágenes de entrenamiento y 10\,000 de prueba, con una cla
 
 \subsection{Arquitectura propuesta}
 
-El enunciado pide al menos dos bloques de convolución con normalización por lotes y \emph{pooling}, \emph{dropout} antes de la capa final y menos de 200\,000 parámetros. La red de la Tabla~\ref{tab:arq} y la Figura~\ref{fig:arq} cumple con \nPar{} parámetros, una cuarta parte del límite. Cada componente tiene una razón. La convolución con relleno conserva el tamaño para que sea el \emph{pooling} quien decida la reducción. Los 32 y 64 filtros duplican los 16 y 32 de la red del cuaderno resuelto porque las formas de KMNIST son más variadas que las de los dígitos. La normalización por lotes va justo después de cada convolución y antes de la ReLU, el orden habitual, para estabilizar el entrenamiento con la tasa de $10^{-3}$. El \emph{dropout} de 0.3 protege la capa lineal, que concentra el \parFcPct{} por ciento de los parámetros (\parFc) y es donde más riesgo hay de memorizar.
+El enunciado pide al menos dos bloques de convolución con normalización por lotes y \emph{pooling}, \emph{dropout} antes de la capa final y menos de 200\,000 parámetros. La red de la Tabla~\ref{tab:arq} y la Figura~\ref{fig:arq} cumple con \nPar{} parámetros, una cuarta parte del límite. Cada componente tiene una razón. La convolución con relleno conserva el tamaño para que sea el \emph{pooling} quien decida la reducción. Los 32 y 64 filtros duplican los 16 y 32 de la red del cuaderno resuelto porque las formas de KMNIST son más variadas que las de los dígitos. La normalización por lotes va justo después de cada convolución y antes de la ReLU, el orden habitual, con la expectativa de un arranque rápido con la tasa de $10^{-3}$. El \emph{dropout} de 0.3 protege la capa lineal, que concentra el \parFcPct{} \% de los parámetros y es donde más riesgo hay de memorizar. El valor 0.3 es un punto medio entre el 0.25 del cuaderno resuelto y el 0.5 usual en capas densas, y no se ajustó.
 
 \begin{table}[!htb]
     \centering
@@ -73,11 +73,11 @@ El enunciado pide al menos dos bloques de convolución con normalización por lo
         \toprule
         \textbf{Bloque} & \textbf{Capa} & \textbf{Parámetros} \\
         \midrule
-        \multirow{2}{*}{1} & Convolución 3 por 3, 32 filtros, salida 32 por 28 por 28 & \parConv \\
-                           & Normalización por lotes, ReLU, max pooling 2 por 2, salida 32 por 14 por 14 & \parBn \\
+        \multirow{2}{*}{1} & Convolución $3\times3$, 32 filtros, salida $32\times28\times28$ & \parConv \\
+                           & Normalización por lotes, ReLU, max pooling $2\times2$, salida $32\times14\times14$ & \parBn \\
         \midrule
-        \multirow{2}{*}{2} & Convolución 3 por 3, 64 filtros, salida 64 por 14 por 14 & \parConvb \\
-                           & Normalización por lotes, ReLU, max pooling 2 por 2, salida 64 por 7 por 7 & \parBnb \\
+        \multirow{2}{*}{2} & Convolución $3\times3$, 64 filtros, salida $64\times14\times14$ & \parConvb \\
+                           & Normalización por lotes, ReLU, max pooling $2\times2$, salida $64\times7\times7$ & \parBnb \\
         \midrule
         \multirow{2}{*}{Salida} & Aplanar, 3\,136, y dropout 0.3 & 0 \\
                                 & Lineal 3\,136 a 10 & \parFc \\
@@ -90,21 +90,21 @@ El enunciado pide al menos dos bloques de convolución con normalización por lo
 \begin{figure}[!htb]
     \centering
     \begin{tikzpicture}[node distance=0.35cm]
-        \node[capa, fill=cEntrada] (e) {Entrada\\1 por 28 por 28};
-        \node[capa, fill=cConv, right=of e] (c1) {Conv 3 por 3\\32 filtros};
+        \node[capa, fill=cEntrada] (e) {Entrada\\$1\times28\times28$};
+        \node[capa, fill=cConv, right=of e] (c1) {Conv $3\times3$\\32 filtros};
         \node[capa, fill=cConv, right=of c1] (b1) {Norm. lotes\\ReLU};
-        \node[capa, fill=cPool, right=of b1] (p1) {Max pooling\\2 por 2};
-        \node[capa, fill=cConv, below=1.0cm of p1] (c2) {Conv 3 por 3\\64 filtros};
+        \node[capa, fill=cPool, right=of b1] (p1) {Max pooling\\$2\times2$};
+        \node[capa, fill=cConv, below=1.0cm of p1] (c2) {Conv $3\times3$\\64 filtros};
         \node[capa, fill=cConv, left=of c2] (b2) {Norm. lotes\\ReLU};
-        \node[capa, fill=cPool, left=of b2] (p2) {Max pooling\\2 por 2};
+        \node[capa, fill=cPool, left=of b2] (p2) {Max pooling\\$2\times2$};
         \node[capa, fill=cReg, left=of p2] (dr) {Aplanar 3\,136\\Dropout 0.3};
         \node[capa, fill=cDensa, below=0.45cm of dr] (o) {Lineal 10\\logits};
         \draw[flecha] (e) -- (c1); \draw[flecha] (c1) -- (b1); \draw[flecha] (b1) -- (p1);
         \draw[flecha] (p1) -- (c2); \draw[flecha] (c2) -- (b2); \draw[flecha] (b2) -- (p2); \draw[flecha] (p2) -- (dr); \draw[flecha] (dr) -- (o);
-        \node[tensor, above=0.02cm of c1] {32 por 28 por 28};
-        \node[tensor, above=0.02cm of p1] {32 por 14 por 14};
-        \node[tensor, below=0.02cm of c2] {64 por 14 por 14};
-        \node[tensor, below=0.02cm of p2] {64 por 7 por 7};
+        \node[tensor, above=0.02cm of c1] {$32\times28\times28$};
+        \node[tensor, above=0.02cm of p1] {$32\times14\times14$};
+        \node[tensor, below=0.02cm of c2] {$64\times14\times14$};
+        \node[tensor, below=0.02cm of p2] {$64\times7\times7$};
     \end{tikzpicture}
     \caption{Red propuesta, \nPar{} parámetros. Junto a cada bloque va el tamaño de su salida}
     \label{fig:arq}
@@ -112,21 +112,25 @@ El enunciado pide al menos dos bloques de convolución con normalización por lo
 
 \subsection{Entrenamiento, evaluación y aumento}
 
-El bucle de entrenamiento sigue los cinco pasos de cada iteración, borrar los gradientes, propagar el lote, calcular la entropía cruzada, retropropagar y actualizar con Adam a tasa $10^{-3}$, con lotes de 64 imágenes y \epocas{} épocas. La prueba se usa una sola vez. El aumento desplaza cada lote un número entero aleatorio de píxeles entre $-2$ y $2$ en cada eje con \texttt{torch.roll}, lo que sale por un borde entra por el opuesto. La comparación con y sin aumento se hace con la misma semilla y las mismas épocas, y se repite con las semillas 42, 43 y 44 para separar el efecto del ruido.
+El bucle de entrenamiento sigue los cinco pasos de cada iteración, borrar los gradientes, propagar el lote, calcular la entropía cruzada, retropropagar y actualizar con Adam a tasa $10^{-3}$, con lotes de 64 imágenes y \epocas{} épocas. Como en el cuaderno resuelto, la pérdida y la exactitud de entrenamiento son el promedio de los lotes de la época, medido mientras los pesos cambian y con el \emph{dropout} activo, y las de validación se miden al final de la época en modo de evaluación.
+
+La prueba se evaluó una vez con la red principal y ocho veces más dentro de la comparación del aumento, dos en la celda del cuaderno y seis en la repetición con tres semillas. Ninguna decisión de diseño se tomó mirando esas cifras. El aumento desplaza cada lote completo un número entero de píxeles entre $-2$ y $2$ en cada eje con \texttt{torch.roll}, de modo que las 64 imágenes del lote reciben el mismo desplazamiento y lo que sale por un borde entra por el opuesto. La comparación con y sin aumento se repite con las semillas 42, 43 y 44. La semilla fija la inicialización de los pesos y los desplazamientos, pero no el orden de los lotes, que depende de un generador propio del cargador de datos que el cuaderno no reinicia. Por eso dos corridas con la misma semilla no son idénticas y la comparación no está emparejada al detalle, lo que obliga a leer las diferencias frente a la dispersión entre semillas.
+
+Para la distancia al entrenamiento se aplanó cada imagen normalizada a un vector de 784 valores y se calculó la distancia euclidiana a la imagen de entrenamiento más cercana, para las \nVal{} de validación y las \nTe{} de prueba.
 
 \section{Resultados}
 
 \subsection{Exploración del conjunto}
 
-Las diez clases tienen entre \conteoMin{} y \conteoMax{} imágenes de entrenamiento, una diferencia menor al 2 por ciento, así que el conjunto está balanceado y la exactitud global es una medida fiable. No hace falta ponderar las clases ni remuestrear.
+Las diez clases tienen entre \conteoMin{} y \conteoMax{} imágenes de entrenamiento, una diferencia menor al 2 \%, y la prueba tiene exactamente \conteoTe{} por clase. El conjunto está balanceado, la exactitud global es una medida fiable y no hace falta ponderar las clases ni remuestrear.
 
 \subsection{Entrenamiento}
 
-La Tabla~\ref{tab:epocas} y la Figura~\ref{fig:curvas} muestran las \epocas{} épocas. La pérdida de entrenamiento baja de \lossA{} a \lossZ{} y la exactitud de validación sube de \vaccA{} a \vaccZ{} por ciento, con su máximo de \vaccMax{} en la época \epVaccMax. Entrenamiento y validación terminan juntos, \accZ{} y \vaccZ{} por ciento, sin brecha de sobreajuste.
+La Tabla~\ref{tab:epocas} y la Figura~\ref{fig:curvas} muestran las \epocas{} épocas. La validación llega a \vaccA{} \% en la primera época y sube hasta \vaccMax{} en la época \epVaccMax, donde su pérdida también es mínima. En la última época la validación retrocede a \vaccZ{} \% y su pérdida sube, mientras que el entrenamiento sigue mejorando hasta \accZ{} \%. Una parada temprana sobre la validación habría conservado la red de la época \epVaccMax.
 
 \begin{table}[!htb]
     \centering
-    \caption{Pérdida y exactitud por época de la red propuesta. La exactitud está en porcentaje}
+    \caption{Pérdida y exactitud por época de la red propuesta. La exactitud está en porcentaje. Las columnas de entrenamiento son promedios de la época y las de validación se miden al final de ella}
     \label{tab:epocas}
     \footnotesize
     \begin{tabular}{c S[table-format=1.4] S[table-format=2.2] S[table-format=1.4] S[table-format=2.2]}
@@ -143,18 +147,18 @@ La Tabla~\ref{tab:epocas} y la Figura~\ref{fig:curvas} muestran las \epocas{} é
 \begin{figure}[!htb]
     \centering
     \includegraphics[width=15cm]{fig02_curvas.png}
-    \caption{Pérdida y exactitud por época de la red propuesta en KMNIST}
+    \caption{Pérdida y exactitud por época de la red propuesta en KMNIST. Línea continua y marcador lleno para el entrenamiento, discontinua y marcador hueco para la validación}
     \label{fig:curvas}
 \end{figure}
 
 \subsection{Evaluación en prueba}
 
-La exactitud en prueba es \accTe{} por ciento, \erroresTe{} errores de \nTe{}, con pérdida \perdTe, \brecha{} puntos por debajo de la validación. La Figura~\ref{fig:confusion} muestra la matriz de confusión y la Tabla~\ref{tab:clases} el acierto por clase, que va de \accPeor{} por ciento en \parReal{} a \accMejor{} en \claseMejor. El par más confundido es \parReal{} tomado por \parPred, \parN{} de las \parTotal{} imágenes de \parReal. La columna \colMax{} recibe \colMaxN{} errores de casi todas las clases, el \colMaxPct{} por ciento de todos los errores. La Figura~\ref{fig:par} muestra cinco imágenes del par confundido junto a imágenes bien clasificadas de las dos clases.
+La exactitud en prueba es \accTe{} \%, \erroresTe{} errores de \nTe{}, con pérdida \perdTe, \brecha{} puntos por debajo de la validación. La Figura~\ref{fig:confusion} muestra la matriz de confusión y la Tabla~\ref{tab:clases} el acierto por clase, que va de \accPeor{} \% en \parReal{} y \accPeorB{} en \clasePeorB{} a \accMejor{} en \claseMejor. El par más confundido es \parReal{} tomado por \parPred, \parN{} de las \parTotal{} imágenes de \parReal. Ese par explica menos de un tercio de los \errReal{} errores de \parReal, el resto va sobre todo a \destB{} (\destBN), \destC{} (\destCN) y \destD{} (\destDN). La columna \colMax{} recibe \colMaxN{} errores de las nueve clases restantes, el \colMaxPct{} \% del total, y por eso \colMax{} tiene la precisión más baja, \precColMax{} \%, aunque su acierto sea el más alto. La Figura~\ref{fig:par} muestra las cinco primeras imágenes de \parReal{} tomadas por \parPred{} junto a imágenes bien clasificadas de las dos clases.
 
 \begin{figure}[!htb]
     \centering
     \includegraphics[width=9cm]{fig03_confusion.png}
-    \caption{Matriz de confusión sobre las \nTe{} imágenes de prueba}
+    \caption{Matriz de confusión sobre las \nTe{} imágenes de prueba. El color codifica solo los errores y la diagonal va en gris para que los aciertos no aplanen la escala}
     \label{fig:confusion}
 \end{figure}
 
@@ -175,24 +179,43 @@ La exactitud en prueba es \accTe{} por ciento, \erroresTe{} errores de \nTe{}, c
 \begin{figure}[!htb]
     \centering
     \includegraphics[width=12cm]{fig04_par.png}
-    \caption{Arriba, imágenes de \parReal{} que la red tomó por \parPred. En medio y abajo, imágenes de \parReal{} y de \parPred{} bien clasificadas}
+    \caption{Arriba, las cinco primeras imágenes de \parReal{} que la red tomó por \parPred. En medio y abajo, las cinco primeras imágenes de \parReal{} y de \parPred{} bien clasificadas}
     \label{fig:par}
 \end{figure}
 
+\subsection{Distancia al entrenamiento}
+
+La Tabla~\ref{tab:vecinos} compara la distancia de cada imagen de validación y de prueba a su vecino más cercano en el entrenamiento. Ninguna imagen de validación ni de prueba coincide con una de entrenamiento. La prueba queda algo más lejos que la validación en la mediana y en los dos percentiles, \vecDifPct{} \% más en la mediana.
+
+\begin{table}[!htb]
+    \centering
+    \caption{Distancia euclidiana al vecino más cercano del entrenamiento, sobre las imágenes normalizadas}
+    \label{tab:vecinos}
+    \footnotesize
+    \begin{tabular}{l S[table-format=2.1] S[table-format=2.1] S[table-format=2.1]}
+        \toprule
+        \textbf{Conjunto} & {\textbf{Percentil 10}} & {\textbf{Mediana}} & {\textbf{Percentil 90}} \\
+        \midrule
+        Validación & \vecValPdiez & \vecValMed & \vecValPnov \\
+        Prueba     & \vecTePdiez  & \vecTeMed  & \vecTePnov \\
+        \bottomrule
+    \end{tabular}
+\end{table}
+
 \subsection{Aumento de datos}
 
-La Figura~\ref{fig:aumento} muestra el efecto del desplazamiento sobre cuatro imágenes. La Tabla~\ref{tab:aumento} y la Figura~\ref{fig:barras} resumen tres semillas con \epocas{} épocas cada una. Con aumento la exactitud de entrenamiento baja \augDifTr{} puntos, la de validación cambia \augDifVal{} y la de prueba \augDifTe, las dos últimas dentro de la desviación entre semillas. La brecha entre validación y entrenamiento pasa de \augBrechaSin{} a \augBrechaCon{} puntos.
+La Figura~\ref{fig:aumento} muestra el efecto del desplazamiento sobre cuatro imágenes. La Tabla~\ref{tab:aumento} y la Figura~\ref{fig:puntos} resumen las tres semillas con \epocas{} épocas cada una, y la Tabla~\ref{tab:semillas} da la diferencia por semilla. Con aumento la exactitud de entrenamiento baja \augDifTrAbs{} puntos en las tres semillas. En validación y en prueba las diferencias medias son de \augDifVal{} y $\augDifTe$ puntos, menores que la desviación entre semillas, y por semilla ni siquiera coinciden en el signo. La brecha entre validación y entrenamiento pasa de \augBrechaSin{} a \augBrechaCon{} puntos.
 
 \begin{figure}[!htb]
     \centering
     \includegraphics[width=10cm]{fig05_aumento.png}
-    \caption{Cuatro imágenes de entrenamiento antes y después del desplazamiento aleatorio}
+    \caption{Cuatro imágenes de entrenamiento antes y después del desplazamiento, con el caso extremo del rango, \desplDy{} píxeles hacia abajo y \desplDx{} a la derecha. Los trazos que tocaban el borde inferior reaparecen arriba}
     \label{fig:aumento}
 \end{figure}
 
 \begin{table}[!htb]
     \centering
-    \caption{Exactitud en porcentaje, media y desviación de las semillas 42, 43 y 44 con \epocas{} épocas}
+    \caption{Exactitud en porcentaje, media y desviación muestral de las semillas 42, 43 y 44 con \epocas{} épocas}
     \label{tab:aumento}
     \footnotesize
     \begin{tabular}{l c c c}
@@ -205,47 +228,66 @@ La Figura~\ref{fig:aumento} muestra el efecto del desplazamiento sobre cuatro im
     \end{tabular}
 \end{table}
 
+\begin{table}[!htb]
+    \centering
+    \caption{Exactitud de validación y de prueba por semilla, en porcentaje, y diferencia con aumento menos sin aumento}
+    \label{tab:semillas}
+    \footnotesize
+    \begin{tabular}{c S[table-format=2.2] S[table-format=2.2] S[table-format=2.2] S[table-format=2.2] c c}
+        \toprule
+         & \multicolumn{2}{c}{\textbf{Validación}} & \multicolumn{2}{c}{\textbf{Prueba}} & \multicolumn{2}{c}{\textbf{Diferencia}} \\
+        \cmidrule(lr){2-3} \cmidrule(lr){4-5} \cmidrule(lr){6-7}
+        \textbf{Semilla} & {\textbf{Sin}} & {\textbf{Con}} & {\textbf{Sin}} & {\textbf{Con}} & \textbf{Validación} & \textbf{Prueba} \\
+        \midrule
+\filasSemillas
+        \bottomrule
+    \end{tabular}
+\end{table}
+
 \begin{figure}[!htb]
     \centering
-    \includegraphics[width=10cm]{fig06_aumento_barras.png}
-    \caption{Exactitud media de las tres semillas con y sin aumento. Las barras de error son la desviación entre semillas}
-    \label{fig:barras}
+    \includegraphics[width=11cm]{fig06_aumento_puntos.png}
+    \caption{Exactitud con y sin aumento. Los círculos huecos son las tres semillas y el rombo la media con la desviación muestral}
+    \label{fig:puntos}
 \end{figure}
 
 \section{Análisis}
 
 \subsection{Por qué cada componente de la red}
 
-La pregunta del paso 2 era qué se esperaba de cada componente. La convolución aporta filtros que se reutilizan en toda la imagen, y con 32 y 64 de ellos la red tiene margen para las variantes de forma de KMNIST. La normalización por lotes hizo lo que se esperaba, la red llegó a \vaccA{} por ciento de validación en la primera época con la tasa de $10^{-3}$, sin ningún ajuste de la tasa. El \emph{pooling} redujo las 3\,136 características de la capa lineal a una cantidad manejable, y aun así esa capa concentra el \parFcPct{} por ciento de los parámetros, lo que justifica el \emph{dropout} delante de ella. La Tabla~\ref{tab:epocas} muestra que la combinación funcionó, entrenamiento y validación avanzan juntos y la pérdida de validación baja en cada época.
+La pregunta del paso 2 era qué se esperaba de cada componente. La convolución aporta filtros que se reutilizan en toda la imagen, y con 32 y 64 de ellos la red tiene margen para las variantes de forma de KMNIST. La normalización por lotes se incluyó esperando un arranque rápido, y la red llegó a \vaccA{} \% de validación en la primera época, pero sin una corrida sin normalización no se puede separar su aporte del resto. El \emph{pooling} redujo las 50\,176 activaciones del segundo bloque a las 3\,136 que entran a la capa lineal, y aun así esa capa concentra el \parFcPct{} \% de los parámetros, lo que justifica el \emph{dropout} delante de ella. La Tabla~\ref{tab:epocas} muestra que la combinación funcionó, la pérdida de validación baja hasta la época \epVlossMin{} y la exactitud de entrenamiento alcanza a la de validación en la última. Que la validación empeore en la época 5 mientras el entrenamiento mejora es el primer signo de que, con más épocas, el \emph{dropout} de 0.3 no bastaría.
 
 \subsection{La brecha entre validación y prueba}
 
-La validación termina en \vaccZ{} por ciento y la prueba en \accTe, \brecha{} puntos menos. No es sobreajuste, porque el entrenamiento y la validación coinciden y el \emph{dropout} está activo. La validación es una muestra al azar del mismo conjunto de entrenamiento, escrita por las mismas manos y con las mismas formas, mientras que la prueba de KMNIST proviene de otros documentos. Una validación tomada del entrenamiento no puede anticipar esa diferencia, y por eso la prueba se reserva para una sola medición final. En MNIST la brecha fue de dos décimas de punto porque sus dígitos de prueba se parecen mucho a los de entrenamiento. Esta diferencia entre los dos conjuntos es la lección más clara del taller.
+La validación termina en \vaccZ{} \% y la prueba en \accTe, \brecha{} puntos menos. En el cuaderno resuelto la prueba de MNIST quedó una centésima por encima de la validación. No es un sobreajuste a la validación, que nunca se usó para elegir nada, y tampoco se explica por la procedencia de los datos, porque según sus autores las imágenes de entrenamiento y de prueba de KMNIST salen de los mismos 35 libros. Una hipótesis compatible con los datos es que la validación, tomada al azar del entrenamiento, comparte páginas y manos con él y resulta optimista, mientras que la prueba contiene formas menos representadas. La Tabla~\ref{tab:vecinos} apunta en esa dirección, la prueba queda sistemáticamente más lejos del entrenamiento que la validación, pero la diferencia es pequeña y no alcanza para atribuirle los \brecha{} puntos. Lo que sí se puede afirmar es que la validación interna no anticipa el resultado en prueba de este conjunto, y que la brecha es conocida. En el artículo de KMNIST una red convolucional sencilla de dos convoluciones entrenada 12 épocas alcanza 95.12 \% de prueba, un clasificador de vecinos más cercanos 91.56 y una red residual 97.82. La red de este taller, con \epocas{} épocas, queda por debajo de la convolucional sencilla, lo que indica que la parada en \epocas{} épocas también cuesta puntos.
 
 \subsection{Por qué se confunden su y tsu}
 
-El par más frecuente es \parReal{} tomado por \parPred. La Figura~\ref{fig:par} lo explica. La clase \parReal{} reúne varias formas antiguas del carácter, y las cinco imágenes mal clasificadas comparten dos trazos verticales largos con un lazo, mientras que las de \parReal{} bien clasificadas muestran formas más compactas y distintas entre sí. Las imágenes de \parPred{} bien clasificadas tienen también trazos verticales largos que se cierran, así que la variante alargada de \parReal{} cae en el territorio visual de \parPred. La red no falla por un defecto del entrenamiento sino porque una misma clase contiene formas que se parecen más a otra clase que entre sí. La columna \colMax{} con el \colMaxPct{} por ciento de los errores muestra otra cosa, la red usa \colMax{} como respuesta por defecto ante formas que no reconoce bien, probablemente porque sus trazos curvos y sueltos se parecen a fragmentos de muchos otros caracteres.
+La clase \parReal{} tiene el acierto más bajo. Reúne varias formas antiguas del carácter, y de sus \errReal{} errores \parN{} van a \parPred{} y el resto se reparte entre \destB, \destC{} y \destD. La Figura~\ref{fig:par} muestra por qué con \parPred. Las cinco imágenes mal clasificadas son la misma variante, un trazo vertical largo a la izquierda y un grupo de trazos a la derecha, y se parecen a la variante de \parPred{} de trazos verticales que aparece en la fila inferior. Entre las \parReal{} bien clasificadas también hay formas con el trazo vertical largo, así que la red distingue esa variante en algunos casos y no en otros. Cinco imágenes elegidas por índice no bastan para generalizar, pero una explicación compatible con la figura es que una misma clase contiene variantes que se parecen más a otra clase que entre sí. La columna \colMax{} con el \colMaxPct{} \% de los errores muestra otra cosa, \colMax{} recibe imágenes de las nueve clases restantes, lo que sugiere que sus trazos curvos y sueltos comparten fragmentos con muchos caracteres. La clase \clasePeorB, segunda con menos acierto, también tiene a \colMax{} como destino más frecuente de sus errores, como se ve en la Figura~\ref{fig:confusion}.
 
 \subsection{Qué hizo y qué no hizo el aumento de datos}
 
-El aumento no mejoró la exactitud de prueba ni la de validación. Las diferencias de \augDifVal{} y \augDifTe{} puntos están dentro de la desviación entre semillas, así que no se puede afirmar un cambio en ningún sentido. Lo que sí cambió es la brecha, que pasó de \augBrechaSin{} a \augBrechaCon{} puntos porque el entrenamiento cayó \augDifTr{} puntos. Es el comportamiento esperado de un regularizador, la red ve imágenes más difíciles de las que después evalúa. Pero un regularizador solo ayuda cuando hay sobreajuste que corregir, y en \epocas{} épocas no lo había. Hay además dos razones para que no ayude en la prueba. El \emph{pooling} ya tolera desplazamientos de uno o dos píxeles, de modo que la red no necesitaba verlos durante el entrenamiento. Y los errores de prueba no vienen de la posición del carácter sino de su forma, como muestra el par \parReal{} y \parPred, y un desplazamiento no cambia la forma. Si se quisiera cerrar la brecha de prueba haría falta un aumento que cambie la forma, por ejemplo pequeñas rotaciones o deformaciones del trazo, y más épocas para que el regularizador tenga algo que corregir.
+El aumento no mejoró la exactitud de validación ni la de prueba. Las diferencias medias son menores que la dispersión entre semillas y cambian de signo de una semilla a otra, así que no se puede afirmar un cambio en ningún sentido. Lo que sí cambió es la brecha, que pasó de \augBrechaSin{} a \augBrechaCon{} puntos porque el entrenamiento cayó \augDifTrAbs{} puntos. Esa caída se mide sobre las imágenes desplazadas, y muestra que la red no era invariante a desplazamientos de uno o dos píxeles, porque si lo fuera las imágenes desplazadas no le costarían nada. La capa lineal sobre los 64 mapas de $7\times7$ depende de la posición, y el \emph{pooling} solo da tolerancia local.
+
+Hay tres razones para que el aumento no ayudara en prueba. La primera es de implementación. Las 64 imágenes del lote reciben el mismo desplazamiento, lo que da poca diversidad, y \texttt{torch.roll} hace entrar por el borde opuesto los trazos que tocan el marco, algo frecuente en KMNIST como se ve en la Figura~\ref{fig:aumento}, con lo que una parte de las imágenes aumentadas no son variantes realistas. La segunda es que en \epocas{} épocas el sobreajuste apenas empieza, y un regularizador tiene poco que corregir. La tercera es que los errores de prueba parecen venir de la forma del carácter y no de su posición, como sugiere el par \parReal{} y \parPred, y un desplazamiento no cambia la forma. Si se quisiera cerrar la brecha de prueba haría falta un desplazamiento por imagen con relleno de ceros en lugar de envolvente, aumentos que cambien la forma, como rotaciones o deformaciones pequeñas del trazo, y más épocas.
 
 \section{Conclusiones}
 
-La red propuesta de dos bloques con normalización por lotes y \emph{dropout} alcanza \vaccZ{} por ciento de validación y \accTe{} de prueba en KMNIST con \nPar{} parámetros, y cumple todas las restricciones del enunciado con las diez verificaciones en \texttt{[OK]}.
+La red propuesta de dos bloques con normalización por lotes y \emph{dropout} alcanza \vaccZ{} \% de validación y \accTe{} de prueba en KMNIST con \nPar{} parámetros, y cumple todas las restricciones del enunciado con las once verificaciones en \texttt{[OK]}.
 
-La brecha de \brecha{} puntos entre validación y prueba no es sobreajuste. Las curvas de entrenamiento y validación coinciden, y la diferencia viene de que la prueba de KMNIST proviene de otros documentos. Una validación tomada del entrenamiento no puede detectar eso.
+La brecha de \brecha{} puntos entre validación y prueba no es sobreajuste a la validación ni una diferencia de procedencia de los datos. La prueba queda algo más lejos del entrenamiento que la validación, pero esa medida solo explica una parte, y el resultado principal es que en este conjunto la validación interna no anticipa la prueba.
 
-El error dominante, \parReal{} tomado por \parPred{} en \parN{} de \parTotal{} imágenes, nace de una clase que agrupa formas de escritura muy distintas, y la columna \colMax{} concentra el \colMaxPct{} por ciento de los errores como respuesta por defecto de la red.
+El error dominante, \parReal{} tomado por \parPred{} en \parN{} de \parTotal{} imágenes, nace de una clase que agrupa variantes de escritura muy distintas, y la columna \colMax{} concentra el \colMaxPct{} \% de los errores con imágenes de todas las demás clases.
 
-El aumento por desplazamiento de dos píxeles no cambió la exactitud de validación ni de prueba con tres semillas, y solo redujo la de entrenamiento. En \epocas{} épocas no había sobreajuste que corregir, el \emph{pooling} ya tolera esos desplazamientos y los errores son de forma y no de posición.
+El aumento por desplazamiento de dos píxeles no produjo en validación ni en prueba un cambio distinguible de la variación entre semillas, y bajó \augDifTrAbs{} puntos la exactitud de entrenamiento. La red no era invariante al desplazamiento, pero el aumento tal como está implementado, con un solo desplazamiento por lote y envolvente en los bordes, no genera variantes que ayuden en prueba.
 
-Repetir el experimento con tres semillas fue necesario. Con una sola, la primera comparación daba al aumento una ventaja de medio punto en prueba que desapareció al promediar.
+Repetir el experimento con tres semillas fue necesario. Con una sola semilla el signo de la diferencia en prueba depende de cuál se elija.
 
 \section{Referencias}
 \begin{itemize}
     \item Clanuwat, T., Bober-Irizar, M., Kitamoto, A., Lamb, A., Yamamoto, K., \& Ha, D. (2018). Deep learning for classical Japanese literature. \textit{NeurIPS Workshop on Machine Learning for Creativity and Design}.
     \item Ioffe, S., \& Szegedy, C. (2015). Batch normalization: Accelerating deep network training by reducing internal covariate shift. \textit{International Conference on Machine Learning}.
+    \item Santurkar, S., Tsipras, D., Ilyas, A., \& Madry, A. (2018). How does batch normalization help optimization? \textit{Advances in Neural Information Processing Systems}, 31.
     \item Srivastava, N., Hinton, G., Krizhevsky, A., Sutskever, I., \& Salakhutdinov, R. (2014). Dropout: A simple way to prevent neural networks from overfitting. \textit{Journal of Machine Learning Research}, 15, 1929--1958.
     \item Kingma, D. P., \& Ba, J. (2015). Adam: A method for stochastic optimization. \textit{International Conference on Learning Representations}.
     \item Paszke, A. et al. (2019). PyTorch: An imperative style, high-performance deep learning library. \textit{Advances in Neural Information Processing Systems}, 32.
@@ -255,7 +297,7 @@ Repetir el experimento con tres semillas fue necesario. Con una sola, la primera
 \section{Código de los bloques completados}
 \label{anexo:codigo}
 
-Se reproducen los cinco bloques \texttt{TODO} tal como quedaron en el cuaderno entregado, entre las marcas que usa el docente.
+Se reproducen los cinco bloques \texttt{TODO} tal como quedaron en el cuaderno entregado, delimitados con marcas del mismo estilo que usa el docente.
 
 \begin{lstlisting}[caption={TODO 1, imágenes por clase}]
 conteo = torch.bincount(datos["y_tr"], minlength=len(clases))
