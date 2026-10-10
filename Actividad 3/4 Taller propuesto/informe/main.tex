@@ -58,13 +58,19 @@ El \emph{max pooling} 2×2 reduce la imagen de 28 a 14 y luego a 7 píxeles por 
 El \emph{dropout} de 0.3 va antes de la capa lineal porque esa capa concentra el 62 \% de los parámetros (31\,370), y es donde más riesgo hay de memorizar.
 
 \begin{lstlisting}[caption={Arquitectura del TODO 2}, label=cod:red]
-self.bloque1 = nn.Sequential(nn.Conv2d(1, 32, 3, padding=1), nn.BatchNorm2d(32), nn.ReLU(), nn.MaxPool2d(2))
-self.bloque2 = nn.Sequential(nn.Conv2d(32, 64, 3, padding=1), nn.BatchNorm2d(64), nn.ReLU(), nn.MaxPool2d(2))
-self.drop = nn.Dropout(0.3)
-self.fc = nn.Linear(64 * 7 * 7, 10)          # forward: fc(drop(bloque2(bloque1(x)).flatten(1)))
+self.conv1 = nn.Conv2d(1, 32, kernel_size=3, padding=1)     # 28 -> 28
+self.bn1 = nn.BatchNorm2d(32)
+self.conv2 = nn.Conv2d(32, 64, kernel_size=3, padding=1)    # 14 -> 14
+self.bn2 = nn.BatchNorm2d(64)
+self.drop = nn.Dropout(p_drop)
+self.fc = nn.Linear(64 * 7 * 7, 10)
+
+x = F.max_pool2d(F.relu(self.bn1(self.conv1(x))), 2)        # 28 -> 14
+x = F.max_pool2d(F.relu(self.bn2(self.conv2(x))), 2)        # 14 -> 7
+return self.fc(self.drop(x.flatten(1)))
 \end{lstlisting}
 
-\textbf{TODO 3, entrenamiento.} El bucle sigue el orden pedido, borrar gradientes, propagar, calcular la entropía cruzada, retropropagar y actualizar con Adam. La pérdida de entrenamiento baja de 0.306 a 0.080 y la exactitud de validación llega a 97.40 \% (Figura~\ref{fig:curvas}). Las curvas de entrenamiento y validación terminan juntas (97.56 y 97.40 \%), sin señal de sobreajuste en 5 épocas.
+\textbf{TODO 3, entrenamiento.} El bucle sigue el orden pedido, borrar gradientes, propagar, calcular la entropía cruzada, retropropagar y actualizar con Adam. La pérdida de entrenamiento baja de 0.306 a 0.081 y la exactitud de validación llega a 97.56 \% (Figura~\ref{fig:curvas}). Las curvas de entrenamiento y validación terminan juntas (97.52 y 97.56 \%), sin señal de sobreajuste en 5 épocas.
 
 \begin{figure}[!htb]
     \centering
@@ -73,9 +79,9 @@ self.fc = nn.Linear(64 * 7 * 7, 10)          # forward: fc(drop(bloque2(bloque1(
     \label{fig:curvas}
 \end{figure}
 
-\textbf{TODO 4, prueba y errores.} La exactitud de prueba es 93.25 \%, cuatro puntos por debajo de la de validación. Como la validación es una muestra al azar de las imágenes de entrenamiento y las dos curvas coinciden, la brecha no es sobreajuste, sino que sugiere que las imágenes de prueba difieren de las de entrenamiento, algo que una validación tomada del mismo conjunto no puede detectar.
+\textbf{TODO 4, prueba y errores.} La exactitud de prueba es 93.16 \%, cuatro puntos por debajo de la de validación. Como la validación es una muestra al azar de las imágenes de entrenamiento y las dos curvas coinciden, la brecha no es sobreajuste, sino que sugiere que las imágenes de prueba difieren de las de entrenamiento, algo que una validación tomada del mismo conjunto no puede detectar.
 
-El par más confundido es \emph{su} tomado por \emph{tsu}, 53 de los 1\,000 \emph{su} de prueba (Figura~\ref{fig:confusion}). La Figura~\ref{fig:ejemplos} explica por qué. La clase \emph{su} reúne varias formas antiguas del mismo carácter muy distintas entre sí, y las que la red falla tienen trazos verticales paralelos con un lazo, muy parecidos a la variante de \emph{tsu} hecha de líneas verticales. La matriz muestra además que la columna \emph{na} recibe errores de casi todas las clases, de modo que la red usa \emph{na} como respuesta por defecto ante formas que no reconoce bien.
+El par más confundido es \emph{su} tomado por \emph{tsu}, 55 de los 1\,000 \emph{su} de prueba (Figura~\ref{fig:confusion}). La Figura~\ref{fig:ejemplos} explica por qué. La clase \emph{su} reúne varias formas antiguas del mismo carácter muy distintas entre sí, y las que la red falla tienen trazos verticales paralelos con un lazo, muy parecidos a la variante de \emph{tsu} hecha de líneas verticales. La matriz muestra además que la columna \emph{na} recibe errores de casi todas las clases, de modo que la red usa \emph{na} como respuesta por defecto ante formas que no reconoce bien.
 
 \begin{figure}[!htb]
     \centering
@@ -108,16 +114,16 @@ return torch.roll(xb, shifts=(dy, dx), dims=(2, 3))
         \toprule
          & \textbf{Entrenamiento} & \textbf{Validación} & \textbf{Prueba} \\
         \midrule
-        Sin aumento & $97.50 \pm 0.03$ & $97.66 \pm 0.10$ & $93.08 \pm 0.26$ \\
-        Con aumento & $95.20 \pm 0.18$ & $97.89 \pm 0.19$ & $93.07 \pm 0.33$ \\
+        Sin aumento & $97.52 \pm 0.02$ & $97.75 \pm 0.07$ & $93.19 \pm 0.24$ \\
+        Con aumento & $95.20 \pm 0.18$ & $97.75 \pm 0.20$ & $92.97 \pm 0.20$ \\
         \bottomrule
     \end{tabular}
 \end{table}
 
-El aumento no mejoró la prueba, que queda igual dentro de la variación entre semillas. La validación sube 0.2 puntos, del orden de una desviación, así que tampoco es una mejora clara. Lo que sí cambia es la brecha. Sin aumento entrenamiento y validación casi coinciden, y con aumento el entrenamiento cae 2.3 puntos porque la red ve imágenes desplazadas más difíciles, de modo que la validación queda 2.7 puntos por encima. Es el efecto de un regularizador, pero en 5 épocas la red no estaba sobreajustando, así que no había brecha que cerrar. Hay además dos razones posibles para que no ayude en la prueba. El \emph{pooling} ya tolera desplazamientos pequeños, y los errores vienen de variantes de forma como \emph{su} y \emph{tsu}, no de la posición del carácter. Por otro lado, \texttt{torch.roll} hace que lo que sale por un borde entre por el opuesto, lo que puede pegar trozos de trazo en el lado contrario.
+El aumento no mejoró. La validación queda igual y la prueba baja 0.2 puntos, del orden de una desviación entre semillas, así que tampoco empeora de forma clara. Lo que sí cambia es la brecha. Sin aumento entrenamiento y validación casi coinciden, y con aumento el entrenamiento cae 2.3 puntos porque la red ve imágenes desplazadas más difíciles, de modo que la validación queda 2.6 puntos por encima. Es el efecto de un regularizador, pero en 5 épocas la red no estaba sobreajustando, así que no había brecha que cerrar. Hay además dos razones posibles para que no ayude en la prueba. El \emph{pooling} ya tolera desplazamientos pequeños, y los errores vienen de variantes de forma como \emph{su} y \emph{tsu}, no de la posición del carácter. Por otro lado, \texttt{torch.roll} hace que lo que sale por un borde entre por el opuesto, lo que puede pegar trozos de trazo en el lado contrario.
 
 \section{Conclusión}
 
-La red propia de dos bloques alcanza 97.4 \% de validación y 93.3 \% de prueba en KMNIST con 50\,378 parámetros. La diferencia entre validación y prueba no se explica por sobreajuste y apunta a que el conjunto de prueba es más difícil que una muestra del de entrenamiento. El error dominante, \emph{su} tomado por \emph{tsu}, nace de clases con varias formas de escritura, y el desplazamiento aleatorio de ±2 píxeles no lo corrige.
+La red propia de dos bloques alcanza 97.6 \% de validación y 93.2 \% de prueba en KMNIST con 50\,378 parámetros. La diferencia entre validación y prueba no se explica por sobreajuste y apunta a que el conjunto de prueba es más difícil que una muestra del de entrenamiento. El error dominante, \emph{su} tomado por \emph{tsu}, nace de clases con varias formas de escritura, y el desplazamiento aleatorio de ±2 píxeles no lo corrige.
 
 \end{document}
