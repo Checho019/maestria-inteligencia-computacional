@@ -223,7 +223,7 @@ El MLP no muestra sobreajuste en tres épocas. Su pérdida de validación sigue 
 
 \subsection{Qué dígitos se confunden}
 
-Los errores no se concentran en unos pocos pares. Ocupan \celdasConError{} de las 90 celdas fuera de la diagonal y los tres pares más frecuentes solo reúnen el \tresParesPct{} \% de ellos. Lo que sí se ve es una estructura. Los pares \parAA{} con \parAB{} y \parBA{} con \parBB{} son dígitos que difieren en un trazo, un 4 con la parte superior cerrada se convierte en un 9 y un 7 con el trazo horizontal curvo se parece a un 2. La columna del \colMaxDig{} recibe más errores que ninguna otra, \colMaxN{}, lo que sugiere que la forma del 7, un trazo horizontal y otro inclinado, aparece como fragmento en dígitos de otras clases mal escritos. De los diez errores de la Figura~\ref{fig:errores} solo uno pertenece a los tres pares principales y varios son dígitos que una persona también dudaría en clasificar.
+Los errores no se concentran en unos pocos pares. Ocupan \celdasConError{} de las 90 celdas fuera de la diagonal y los tres pares más frecuentes solo reúnen el \tresParesPct{} \% de ellos. Aun así hay estructura. Los pares \parAA{} con \parAB{} y \parBA{} con \parBB{} son dígitos que difieren en un trazo, un 4 con la parte superior cerrada se convierte en un 9 y un 7 con el trazo horizontal curvo se parece a un 2. La columna del \colMaxDig{} recibe más errores que ninguna otra, \colMaxN{}, lo que sugiere que la forma del 7, un trazo horizontal y otro inclinado, aparece como fragmento en dígitos de otras clases mal escritos. De los diez errores de la Figura~\ref{fig:errores} solo uno pertenece a los tres pares principales y varios son dígitos que una persona también dudaría en clasificar.
 
 \subsection{Qué muestra la tasa de aprendizaje}
 
@@ -235,11 +235,11 @@ La ejecución con $10^{-3}$ de este experimento no repite las cifras de la Tabla
 
 La red convolucional del cuaderno alcanza \accTe{} \% en prueba con \paramCnn{} parámetros y supera al MLP de \paramMlp{} parámetros en \difVal{} puntos de validación, lo que se explica porque reutiliza cada filtro en toda la imagen y el \emph{pooling} tolera desplazamientos de un píxel.
 
-La validación por encima del entrenamiento en la primera época se debe a que el cuaderno promedia la exactitud de entrenamiento durante la época y mide la validación al final. El \emph{dropout} alarga ese efecto en la CNN. El MLP no muestra sobreajuste en tres épocas, su pérdida de validación sigue bajando.
+Que la validación quede por encima del entrenamiento en la primera época se debe a que el cuaderno promedia la exactitud de entrenamiento durante la época y mide la validación al final. El \emph{dropout} alarga ese efecto en la CNN. En tres épocas el MLP no llega a sobreajustar, su pérdida de validación sigue bajando.
 
-Los \erroresTe{} errores de prueba se reparten por \celdasConError{} celdas de la matriz. Los pares más frecuentes, \parAA{} con \parAB{} y \parBA{} con \parBB, son dígitos que difieren en un trazo, y el acierto por clase va de \accPeor{} a \accMejor{} \%.
+En prueba los \erroresTe{} errores se reparten por \celdasConError{} celdas de la matriz. Los pares más frecuentes, \parAA{} con \parAB{} y \parBA{} con \parBB, son dígitos que difieren en un trazo, y el acierto por clase va de \accPeor{} a \accMejor{} \%.
 
-La tasa de aprendizaje decide entre no aprender, aprender despacio y aprender bien. Con Adam el valor de $10^{-3}$ es el que funciona y $10^{-1}$ colapsa la red a una salida constante.
+Con la tasa de aprendizaje se decide entre no aprender, aprender despacio y aprender bien. Para Adam el valor de $10^{-3}$ es el que funciona y $10^{-1}$ colapsa la red a una salida constante.
 
 Las diez verificaciones se cumplieron y el modelo guardado reproduce la exactitud de prueba al recargarse. La semilla fija la inicialización pero no el orden de los lotes, y la GPU añade pequeñas diferencias, así que las cifras de la CNN varían en la segunda decimal entre ejecuciones.
 
