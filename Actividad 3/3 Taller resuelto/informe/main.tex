@@ -229,7 +229,7 @@ Los errores no se concentran en unos pocos pares. Ocupan \celdasConError{} de la
 
 Con $10^{-1}$ la pérdida de entrenamiento de la primera época, \lrATrLossA, supera a $\ln 10$. Adam da pasos de tamaño cercano a la tasa sin importar la magnitud del gradiente, así que los pesos saltan a valores que ya no dependen de la imagen y la red colapsa a una salida casi constante. Una exactitud de \lrAAcc{} \% corresponde a predecir casi siempre la misma clase, y una pérdida a \lrAMilesimas{} milésimas de $\ln 10$ dice que la salida constante reparte la probabilidad casi por igual entre las diez clases. Con $10^{-5}$ la pérdida sí baja época a época, así que la red aprende, pero necesitaría muchas más épocas. El valor intermedio de $10^{-3}$ repite la lección del Taller 2 con la tasa del MLP, demasiado grande no aprende y demasiado pequeña no llega a tiempo.
 
-La corrida con $10^{-3}$ de este experimento no repite las cifras de la Tabla~\ref{tab:epocas} en sus dos primeras épocas. La función que fija la semilla reinicia los generadores de PyTorch pero no el generador propio que el cuaderno le entrega al cargador de datos, así que el orden de los lotes cambia de una corrida a otra. Además algunas operaciones de la convolución en GPU no son deterministas, y por eso la CNN cambia en la segunda cifra decimal entre ejecuciones completas del cuaderno mientras que el MLP repite sus cifras.
+La ejecución con $10^{-3}$ de este experimento no repite las cifras de la Tabla~\ref{tab:epocas} en sus dos primeras épocas. La función que fija la semilla reinicia los generadores de PyTorch pero no el generador propio que el cuaderno le entrega al cargador de datos, así que el orden de los lotes cambia de una ejecución a otra. Además algunas operaciones de la convolución en GPU no son deterministas, y por eso la CNN cambia en la segunda cifra decimal entre ejecuciones completas del cuaderno mientras que el MLP repite sus cifras.
 
 \section{Conclusiones}
 
@@ -241,7 +241,7 @@ Los \erroresTe{} errores de prueba se reparten por \celdasConError{} celdas de l
 
 La tasa de aprendizaje decide entre no aprender, aprender despacio y aprender bien. Con Adam el valor de $10^{-3}$ es el que funciona y $10^{-1}$ colapsa la red a una salida constante.
 
-Las diez verificaciones se cumplieron y el modelo guardado reproduce la exactitud de prueba al recargarse. La semilla fija la inicialización pero no el orden de los lotes, y la GPU añade pequeñas diferencias, así que las cifras de la CNN varían en la segunda decimal entre corridas.
+Las diez verificaciones se cumplieron y el modelo guardado reproduce la exactitud de prueba al recargarse. La semilla fija la inicialización pero no el orden de los lotes, y la GPU añade pequeñas diferencias, así que las cifras de la CNN varían en la segunda decimal entre ejecuciones.
 
 \section{Referencias}
 \begin{itemize}

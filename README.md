@@ -29,7 +29,7 @@ Hay que descomprimir los dos zip dentro de `Primera actividad/data` de modo que 
 run_todo
 ```
 
-Tarda unos 17 minutos. Genera los dos libros de Excel, las 43 figuras y los 12 CSV de etapas. Usa semilla fija en todo, así que los números salen idénticos en cada corrida.
+Tarda unos 17 minutos. Genera los dos libros de Excel, las 43 figuras y los 12 CSV de etapas. Usa semilla fija en todo, así que los números salen idénticos en cada ejecución.
 
 Para pasar los informes de Markdown a Word hace falta Python con `python-docx`:
 
