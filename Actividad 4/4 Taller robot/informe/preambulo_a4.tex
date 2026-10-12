@@ -1,0 +1,81 @@
+\input{glyphtounicode}
+\pdfgentounicode=1
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage[spanish,es-noindentfirst,es-tabla]{babel}
+\decimalpoint
+\usepackage[margin=2.5cm]{geometry}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{multirow}
+\usepackage{siunitx}
+\sisetup{output-decimal-marker={.}, group-digits=false, detect-weight=true, table-number-alignment=center}
+\usepackage{amsmath,amssymb}
+\usepackage{listings}
+\renewcommand{\lstlistingname}{Código}
+\usepackage{xcolor}
+\usepackage{tikz}
+\usetikzlibrary{positioning,arrows.meta,shapes.geometric}
+\usepackage{fancyhdr}
+\usepackage{titlesec}
+\usepackage{caption}
+\usepackage[section]{placeins}
+\usepackage[hidelinks]{hyperref}
+\graphicspath{{figuras/}}
+\renewcommand{\topfraction}{0.92}
+\renewcommand{\bottomfraction}{0.85}
+\renewcommand{\textfraction}{0.06}
+\renewcommand{\floatpagefraction}{0.80}
+\setcounter{topnumber}{3}
+\setcounter{totalnumber}{5}
+\captionsetup{font=small,labelfont=bf}
+
+\lstdefinestyle{codigo}{
+    language=Python,
+    basicstyle=\ttfamily\footnotesize,
+    keywordstyle=\color{blue!60!black}\bfseries,
+    commentstyle=\color{gray},
+    stringstyle=\color{orange!70!black},
+    numbers=left,
+    numberstyle=\tiny\color{gray},
+    frame=single,
+    breaklines=true,
+    showstringspaces=false,
+    tabsize=4,
+    backgroundcolor=\color{gray!5},
+    extendedchars=true,
+    columns=fullflexible,
+    keepspaces=true,
+    literate={á}{{\'a}}1 {é}{{\'e}}1 {í}{{\'i}}1 {ó}{{\'o}}1 {ú}{{\'u}}1
+             {Á}{{\'A}}1 {É}{{\'E}}1 {Í}{{\'I}}1 {Ó}{{\'O}}1 {Ú}{{\'U}}1
+             {ñ}{{\~n}}1 {Ñ}{{\~N}}1 {¿}{{?`}}1 {¡}{{!`}}1 {±}{{$\pm$}}1
+}
+\lstset{style=codigo}
+
+\pagestyle{fancy}
+\fancyhf{}
+\rhead{Inteligencia Computacional Aplicada}
+\cfoot{\thepage}
+\renewcommand{\headrulewidth}{0.4pt}
+\titleformat{\section}{\normalfont\Large\bfseries}{\thesection.}{0.5em}{}
+\titleformat{\subsection}{\normalfont\large\bfseries}{\thesubsection}{0.5em}{}
+
+\newcommand{\nombreEstudiante}{Sergio Santiago Duarte Rojas}
+\newcommand{\codigoEstudiante}{20261595002}
+\newcommand{\nombreDocente}{Cesar Andrey Perdomo Charry}
+\newcommand{\nombreAsignatura}{Inteligencia Computacional Aplicada}
+
+% Diagramas de arquitectura
+\definecolor{cEntrada}{RGB}{230,230,230}
+\definecolor{cConv}{RGB}{204,224,240}
+\definecolor{cPool}{RGB}{255,228,204}
+\definecolor{cDensa}{RGB}{212,236,222}
+\definecolor{cReg}{RGB}{236,220,240}
+\tikzset{
+    capa/.style={draw=black!60, rounded corners=2pt, minimum height=1.05cm, text width=1.95cm, align=center, font=\footnotesize, inner sep=2pt},
+    tensor/.style={font=\scriptsize, text=black!70},
+    flecha/.style={-{Latex[length=1.6mm]}, black!70},
+}
+\definecolor{cDifuso}{RGB}{255,240,200}

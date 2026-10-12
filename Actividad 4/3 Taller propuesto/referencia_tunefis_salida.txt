@@ -1,0 +1,50 @@
+campana inicial 1  gbellmf [1.250000 2.000000 0.000000]
+campana inicial 2  gbellmf [1.250000 2.000000 2.500000]
+campana inicial 3  gbellmf [1.250000 2.000000 5.000000]
+campana inicial 4  gbellmf [1.250000 2.000000 7.500000]
+campana inicial 5  gbellmf [1.250000  2.000000 10.000000]
+RMSE inicial 0.3466485
+
+ANFIS info:
+	Number of nodes: 24
+	Number of linear parameters: 10
+	Number of nonlinear parameters: 15
+	Total number of parameters: 25
+	Number of training data pairs: 101
+	Number of checking data pairs: 0
+	Number of fuzzy rules: 5
+
+
+Start training ANFIS ...
+
+1 	 0.0694086
+2 	 0.0680259
+3 	 0.066663
+4 	 0.0653198
+Step size increases to 0.011000 after epoch 5.
+5 	 0.0639961
+6 	 0.0626917
+7 	 0.0612787
+8 	 0.0598881
+Step size increases to 0.012100 after epoch 9.
+9 	 0.0585193
+10 	 0.0571712
+
+Designated epoch number reached. ANFIS training completed at epoch 10.
+
+Minimal training RMSE = 0.0571712
+RMSE final 0.0571712
+campana final 1  [1.313552 1.999443 0.056200]
+campana final 2  [1.241396 1.985618 2.498113]
+campana final 3  [1.242335 1.998512 4.988612]
+campana final 4  [1.275471 1.999512 7.477887]
+campana final 5  [1.251139 1.999575 9.999436]
+consecuente final 1  [1.872801 0.215714]
+consecuente final 2  [0.848484 -3.096972]
+consecuente final 3  [-0.639171  2.859215]
+consecuente final 4  [-0.487932  3.894183]
+consecuente final 5  [0.123148 -1.032788]
+300 épocas. RMSE de entrenamiento en la época 10 0.05717 y en la 300 0.00370
+300 épocas. RMSE de comprobación mínimo 0.00334 en la época 299
+300 épocas. Paso final 0.0020
+Épocas en que cambia el paso: 6 10 14 18 22 26 30 34 38 42 46 53 57 61 65 69 73 77 81 85 89 93 97 101 108 114 119 123 127 131 135 139 142 148 153 159 166 171 177 183 190 195 201 207 214 219 225 232 237 243 249 256 262 267 271 275 279 283 286 292 298

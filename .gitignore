@@ -122,3 +122,15 @@ Actividad 3/**/informe/*.fdb_latexmk
 Actividad 3/**/informe/cifras.tex
 Actividad 3/**/informe/*.toc
 Actividad 3/2 Onramp/*.pdf
+
+# Actividad 4. Material del profesor, datos y salidas de LaTeX
+Actividad 4/material/
+Actividad 4/**/datos/
+Actividad 4/**/informe/*.aux
+Actividad 4/**/informe/*.log
+Actividad 4/**/informe/*.out
+Actividad 4/**/informe/*.fls
+Actividad 4/**/informe/*.fdb_latexmk
+Actividad 4/**/informe/*.toc
+Actividad 4/**/informe/cifras.tex
+Actividad 4/3 Taller propuesto/fcm_matlab_grupos.csv
