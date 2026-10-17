@@ -31,7 +31,7 @@
 
 El taller pide construir dos modelos de lógica difusa que clasifiquen la acción de un robot a partir de sus sensores, uno con cuatro entradas y otro con dos. Las funciones de pertenencia de cada entrada deben salir del análisis de datos, es decir de los histogramas, los histogramas por clase y las nubes de puntos, y el número de reglas, que es el producto del número de etiquetas de cada variable, no puede pasar de 100.
 
-Los histogramas por clase muestran que las cuatro acciones quedan separadas por completo con tres umbrales sobre dos distancias, la frontal y la izquierda. Las distancias derecha y trasera aportan información por sí solas, pero no agregan nada una vez conocidas las otras dos. Con esos umbrales como cruces de las funciones de pertenencia, el modelo de dos sensores tiene \reglasDos{} reglas y el de cuatro \reglasCuatro, y los dos clasifican bien los \nTe{} registros de prueba. Con etiquetas uniformes ninguna variante pasa de \uniMejor~\% dentro del límite de reglas. El trabajo se hizo en Python con las funciones del cuaderno resuelto de la clase, y el cuaderno entregado se ejecutó completo con las catorce verificaciones en \texttt{[OK]}.
+Los histogramas por clase muestran que las cuatro acciones quedan separadas por completo con tres umbrales sobre dos distancias, la frontal y la izquierda. Las distancias derecha y trasera aportan información por sí solas, pero no agregan nada una vez conocidas las otras dos. Con esos umbrales como cruces de las funciones de pertenencia, el modelo de dos sensores tiene \reglasDos{} reglas y el de cuatro \reglasCuatro, y los dos clasifican bien los \nTe{} registros de prueba. Con etiquetas uniformes ninguna variante pasa de \uniMejor~\% dentro del límite de reglas. El trabajo parte de la experiencia del taller propuesto y se hizo en Python con las funciones del cuaderno resuelto de la clase. El cuaderno entregado se ejecutó completo con las dieciocho verificaciones en \texttt{[OK]}. Junto con el informe se entregan los datos, los grupos de entrenamiento y de prueba de cada partición y los dos modelos, que permiten repetir el experimento (Anexo~\ref{anexo:archivos}).
 
 \section{Marco teórico (resumen)}
 
@@ -48,6 +48,10 @@ Si cada variable tiene $n_j$ etiquetas, la rejilla completa tiene $\prod_j n_j$ 
 Para clasificar un registro nuevo se calcula la fuerza de todas las reglas y gana la más fuerte, como en el clasificador del cuaderno resuelto. Un Sugeno de orden cero usa las mismas reglas de otra forma. Cada regla propone una constante, aquí un giro, y la salida es el promedio de esas constantes ponderado por la fuerza de cada regla (Takagi y Sugeno, 1985). Además de la exactitud se informa la exactitud balanceada, el promedio del acierto de cada clase, porque una de las cuatro acciones es solo el 6~\% de los registros.
 
 \section{Metodología}
+
+\subsection{Punto de partida, el taller propuesto}
+
+El taller propuesto aplicó a Wine el clasificador de Wang y Mendel con etiquetas uniformes. Con tres etiquetas obtuvo 92.6~\% en prueba con 31 reglas, y con las cuatro etiquetas que eligió la validación cruzada 88.9~\% con 43. De ese taller se toman cinco decisiones. Todo lo que define el modelo (cortes, etiquetas, consecuentes y elección entre modelos) se calcula solo con el entrenamiento, y la prueba se mide una vez al final. La t-norma es el producto, porque allí el mínimo y el producto dieron las mismas 54 predicciones, ya que con la regla más fuerte gana la celda propia de cada registro. Con tres etiquetas, tres de los cuatro errores de aquel taller caían en celdas dominadas por otro cultivar, uno en la única regla cuyo consecuente, tomado del registro de mayor grado, no seguía a la mayoría, y con más etiquetas aparecían celdas casi vacías. Por eso aquí el consecuente sale de la suma de fuerzas de todos los registros y se revisa el soporte de cada regla. Como allí, el modelo se compara con un árbol de decisión con el mismo límite de hojas. Por último, las reglas se prueban también como Sugeno de orden cero, el tipo de sistema que allí se ajustó con ANFIS. Lo que aquel taller no resolvió, dónde poner las etiquetas cuando la partición uniforme no sirve, es lo que este resuelve con los histogramas por clase.
 
 \subsection{Datos}
 
@@ -130,7 +134,7 @@ La Figura~\ref{fig:hist} muestra los histogramas de cada distancia en escala log
     \label{fig:nubes}
 \end{figure}
 
-La Tabla~\ref{tab:rangos} da el rango de las dos primeras distancias por acción. El giro fuerte a la derecha ocurre siempre con la distancia frontal hasta 0.900 y las otras tres acciones empiezan en 0.901. Entre esas tres, la distancia izquierda forma franjas que no se tocan, giro suave a la derecha hasta 0.494, avanzar entre 0.495 y 0.900 y giro suave a la izquierda desde 0.902. En las distancias derecha y trasera los rangos de todas las acciones se superponen (Tabla~\ref{tab:rangosdt}). Aun así informan algo por sí solas. Por encima del corte de la trasera queda el \trasIzq~\% de los registros de giro suave a la izquierda y como mucho el \trasOtrasMax~\% de las demás acciones. Por encima del corte de la derecha queda el \derSuave~\% de los de giro suave a la derecha y como mucho el \derOtrasMax~\% de las demás. Un árbol sin límite entrenado solo con esas dos distancias acierta el \accSoloDT~\% de la prueba aleatoria, pero con \hojasSoloDT{} hojas que memorizan tramos del recorrido. Con la partición temporal acierta el \accSoloDTt~\%, todavía por encima del \mayT~\% de la clase mayoritaria.
+La Tabla~\ref{tab:rangos} da el rango de las dos primeras distancias por acción. El giro fuerte a la derecha ocurre siempre con la distancia frontal hasta 0.900 y las otras tres acciones empiezan en 0.901. Entre esas tres, la distancia izquierda forma franjas que no se tocan, giro suave a la derecha hasta 0.494, avanzar entre 0.495 y 0.900 y giro suave a la izquierda desde 0.902. En las distancias derecha y trasera los rangos de todas las acciones se superponen (Tabla~\ref{tab:rangosdt}). Aun así separan en parte algunas acciones. Por encima del corte de la trasera queda el \trasIzq~\% de los registros de giro suave a la izquierda y como mucho el \trasOtrasMax~\% de las demás acciones. Por encima del corte de la derecha queda el \derSuave~\% de los de giro suave a la derecha y como mucho el \derOtrasMax~\% de las demás. Un árbol sin límite entrenado solo con esas dos distancias acierta el \accSoloDT~\% de la prueba aleatoria, frente al \mayoritaria~\% de la clase mayoritaria, pero con \hojasSoloDT{} hojas que memorizan tramos del recorrido. Con la partición temporal acierta el \accSoloDTt~\%, todavía por encima del \mayT~\% de la clase mayoritaria.
 
 \begin{table}[!htb]
     \centering
@@ -210,7 +214,7 @@ La rejilla de dos entradas tiene $2\times3=6$ reglas y la de cuatro $2\times3\ti
 
 \subsection{Evaluación en prueba}
 
-En la validación cruzada del entrenamiento los dos modelos aciertan el \cvDos~\%. La Tabla~\ref{tab:resultados} resume la prueba. Los dos modelos difusos aciertan los \nTe{} registros, con exactitud y exactitud balanceada del 100~\%, y la matriz de confusión es diagonal. El árbol de decisión, con permiso para \reglasCuatro{} hojas, solo usa \hojasCuatro{} y también acierta todo. La regla nítida de tres umbrales, frontal hasta \uFrontal{} y luego izquierda hasta \uIzqBajo{} y hasta \uIzqAlto, acierta los \aciertosNitida{} registros del archivo. La Figura~\ref{fig:mapa} muestra las regiones que asigna el modelo de dos sensores, con las franjas de transición sombreadas y los registros de prueba encima.
+En la validación cruzada del entrenamiento los dos modelos aciertan el \cvDos~\%. La Tabla~\ref{tab:resultados} resume la prueba. Los dos modelos difusos aciertan los \nTe{} registros, con exactitud y exactitud balanceada del 100~\%, y la matriz de confusión es diagonal (Tabla~\ref{tab:confusion}). Los dos modelos guardados en disco y vueltos a cargar reproducen esas predicciones sobre los archivos de prueba. El árbol de decisión, con permiso para \reglasCuatro{} hojas, solo usa \hojasCuatro, corta en \uFrontal, \uIzqBajo{} y \uIzqAlto{} y también acierta todo. La regla nítida de tres umbrales, frontal hasta \uFrontal{} y luego izquierda hasta \uIzqBajo{} y hasta \uIzqAlto, acierta los \aciertosNitida{} registros del archivo. La Figura~\ref{fig:mapa} muestra las regiones que asigna el modelo de dos sensores, con las franjas de transición sombreadas y los registros de prueba encima.
 
 \begin{table}[!htb]
     \centering
@@ -226,6 +230,23 @@ En la validación cruzada del entrenamiento los dos modelos aciertan el \cvDos~\
         \midrule
         \multirow{2}{*}{2 sensores} & Difuso, cortes del análisis & \reglasDos & \accDos & \balDos \\
                                     & Árbol de decisión & \hojasDos & \arbolDos & 100.0 \\
+        \bottomrule
+    \end{tabular}
+\end{table}
+
+\begin{table}[!htb]
+    \centering
+    \caption{Matriz de confusión en prueba, igual para los dos modelos difusos. Filas, acción real. Columnas, acción predicha}
+    \label{tab:confusion}
+    \footnotesize
+    \begin{tabular}{l S[table-format=3.0] S[table-format=3.0] S[table-format=3.0] S[table-format=2.0]}
+        \toprule
+         & {\textbf{Giro fuerte der.}} & {\textbf{Giro suave der.}} & {\textbf{Avanzar}} & {\textbf{Giro suave izq.}} \\
+        \midrule
+        Giro fuerte a la derecha & \cuentaTeA & 0 & 0 & 0 \\
+        Giro suave a la derecha & 0 & \cuentaTeB & 0 & 0 \\
+        Avanzar & 0 & 0 & \cuentaTeC & 0 \\
+        Giro suave a la izquierda & 0 & 0 & 0 & \cuentaTeD \\
         \bottomrule
     \end{tabular}
 \end{table}
@@ -329,13 +350,13 @@ La Tabla~\ref{tab:uniforme} muestra que la causa principal es la escala. Las lec
 
 \subsection{Cuatro sensores frente a dos}
 
-Los dos modelos aciertan lo mismo en validación y en prueba, pero el de cuatro sensores necesita 24 reglas para expresar lo que el de dos dice con 6. Cada regla del segundo se reparte en cuatro según las etiquetas de las distancias derecha y trasera, que no cambian la decisión una vez conocidas la frontal y la izquierda. La trasera distingue en parte el giro suave a la izquierda, porque en esa acción suele ser mayor que en las demás (Tabla~\ref{tab:rangosdt}), pero la izquierda ya lo separa por completo. En 22 de las 24 reglas la acción aprendida coincide con la del modelo de dos sensores, y las \nDistintas{} que no coinciden tienen un soporte casi nulo. No ganan en prueba, pero un registro que cayera de lleno en una de ellas recibiría una acción equivocada. Las rejillas grandes tienen ese riesgo en las celdas casi vacías. La elección entre los dos modelos se puede hacer sin mirar la prueba. El análisis de datos y la validación cruzada dicen que las distancias derecha y trasera sobran. El criterio de la clase pide el modelo más simple cuya exactitud no se distinga de la del más complejo, y aplicado aquí a la validación del entrenamiento recomienda el modelo de dos sensores con seis reglas.
+Los dos modelos aciertan lo mismo en validación y en prueba, pero el de cuatro sensores necesita 24 reglas para expresar lo que el de dos dice con 6. Cada regla del segundo se reparte en cuatro según las etiquetas de las distancias derecha y trasera, que no cambian la decisión una vez conocidas la frontal y la izquierda. La trasera distingue en parte el giro suave a la izquierda, porque en esa acción suele ser mayor que en las demás (Tabla~\ref{tab:rangosdt}), pero la izquierda ya lo separa por completo. En 22 de las 24 reglas la acción aprendida coincide con la del modelo de dos sensores, y las \nDistintas{} que no coinciden tienen un soporte casi nulo. No ganan en prueba, pero un registro que cayera de lleno en una de ellas recibiría una acción equivocada. Ese riesgo crece con la rejilla, porque aparecen más celdas casi vacías. La elección entre los dos modelos se puede hacer sin mirar la prueba. El análisis de datos y la validación cruzada dicen que las distancias derecha y trasera sobran. El criterio visto en clase pide el modelo más simple cuya exactitud no se distinga de la del más complejo, y aplicado aquí a la validación del entrenamiento recomienda el modelo de dos sensores con seis reglas.
 
 \subsection{Qué aporta lo difuso}
 
 Con la regla más fuerte como decisión y trapecios que se cruzan en 0.5 justo en cada umbral, la frontera entre acciones es el umbral mismo. El modelo difuso decide entonces como el árbol de cuatro hojas, y la Tabla~\ref{tab:ruido} lo confirma, con predicciones idénticas a las del árbol para todos los niveles de ruido. Por la misma razón el semiancho $\delta$ no cambia ninguna predicción. Una fuerza ganadora menor que 1 indica cercanía a un corte y no siempre a un cambio de acción, porque en el \misma~\% de los registros la franja separa dos reglas con la misma acción. El cambio cercano lo indica una regla activa de otra acción, lo que ocurre en el \compite~\% de los registros con $\delta=\semiancho$. Las dos cosas se pueden calcular también con la distancia a los cortes del árbol. La certeza menor que 1 de la Tabla~\ref{tab:reglas} la produce $\delta$, porque las franjas hacen que registros de una acción activen en parte la regla vecina. Con $\delta=0.001$ la certeza mínima es 0.997.
 
-Lo difuso cambia el resultado cuando la salida es continua. El Sugeno de orden cero de la Figura~\ref{fig:sugeno} cambia el giro de forma gradual dentro de cada franja en lugar de saltar de una acción a otra. Entre acciones vecinas, como en las franjas de la izquierda, el redondeo devuelve la acción nítida. Entre acciones no vecinas, como el giro fuerte a la derecha y avanzar en la franja frontal, el promedio pasa por una acción intermedia que la regla ganadora no propone, y de ahí salen los \erroresSugeno{} registros que bajan la exactitud a \accSugeno~\%. Promediar acciones solo tiene sentido cuando se ordenan en una escala, y aun así el resultado depende de los valores asignados a cada una.
+Con una salida continua el resultado sí cambia. El Sugeno de orden cero de la Figura~\ref{fig:sugeno} cambia el giro de forma gradual dentro de cada franja en lugar de saltar de una acción a otra. Entre acciones vecinas, como en las franjas de la izquierda, el redondeo devuelve la acción nítida. Entre acciones no vecinas, como el giro fuerte a la derecha y avanzar en la franja frontal, el promedio pasa por una acción intermedia que la regla ganadora no propone, y de ahí salen los \erroresSugeno{} registros que bajan la exactitud a \accSugeno~\%. Promediar acciones solo tiene sentido cuando se ordenan en una escala, y aun así el resultado depende de los valores asignados a cada una.
 
 \subsection{Sensibilidad y límites de la evaluación}
 
@@ -345,15 +366,19 @@ La partición temporal da el mismo resultado que la aleatoria. Las acciones sigu
 
 \section{Conclusiones}
 
-El análisis de los histogramas por clase y de las nubes de puntos mostró que la acción del robot queda determinada por la distancia frontal, con un umbral en \uFrontal, y por la izquierda, con umbrales en \uIzqBajo{} y \uIzqAlto. Esa regla nítida acierta los \aciertosNitida{} registros, lo que concuerda con el clasificador heurístico que asignó las acciones. Las distancias derecha y trasera informan por sí solas pero sobran una vez conocidas las otras dos.
+En la Tabla~\ref{tab:rangos} la distancia frontal separa el giro fuerte de las otras tres acciones, y con el frente despejado la izquierda separa esas tres sin que sus rangos se toquen. La regla nítida de tres cortes acierta los \aciertosNitida{} registros del archivo, así que la acción depende de la distancia frontal, con un corte en \uFrontal, y de la izquierda, con cortes en \uIzqBajo{} y \uIzqAlto. Por eso bastan dos etiquetas en la frontal y tres en la izquierda, cruzadas en esos cortes (Tabla~\ref{tab:mf}).
 
-Con esos umbrales como cruces de etiquetas trapezoidales, el modelo de cuatro sensores tiene \reglasCuatro{} reglas y el de dos tiene \reglasDos, los dos dentro del límite de 100. Los dos aciertan el 100~\% de los \nTe{} registros de prueba, con una partición aleatoria y con una temporal.
+Con esas etiquetas el modelo de dos sensores tiene \reglasDos{} reglas y el de cuatro \reglasCuatro, y los dos aciertan los \nTe{} registros de prueba (Tablas~\ref{tab:resultados} y \ref{tab:confusion}). La partición temporal, que también acierta todo, descarta que el acierto venga de registros vecinos entre entrenamiento y prueba. Como las acciones las asignó un controlador de reglas nítidas, ese acierto indica que el modelo recupera el controlador, no cómo se comportaría el robot en otra sala.
 
-Con etiquetas uniformes, el clasificador del cuaderno resuelto llega a \uniCursoAcc~\%. Repartir las etiquetas en los cuantiles del entrenamiento lo sube a \uniCuantAcc~\% con \uniCuantReglas{} reglas, y los cortes tomados de los histogramas por clase llegan al 100~\% con seis.
+Una vez conocidas la frontal y la izquierda, las distancias derecha y trasera no cambian ninguna decisión en prueba. En 22 de las 24 reglas del modelo de cuatro sensores la acción es la que dictan la frontal y la izquierda, y las dos que difieren tienen soportes de \distSoportes{} y no ganan en ningún registro de prueba (Tabla~\ref{tab:reglas4}). Por eso, y porque los dos modelos empatan en la validación del entrenamiento con \cvDos~\%, el modelo que se entrega como el mejor es el de dos sensores.
 
-El modelo recomendado es el de dos sensores, elegido con el análisis y la validación del entrenamiento. Acierta lo mismo con la cuarta parte de las reglas, y sus seis reglas describen la maniobra de seguir la pared.
+La ubicación de las etiquetas pesa más que su número. Con tres etiquetas por sensor en el modelo de cuatro, repartirlas por cuantiles en lugar de entre el mínimo y el máximo sube la prueba de \uniTresMinMax{} a \uniTresCuant~\% (Tabla~\ref{tab:uniforme}). Con dos sensores el clasificador del cuaderno resuelto llega a \uniCursoAcc~\%, y casi todo su error está en avanzar, que acierta \uniCursoAvanzar{} de \nAvanzarTe. Con los cortes de los histogramas por clase se llega al 100~\% con seis reglas (Tablas~\ref{tab:resultados} y \ref{tab:uniforme}). En Wine la partición uniforme había alcanzado 92.6~\%, y aquí deja de servir porque la cola larga de la distancia izquierda deja sus límites de clase en \escIzqA{} y \escIzqB{} de la escala.
 
-Con la regla más fuerte como decisión el modelo difuso decide igual que un árbol con los mismos cortes, también con ruido en las lecturas. Usadas como Sugeno de orden cero, las mismas reglas producen un giro continuo. Entre acciones vecinas el giro redondeado coincide con la etiqueta, y en la franja frontal el promedio cae en una acción intermedia que la regla ganadora no propone, lo que baja la exactitud a \accSugeno~\%.
+En el taller propuesto el mínimo y el producto dieron las mismas predicciones, porque con la regla más fuerte gana la celda propia de cada registro. Aquí la forma de las etiquetas tampoco cambia la decisión. Con semianchos de 0.001 a 0.200 la exactitud sigue en 100~\% (Tabla~\ref{tab:ancho}), y con ruido en las lecturas el modelo difuso y el árbol de cuatro hojas, que corta en los mismos tres valores, dan las mismas predicciones en las 20 realizaciones de cada nivel (Tabla~\ref{tab:ruido}).
+
+El margen entre clases en el entrenamiento es de una milésima, 0.900 frente a 0.901 en la frontal. Mover ese corte 0.01 cuesta entre 0.8 y 1.3 puntos, y un ruido de 0.01 en las lecturas baja la exactitud a \ruidoUno~\% en promedio (Figura~\ref{fig:sens} y Tabla~\ref{tab:ruido}). El modelo es exacto mientras las lecturas tengan la resolución con que se etiquetaron.
+
+Como Sugeno de orden cero, las seis reglas dan un giro que cambia en rampa dentro de las franjas de $\pm$\semiancho, y al redondearlo la exactitud queda en \accSugeno~\%. Los \erroresSugeno{} registros que cambian están en la franja del corte frontal, donde se promedian acciones que no son vecinas (Figura~\ref{fig:sugeno}). La cifra depende de los giros elegidos, y con $-3$ para el giro fuerte sube a \accSugenoB~\%.
 
 \section{Referencias}
 \begin{itemize}
@@ -423,5 +448,33 @@ def crear_reglas(X, y, variables, MF, n_clases=4):
     soporte = voto.sum(axis=1)
     return R, voto.argmax(axis=1), soporte, voto.max(axis=1) / np.maximum(soporte, 1e-12)
 \end{lstlisting}
+
+\section{Archivos entregados}
+\label{anexo:archivos}
+
+El archivo ZIP de la entrega contiene este informe y una carpeta con todo lo necesario para repetir el experimento, cuyo nombre es \texttt{TallerRobot\_LogicaDifusa\_SergioDuarte}.
+
+\begin{table}[!htb]
+    \centering
+    \caption{Contenido de la carpeta entregada}
+    \label{tab:archivos}
+    \footnotesize
+    \begin{tabular}{>{\raggedright\arraybackslash}p{5.6cm} >{\raggedright\arraybackslash}p{9.4cm}}
+        \toprule
+        \textbf{Archivo} & \textbf{Contenido} \\
+        \midrule
+        \texttt{Taller\_LogicaDifusa\_Robot.ipynb} & Cuaderno completo y ejecutado con NumPy 2.4 y scikit-fuzzy 0.5, con el análisis, los dos modelos, las comparaciones y las dieciocho verificaciones \\
+        \texttt{datos/sensor\_readings\_4.csv} & Distancias frontal, izquierda, derecha y trasera con la acción, como las entrega el aula \\
+        \texttt{datos/sensor\_readings\_2.csv} & Distancias frontal e izquierda con la acción \\
+        \texttt{particiones/aleatoria\_*.csv} & Grupos de entrenamiento (3\,819 registros) y de prueba (1\,637) de la partición aleatoria, para 4 y para 2 sensores, con el número de fila del archivo original \\
+        \texttt{particiones/temporal\_*.csv} & Los mismos grupos para la partición temporal, primer 70~\% del recorrido y último 30~\% \\
+        \texttt{modelos/modelo\_2\_sensores.json} & Modelo entregado como el mejor, con cortes, etiquetas, seis reglas, soporte y certeza \\
+        \texttt{modelos/modelo\_4\_sensores.json} & Modelo de cuatro sensores con sus 24 reglas \\
+        \texttt{resultados.json} & Cifras que usa este informe, escritas por el último paso del cuaderno \\
+        \texttt{figuras\_informe.py} & Genera las figuras de este informe y sus cifras a partir de \texttt{resultados.json} \\
+        \texttt{LEEME.txt} & Pasos para ejecutar el cuaderno y requisitos \\
+        \bottomrule
+    \end{tabular}
+\end{table}
 
 \end{document}

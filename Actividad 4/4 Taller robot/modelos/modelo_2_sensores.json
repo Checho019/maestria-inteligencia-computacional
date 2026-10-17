@@ -1,0 +1,127 @@
+{
+ "variables": [
+  "frontal",
+  "izquierdo"
+ ],
+ "tnorma": "producto",
+ "decision": "regla más fuerte",
+ "semiancho": 0.05,
+ "cortes": {
+  "frontal": 0.9005,
+  "izq_bajo": 0.4945,
+  "izq_alto": 0.901
+ },
+ "etiquetas": {
+  "frontal": {
+   "cerca": {
+    "tipo": "trapmf",
+    "parametros": [
+     -1.0,
+     -1.0,
+     0.8505,
+     0.9505000000000001
+    ]
+   },
+   "lejos": {
+    "tipo": "trapmf",
+    "parametros": [
+     0.8505,
+     0.9505000000000001,
+     6.0,
+     6.0
+    ]
+   }
+  },
+  "izquierdo": {
+   "cerca": {
+    "tipo": "trapmf",
+    "parametros": [
+     -1.0,
+     -1.0,
+     0.4445,
+     0.5445
+    ]
+   },
+   "media": {
+    "tipo": "trapmf",
+    "parametros": [
+     0.4445,
+     0.5445,
+     0.851,
+     0.9510000000000001
+    ]
+   },
+   "lejos": {
+    "tipo": "trapmf",
+    "parametros": [
+     0.851,
+     0.9510000000000001,
+     6.0,
+     6.0
+    ]
+   }
+  }
+ },
+ "acciones": [
+  "Sharp-Right-Turn",
+  "Slight-Right-Turn",
+  "Move-Forward",
+  "Slight-Left-Turn"
+ ],
+ "reglas": [
+  {
+   "si": {
+    "frontal": "cerca",
+    "izquierdo": "cerca"
+   },
+   "entonces": "Sharp-Right-Turn",
+   "soporte": 350.1091,
+   "certeza": 0.9816
+  },
+  {
+   "si": {
+    "frontal": "cerca",
+    "izquierdo": "media"
+   },
+   "entonces": "Sharp-Right-Turn",
+   "soporte": 996.6526,
+   "certeza": 0.9657
+  },
+  {
+   "si": {
+    "frontal": "cerca",
+    "izquierdo": "lejos"
+   },
+   "entonces": "Sharp-Right-Turn",
+   "soporte": 77.9484,
+   "certeza": 0.973
+  },
+  {
+   "si": {
+    "frontal": "lejos",
+    "izquierdo": "cerca"
+   },
+   "entonces": "Slight-Right-Turn",
+   "soporte": 536.6259,
+   "certeza": 0.8421
+  },
+  {
+   "si": {
+    "frontal": "lejos",
+    "izquierdo": "media"
+   },
+   "entonces": "Move-Forward",
+   "soporte": 1632.7325,
+   "certeza": 0.884
+  },
+  {
+   "si": {
+    "frontal": "lejos",
+    "izquierdo": "lejos"
+   },
+   "entonces": "Slight-Left-Turn",
+   "soporte": 224.9316,
+   "certeza": 0.9826
+  }
+ ]
+}

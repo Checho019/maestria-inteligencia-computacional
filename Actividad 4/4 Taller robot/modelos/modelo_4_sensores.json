@@ -1,0 +1,381 @@
+{
+ "variables": [
+  "frontal",
+  "izquierdo",
+  "derecho",
+  "trasero"
+ ],
+ "tnorma": "producto",
+ "decision": "regla más fuerte",
+ "semiancho": 0.05,
+ "cortes": {
+  "frontal": 0.9005,
+  "izq_bajo": 0.4945,
+  "izq_alto": 0.901,
+  "derecho": 1.7575,
+  "trasero": 1.8015
+ },
+ "etiquetas": {
+  "frontal": {
+   "cerca": {
+    "tipo": "trapmf",
+    "parametros": [
+     -1.0,
+     -1.0,
+     0.8505,
+     0.9505000000000001
+    ]
+   },
+   "lejos": {
+    "tipo": "trapmf",
+    "parametros": [
+     0.8505,
+     0.9505000000000001,
+     6.0,
+     6.0
+    ]
+   }
+  },
+  "izquierdo": {
+   "cerca": {
+    "tipo": "trapmf",
+    "parametros": [
+     -1.0,
+     -1.0,
+     0.4445,
+     0.5445
+    ]
+   },
+   "media": {
+    "tipo": "trapmf",
+    "parametros": [
+     0.4445,
+     0.5445,
+     0.851,
+     0.9510000000000001
+    ]
+   },
+   "lejos": {
+    "tipo": "trapmf",
+    "parametros": [
+     0.851,
+     0.9510000000000001,
+     6.0,
+     6.0
+    ]
+   }
+  },
+  "derecho": {
+   "cerca": {
+    "tipo": "trapmf",
+    "parametros": [
+     -1.0,
+     -1.0,
+     1.7074999928474426,
+     1.8074999928474427
+    ]
+   },
+   "lejos": {
+    "tipo": "trapmf",
+    "parametros": [
+     1.7074999928474426,
+     1.8074999928474427,
+     6.0,
+     6.0
+    ]
+   }
+  },
+  "trasero": {
+   "cerca": {
+    "tipo": "trapmf",
+    "parametros": [
+     -1.0,
+     -1.0,
+     1.7515000224113464,
+     1.8515000224113465
+    ]
+   },
+   "lejos": {
+    "tipo": "trapmf",
+    "parametros": [
+     1.7515000224113464,
+     1.8515000224113465,
+     6.0,
+     6.0
+    ]
+   }
+  }
+ },
+ "acciones": [
+  "Sharp-Right-Turn",
+  "Slight-Right-Turn",
+  "Move-Forward",
+  "Slight-Left-Turn"
+ ],
+ "reglas": [
+  {
+   "si": {
+    "frontal": "cerca",
+    "izquierdo": "cerca",
+    "derecho": "cerca",
+    "trasero": "cerca"
+   },
+   "entonces": "Sharp-Right-Turn",
+   "soporte": 123.9491,
+   "certeza": 0.9887
+  },
+  {
+   "si": {
+    "frontal": "cerca",
+    "izquierdo": "cerca",
+    "derecho": "cerca",
+    "trasero": "lejos"
+   },
+   "entonces": "Sharp-Right-Turn",
+   "soporte": 0.3601,
+   "certeza": 1.0
+  },
+  {
+   "si": {
+    "frontal": "cerca",
+    "izquierdo": "cerca",
+    "derecho": "lejos",
+    "trasero": "cerca"
+   },
+   "entonces": "Sharp-Right-Turn",
+   "soporte": 222.8398,
+   "certeza": 0.9773
+  },
+  {
+   "si": {
+    "frontal": "cerca",
+    "izquierdo": "cerca",
+    "derecho": "lejos",
+    "trasero": "lejos"
+   },
+   "entonces": "Sharp-Right-Turn",
+   "soporte": 2.96,
+   "certeza": 1.0
+  },
+  {
+   "si": {
+    "frontal": "cerca",
+    "izquierdo": "media",
+    "derecho": "cerca",
+    "trasero": "cerca"
+   },
+   "entonces": "Sharp-Right-Turn",
+   "soporte": 470.9695,
+   "certeza": 0.9625
+  },
+  {
+   "si": {
+    "frontal": "cerca",
+    "izquierdo": "media",
+    "derecho": "cerca",
+    "trasero": "lejos"
+   },
+   "entonces": "Sharp-Right-Turn",
+   "soporte": 125.3427,
+   "certeza": 0.9834
+  },
+  {
+   "si": {
+    "frontal": "cerca",
+    "izquierdo": "media",
+    "derecho": "lejos",
+    "trasero": "cerca"
+   },
+   "entonces": "Sharp-Right-Turn",
+   "soporte": 335.6371,
+   "certeza": 0.9615
+  },
+  {
+   "si": {
+    "frontal": "cerca",
+    "izquierdo": "media",
+    "derecho": "lejos",
+    "trasero": "lejos"
+   },
+   "entonces": "Sharp-Right-Turn",
+   "soporte": 64.7032,
+   "certeza": 0.9771
+  },
+  {
+   "si": {
+    "frontal": "cerca",
+    "izquierdo": "lejos",
+    "derecho": "cerca",
+    "trasero": "cerca"
+   },
+   "entonces": "Sharp-Right-Turn",
+   "soporte": 12.655,
+   "certeza": 1.0
+  },
+  {
+   "si": {
+    "frontal": "cerca",
+    "izquierdo": "lejos",
+    "derecho": "cerca",
+    "trasero": "lejos"
+   },
+   "entonces": "Sharp-Right-Turn",
+   "soporte": 51.2745,
+   "certeza": 0.9694
+  },
+  {
+   "si": {
+    "frontal": "cerca",
+    "izquierdo": "lejos",
+    "derecho": "lejos",
+    "trasero": "cerca"
+   },
+   "entonces": "Sharp-Right-Turn",
+   "soporte": 11.5829,
+   "certeza": 0.9854
+  },
+  {
+   "si": {
+    "frontal": "cerca",
+    "izquierdo": "lejos",
+    "derecho": "lejos",
+    "trasero": "lejos"
+   },
+   "entonces": "Sharp-Right-Turn",
+   "soporte": 2.436,
+   "certeza": 0.8498
+  },
+  {
+   "si": {
+    "frontal": "lejos",
+    "izquierdo": "cerca",
+    "derecho": "cerca",
+    "trasero": "cerca"
+   },
+   "entonces": "Slight-Right-Turn",
+   "soporte": 101.9369,
+   "certeza": 0.7353
+  },
+  {
+   "si": {
+    "frontal": "lejos",
+    "izquierdo": "cerca",
+    "derecho": "cerca",
+    "trasero": "lejos"
+   },
+   "entonces": "Sharp-Right-Turn",
+   "soporte": 0.0149,
+   "certeza": 1.0
+  },
+  {
+   "si": {
+    "frontal": "lejos",
+    "izquierdo": "cerca",
+    "derecho": "lejos",
+    "trasero": "cerca"
+   },
+   "entonces": "Slight-Right-Turn",
+   "soporte": 434.5374,
+   "certeza": 0.8675
+  },
+  {
+   "si": {
+    "frontal": "lejos",
+    "izquierdo": "cerca",
+    "derecho": "lejos",
+    "trasero": "lejos"
+   },
+   "entonces": "Move-Forward",
+   "soporte": 0.1367,
+   "certeza": 1.0
+  },
+  {
+   "si": {
+    "frontal": "lejos",
+    "izquierdo": "media",
+    "derecho": "cerca",
+    "trasero": "cerca"
+   },
+   "entonces": "Move-Forward",
+   "soporte": 812.9244,
+   "certeza": 0.9319
+  },
+  {
+   "si": {
+    "frontal": "lejos",
+    "izquierdo": "media",
+    "derecho": "cerca",
+    "trasero": "lejos"
+   },
+   "entonces": "Move-Forward",
+   "soporte": 88.0772,
+   "certeza": 0.9254
+  },
+  {
+   "si": {
+    "frontal": "lejos",
+    "izquierdo": "media",
+    "derecho": "lejos",
+    "trasero": "cerca"
+   },
+   "entonces": "Move-Forward",
+   "soporte": 713.759,
+   "certeza": 0.8248
+  },
+  {
+   "si": {
+    "frontal": "lejos",
+    "izquierdo": "media",
+    "derecho": "lejos",
+    "trasero": "lejos"
+   },
+   "entonces": "Move-Forward",
+   "soporte": 17.9718,
+   "certeza": 0.8683
+  },
+  {
+   "si": {
+    "frontal": "lejos",
+    "izquierdo": "lejos",
+    "derecho": "cerca",
+    "trasero": "cerca"
+   },
+   "entonces": "Slight-Left-Turn",
+   "soporte": 1.385,
+   "certeza": 0.7726
+  },
+  {
+   "si": {
+    "frontal": "lejos",
+    "izquierdo": "lejos",
+    "derecho": "cerca",
+    "trasero": "lejos"
+   },
+   "entonces": "Slight-Left-Turn",
+   "soporte": 146.6505,
+   "certeza": 0.9857
+  },
+  {
+   "si": {
+    "frontal": "lejos",
+    "izquierdo": "lejos",
+    "derecho": "lejos",
+    "trasero": "cerca"
+   },
+   "entonces": "Slight-Left-Turn",
+   "soporte": 29.4988,
+   "certeza": 0.965
+  },
+  {
+   "si": {
+    "frontal": "lejos",
+    "izquierdo": "lejos",
+    "derecho": "lejos",
+    "trasero": "lejos"
+   },
+   "entonces": "Slight-Left-Turn",
+   "soporte": 47.3973,
+   "certeza": 0.9899
+  }
+ ]
+}
