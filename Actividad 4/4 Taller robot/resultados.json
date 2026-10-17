@@ -9406,7 +9406,7 @@
  "uniforme": [
   {
    "sensores": 4,
-   "escala": "m\u00ednimo y m\u00e1ximo",
+   "escala": "mínimo y máximo",
    "metodo": "registro de mayor grado",
    "n": 3,
    "rejilla": 81,
@@ -9421,7 +9421,7 @@
   },
   {
    "sensores": 4,
-   "escala": "m\u00ednimo y m\u00e1ximo",
+   "escala": "mínimo y máximo",
    "metodo": "suma de fuerzas",
    "n": 3,
    "rejilla": 81,
@@ -9466,7 +9466,7 @@
   },
   {
    "sensores": 2,
-   "escala": "m\u00ednimo y m\u00e1ximo",
+   "escala": "mínimo y máximo",
    "metodo": "registro de mayor grado",
    "n": 6,
    "rejilla": 36,
@@ -9488,7 +9488,7 @@
   },
   {
    "sensores": 2,
-   "escala": "m\u00ednimo y m\u00e1ximo",
+   "escala": "mínimo y máximo",
    "metodo": "suma de fuerzas",
    "n": 7,
    "rejilla": 49,
@@ -9566,7 +9566,9 @@
  "errores_sugeno": 80,
  "errores_franja_f": 80,
  "errores_a_suave": 77,
+ "acc_sugeno": 0.9511301160659743,
  "acc_sugeno_b": 0.9584605986560782,
+ "n_intermedio": 495,
  "escala_izq": [
   0.03326180257510015,
   0.1201716738197167
@@ -9737,8 +9739,6 @@
    1.0
   ]
  ],
- "acc_sugeno": 0.9511301160659743,
- "n_intermedio": 495,
  "temporal": {
   "4 sensores": [
    1.0,

@@ -44,13 +44,6 @@ def limpiar(carpeta):
         os.remove(os.path.join(carpeta, f))
 
 
-def trimf(x, a, b, c):
-    x = np.asarray(x, dtype=float)
-    izq = np.ones_like(x) if b == a else (x - a) / (b - a)
-    der = np.ones_like(x) if c == b else (c - x) / (c - b)
-    return np.clip(np.minimum(izq, der), 0, 1)
-
-
 def trapmf(x, a, b, c, d):
     x = np.asarray(x, dtype=float)
     izq = np.ones_like(x) if b == a else (x - a) / (b - a)
@@ -58,36 +51,6 @@ def trapmf(x, a, b, c, d):
     return np.clip(np.minimum(np.minimum(izq, 1.0), der), 0, 1)
 
 
-def gbellmf(x, a, b, c):
-    return 1.0 / (1.0 + np.abs((np.asarray(x, dtype=float) - c) / a) ** (2 * b))
-
-
-def sugeno1(x, P, L):
-    W = np.stack([gbellmf(x, *p) for p in P], axis=1)
-    f = L[:, 0][None, :] * x[:, None] + L[:, 1][None, :]
-    return (W * f).sum(axis=1) / W.sum(axis=1)
-
-
-def confusion(cm, clases, carpeta, nombre, tope, ancho=8.5):
-    """El color codifica solo los errores, la diagonal va en gris claro con su número."""
-    cm = np.array(cm); fuera = cm.astype(float); np.fill_diagonal(fuera, np.nan)
-    fig, ax = plt.subplots(figsize=(ancho * CM, ancho * 0.92 * CM))
-    ax.grid(False)
-    diag = np.full(cm.shape, np.nan); np.fill_diagonal(diag, 1)
-    ax.imshow(diag, cmap=ListedColormap(["#e6e6e6"]), vmin=0, vmax=1)
-    im = ax.imshow(fuera, cmap="Oranges", vmin=0, vmax=tope)
-    ax.set_xticks(range(len(clases))); ax.set_yticks(range(len(clases)))
-    ax.set_xticklabels(clases, rotation=30, ha="right"); ax.set_yticklabels(clases)
-    ax.set_xlabel("clase predicha"); ax.set_ylabel("clase real")
-    for i in range(cm.shape[0]):
-        for j in range(cm.shape[1]):
-            ax.text(j, i, cm[i, j], ha="center", va="center", fontsize=8,
-                    color="white" if (i != j and cm[i, j] > tope / 2) else "black")
-    fig.colorbar(im, fraction=0.046, pad=0.03, label="errores", ticks=range(0, int(tope) + 1))
-    guardar(fig, carpeta, nombre)
-
-
-# ============================ taller robot ============================
 r = json.load(open(os.path.join(AQUI, "resultados.json"), encoding="utf-8"))
 C = os.path.join(AQUI, "figuras"); limpiar(C)
 SEN = ["frontal", "izquierdo", "derecho", "trasero"]
