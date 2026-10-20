@@ -18,7 +18,7 @@
         \textbf{Docente:}    & \nombreDocente \\
         \textbf{Estudiante:} & \nombreEstudiante \\
         \textbf{Código:}     & \codigoEstudiante \\
-        \textbf{Fecha:}      & 18 de octubre de 2026 \\
+        \textbf{Fecha:}      & 20 de octubre de 2026 \\
     \end{tabular}
     \vfill
     Universidad Distrital Francisco José de Caldas
@@ -295,15 +295,13 @@ En 300 épocas la secuencia de pasos de Python se separa de la de MATLAB despué
 
 \section{Conclusiones}
 
-Las seis tareas del taller propuesto quedaron resueltas en Python sobre las funciones del cuaderno resuelto, con las veintiuna verificaciones del cuaderno en \texttt{[OK]}.
+El número de etiquetas se decide con la validación cruzada y no con la prueba. Con tres etiquetas el clasificador acierta más vinos de prueba que con cuatro, pero la validación favorece cuatro, cuatro gana en casi todas las repeticiones con otras semillas y McNemar no distingue los dos modelos (Tabla~\ref{tab:etiquetas} y Figura~\ref{fig:etiquetas}). Con \nTe{} vinos de prueba, la ventaja de tres etiquetas es de pocos vinos y depende de esa partición.
 
-Con cuatro medidas elegidas por razón F en el entrenamiento y cuatro etiquetas elegidas por validación cruzada, el clasificador con reglas extraídas de Wine obtiene \accEleg~\% en prueba con \reglasEleg{} reglas. Con tres etiquetas obtuvo \accNtres~\% en prueba, pero la validación estima \cvTres~\% para esa configuración, y McNemar no distingue los dos modelos con \nTe{} vinos.
+La t-norma no cambia la clasificación con la regla ganadora, porque la celda propia de cada vino gana con el mínimo y con el producto (Tabla~\ref{tab:origen}). Los errores vienen de la base de reglas. Todos involucran al cultivar 2 y caen en celdas dominadas por otro cultivar o, con más etiquetas, en celdas con muy pocos vinos o sin ninguna regla activa (Figuras~\ref{fig:cm3} y \ref{fig:cm4}). Esa pérdida de cobertura de Wang y Mendel al crecer las etiquetas es lo que limita su número útil.
 
-El mínimo y el producto dan las mismas predicciones porque la celda propia de cada vino gana con cualquier t-norma cuando existe. Todos los errores involucran al cultivar 2. Con tres etiquetas, tres de los cuatro caen en celdas cuyos vinos de entrenamiento son de otro cultivar y el cuarto en la única regla cuyo consecuente no sigue a la mayoría. Con más etiquetas los errores salen de celdas con uno a tres vinos y se suman vinos que no activan ninguna regla.
+Las cuatro medidas elegidas por razón F ya separan los cultivares sin usar la clase, porque FCM, k-means y \texttt{fcm} de MATLAB recuperan prácticamente la misma partición (Tabla~\ref{tab:fcm} y Figura~\ref{fig:fcm}). Lo que agregan las reglas difusas es describir esa separación con etiquetas legibles para cada medida.
 
-FCM recupera los cultivares con un ARI de \ariFcm, casi igual que k-means (\ariKm), y \texttt{fcm} de MATLAB sobre los CSV exportados produce la misma partición.
-
-El algoritmo ANFIS programado en Python reproduce el ejemplo de \texttt{tunefis} de MathWorks durante las diez épocas, con diferencias de hasta \difRmse{} en el RMSE. Diez épocas mejoran sobre todo los consecuentes. Con 300 el error baja unas \reduccion{} veces y termina en el mismo valor que MATLAB, aunque la secuencia de pasos se separa después de la época \epIguales.
+ANFIS en Python reproduce a \texttt{tunefis} época por época en el ejemplo de diez épocas (Tabla~\ref{tab:anfis}), así que la regla híbrida quedó bien programada. En 300 épocas la secuencia de pasos se separa de la de MATLAB después de la época \epIguales, lo que indica que la regla de ajuste del paso difiere en algún detalle, y aun así las dos terminan en el mismo error (Figura~\ref{fig:anfislargo}).
 
 \section{Declaración de uso de inteligencia artificial}
 
