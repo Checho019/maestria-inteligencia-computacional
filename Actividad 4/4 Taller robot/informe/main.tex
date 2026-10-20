@@ -366,19 +366,17 @@ La partición temporal da el mismo resultado que la aleatoria. Las acciones sigu
 
 \section{Conclusiones}
 
-En la Tabla~\ref{tab:rangos} la distancia frontal separa el giro fuerte de las otras tres acciones, y con el frente despejado la izquierda separa esas tres sin que sus rangos se toquen. La regla nítida de tres cortes acierta los \aciertosNitida{} registros del archivo, así que la acción depende de la distancia frontal, con un corte en \uFrontal, y de la izquierda, con cortes en \uIzqBajo{} y \uIzqAlto. Por eso bastan dos etiquetas en la frontal y tres en la izquierda, cruzadas en esos cortes (Tabla~\ref{tab:mf}).
+La acción del robot depende solo de la distancia frontal y de la izquierda. La regla nítida de tres cortes acierta todo el archivo (Tabla~\ref{tab:rangos}), y por eso bastan dos etiquetas en la frontal y tres en la izquierda, ubicadas en esos cortes (Tabla~\ref{tab:mf}).
 
-Con esas etiquetas el modelo de dos sensores tiene \reglasDos{} reglas y el de cuatro \reglasCuatro, y los dos aciertan los \nTe{} registros de prueba (Tablas~\ref{tab:resultados} y \ref{tab:confusion}). La partición temporal, que también acierta todo, descarta que el acierto venga de registros vecinos entre entrenamiento y prueba. Como las acciones las asignó un controlador de reglas nítidas, ese acierto indica que el modelo recupera el controlador, no cómo se comportaría el robot en otra sala.
+Los modelos de dos y de cuatro sensores aciertan toda la prueba, también con la partición temporal (Tablas~\ref{tab:resultados} y \ref{tab:confusion}). Las distancias derecha y trasera no cambian ninguna decisión, así que se entrega como mejor el de dos sensores, con \reglasDos{} reglas. Como las acciones vienen de un controlador nítido, el acierto muestra que el modelo recupera ese controlador y nada dice de cómo se comportaría el robot en otra sala.
 
-Una vez conocidas la frontal y la izquierda, las distancias derecha y trasera no cambian ninguna decisión en prueba. En 22 de las 24 reglas del modelo de cuatro sensores la acción es la que dictan la frontal y la izquierda, y las dos que difieren tienen soportes de \distSoportes{} y no ganan en ningún registro de prueba (Tabla~\ref{tab:reglas4}). Por eso, y porque los dos modelos empatan en la validación del entrenamiento con \cvDos~\%, el modelo que se entrega como el mejor es el de dos sensores.
+Lo que decide el resultado es dónde se ubican las etiquetas. Repartidas entre el mínimo y el máximo, como en el cuaderno resuelto, fallan sobre todo en avanzar, porque la cola larga de la distancia izquierda comprime los límites de clase en una parte pequeña de la escala (Tabla~\ref{tab:uniforme}). En Wine esa misma partición había funcionado.
 
-La ubicación de las etiquetas pesa más que su número. Con tres etiquetas por sensor en el modelo de cuatro, repartirlas por cuantiles en lugar de entre el mínimo y el máximo sube la prueba de \uniTresMinMax{} a \uniTresCuant~\% (Tabla~\ref{tab:uniforme}). Con dos sensores el clasificador del cuaderno resuelto llega a \uniCursoAcc~\%, y casi todo su error está en avanzar, que acierta \uniCursoAvanzar{} de \nAvanzarTe. Con los cortes de los histogramas por clase se llega al 100~\% con seis reglas (Tablas~\ref{tab:resultados} y \ref{tab:uniforme}). En Wine la partición uniforme había alcanzado 92.6~\%, y aquí deja de servir porque la cola larga de la distancia izquierda deja sus límites de clase en \escIzqA{} y \escIzqB{} de la escala.
+La forma de las etiquetas no cambia la decisión, igual que el mínimo y el producto en el taller propuesto, y el modelo difuso decide como un árbol de cuatro hojas (Tablas~\ref{tab:ancho} y \ref{tab:ruido}). Su límite es la resolución de los sensores, porque las clases están separadas por una milésima y un ruido de 0.01 ya baja la exactitud (Figura~\ref{fig:sens}). Lo que agrega lo difuso es la salida continua del Sugeno de orden cero, cuyo redondeo falla solo en la franja del corte frontal (Figura~\ref{fig:sugeno}).
 
-En el taller propuesto el mínimo y el producto dieron las mismas predicciones, porque con la regla más fuerte gana la celda propia de cada registro. Aquí la forma de las etiquetas tampoco cambia la decisión. Con semianchos de 0.001 a 0.200 la exactitud sigue en 100~\% (Tabla~\ref{tab:ancho}), y con ruido en las lecturas el modelo difuso y el árbol de cuatro hojas, que corta en los mismos tres valores, dan las mismas predicciones en las 20 realizaciones de cada nivel (Tabla~\ref{tab:ruido}).
+\section{Declaración de uso de inteligencia artificial}
 
-El margen entre clases en el entrenamiento es de una milésima, 0.900 frente a 0.901 en la frontal. Mover ese corte 0.01 cuesta entre 0.8 y 1.3 puntos, y un ruido de 0.01 en las lecturas baja la exactitud a \ruidoUno~\% en promedio (Figura~\ref{fig:sens} y Tabla~\ref{tab:ruido}). El modelo es exacto mientras las lecturas tengan la resolución con que se etiquetaron.
-
-Como Sugeno de orden cero, las seis reglas dan un giro que cambia en rampa dentro de las franjas de $\pm$\semiancho, y al redondearlo la exactitud queda en \accSugeno~\%. Los \erroresSugeno{} registros que cambian están en la franja del corte frontal, donde se promedian acciones que no son vecinas (Figura~\ref{fig:sugeno}). La cifra depende de los giros elegidos, y con $-3$ para el giro fuerte sube a \accSugenoB~\%.
+En este trabajo se usó Claude, asistente de inteligencia artificial de Anthropic, en tres tareas. La primera fue la redacción de partes del texto a partir de los resultados obtenidos. La segunda fue la revisión de la consistencia del documento, para que cada concepto se defina una vez y se use con el mismo sentido en todas las secciones. La tercera fue la elaboración de las gráficas a partir de las cifras que produce el código. La elaboración de los procedimientos, las modificaciones al código fuente y la maquetación estructural del documento corresponden al autor. Los resultados se verificaron con las 18 comprobaciones automáticas del cuaderno y ejecutando el paquete entregado en una carpeta vacía, donde las particiones, los modelos y las cifras del informe salieron idénticos.
 
 \section{Referencias}
 \begin{itemize}
@@ -452,7 +450,7 @@ def crear_reglas(X, y, variables, MF, n_clases=4):
 \section{Archivos entregados}
 \label{anexo:archivos}
 
-El archivo ZIP de la entrega contiene este informe y una carpeta con todo lo necesario para repetir el experimento, cuyo nombre es \texttt{TallerRobot\_LogicaDifusa\_SergioDuarte}.
+La entrega tiene este informe y un archivo ZIP con una carpeta que reúne todo lo necesario para repetir el experimento, cuyo nombre es \texttt{TallerRobot\_LogicaDifusa\_SergioDuarte}.
 
 \begin{table}[!htb]
     \centering
