@@ -29,40 +29,41 @@
 
 \section{Introducción}
 
-Con la temperatura y su cuadrado como variables exógenas, SARIMAX pasa de ser superado por NARX a superarlo. En prueba su raíz del error cuadrático medio a un paso baja de 5.32 a 3.26 con la misma serie del cuaderno original, mientras NARX se queda en 4.08, y la prueba de Diebold y Mariano cambia de signo y queda significativa a favor de SARIMAX. Con la semilla 43, que genera otra realización de la serie, el resultado se mantiene y la diferencia se amplía. El modelo lineal llega a ese error con 9 parámetros, frente a 229 de la red.
+La incorporación de la temperatura y de su cuadrado como variables exógenas invierte la comparación entre SARIMAX y NARX. Sobre la misma serie del cuaderno de referencia, la raíz del error cuadrático medio de SARIMAX a un paso desciende de 5.32 a 3.26, mientras la de NARX se mantiene en 4.08, y el estadístico de Diebold y Mariano cambia de signo y resulta significativo a favor de SARIMAX. En una segunda realización de la serie, generada con la semilla 43, el resultado se conserva y la diferencia aumenta. El modelo lineal alcanza ese desempeño con 9 parámetros, frente a 229 de la red.
 
-El experimento corresponde al subgrupo 1 de la sección 11 del cuaderno, que pregunta si la ingeniería de variables cierra la brecha entre SARIMAX y NARX y qué dice Diebold y Mariano. Del cuaderno solo se modificó el bloque 0. Este informe se limita a lo que cambia con esa modificación y a por qué cambia.
+El experimento corresponde al subgrupo 1 de la sección 11 del cuaderno, que plantea si la ingeniería de variables reduce la diferencia entre SARIMAX y NARX y qué indica la prueba de Diebold y Mariano. El informe analiza el efecto de esta especificación sobre la estimación de SARIMAX, sobre el error de pronóstico y sobre la comparación estadística entre modelos.
 
 \section{Marco teórico (resumen)}
 
-La demanda del cuaderno sigue un proceso conocido que incluye el término $\kappa\,(x_t-18)^2$ con $\kappa=0.35$, más un efecto retardado $3\tanh(x_{t-1}-20)$ y un ruido AR(1) con innovaciones de varianza $\sigma^2=9$. SARIMAX es lineal en sus regresores exógenos (Box et al., 2015). Con solo $x_t$ como regresor, la parábola queda fuera de la parte exógena y pasa a los errores. Si además recibe $(x_t-18)^2$, la parábola es una combinación lineal de sus regresores y su coeficiente estima $\kappa$ directamente.
+La demanda del cuaderno sigue un proceso generador conocido que incluye el término $\kappa\,(x_t-18)^2$ con $\kappa=0.35$, un efecto retardado $3\tanh(x_{t-1}-20)$ y un ruido AR(1) con innovaciones de varianza $\sigma^2=9$. SARIMAX es lineal en sus regresores exógenos (Box et al., 2015). Cuando solo recibe $x_t$, la componente cuadrática no puede representarse en la parte exógena y se traslada al término de error. Cuando recibe además $(x_t-18)^2$, esa componente es una combinación lineal de los regresores y su coeficiente estima directamente $\kappa$.
 
-NARX aprende la relación no lineal de los retardos de la salida y de la exógena con una red neuronal, sin que se le indique su forma (Leontaritis y Billings, 1985). La comparación entre modelos usa la prueba de Diebold y Mariano (1995) con la corrección de Harvey et al. (1997). Con pérdida cuadrática, un estadístico positivo favorece al segundo modelo de cada par. La prueba de Ljung y Box (1978) indica si los residuos conservan autocorrelación.
+NARX aproxima la relación no lineal entre los retardos de la salida y de la variable exógena mediante una red neuronal, sin una forma funcional especificada de antemano (Leontaritis y Billings, 1985). La comparación entre modelos emplea la prueba de Diebold y Mariano (1995) con la corrección de Harvey et al. (1997). Con pérdida cuadrática, un estadístico positivo favorece al segundo modelo de cada par. La prueba de Ljung y Box (1978) evalúa la autocorrelación remanente en los residuos.
 
 \section{Metodología}
 
-El cuaderno se ejecutó completo dos veces con el cambio del subgrupo, una con la semilla original y otra con la semilla 43, que es la versión entregada (Tabla~\ref{tab:parametros}). El cuaderno usa statsmodels (Seabold y Perktold, 2010) para los modelos clásicos y TensorFlow para las redes. El resto del cuaderno, incluidos los órdenes de SARIMAX, la arquitectura de las redes y la partición de 766 días de entrenamiento, 164 de validación y 165 de prueba, quedó igual.
+Se evaluaron tres configuraciones del cuaderno, descritas en la Tabla~\ref{tab:parametros}. Los modelos clásicos se ajustan con statsmodels (Seabold y Perktold, 2010) y las redes con TensorFlow. Los órdenes de SARIMAX, la arquitectura de las redes y la partición temporal de 766 días de entrenamiento, 164 de validación y 165 de prueba corresponden a los del cuaderno del curso.
 
 \begin{table}[!htb]
     \centering
-    \caption{Parámetros del bloque 0 que se modificaron}
+    \caption{Configuraciones evaluadas}
     \label{tab:parametros}
     \footnotesize
-    \begin{tabular}{l c c l}
+    \begin{tabular}{l l c l}
         \toprule
-        \textbf{Parámetro} & \textbf{Original} & \textbf{Usado} & \textbf{Efecto} \\
+        \textbf{Configuración} & \textbf{Exógenas de SARIMAX} & \textbf{Semilla} & \textbf{Propósito} \\
         \midrule
-        \texttt{EXOG\_CUADRATICA} & \texttt{False} & \texttt{True} & SARIMAX recibe $x_t$ y $(x_t-18)^2$ \\
-        \texttt{SEMILLA} & 2026 & 43 & otra realización de la serie y otra inicialización de las redes \\
+        Referencia & $x_t$ & 2026 & línea base del cuaderno \\
+        Término cuadrático & $x_t$ y $(x_t-18)^2$ & 2026 & aislar el efecto del regresor \\
+        Término cuadrático (43) & $x_t$ y $(x_t-18)^2$ & 43 & contrastar en otra realización \\
         \bottomrule
     \end{tabular}
 \end{table}
 
-La semilla también genera los datos, así que el efecto del término cuadrático se aísla comparando la ejecución original del cuaderno con la del cambio sobre la misma semilla 2026. La ejecución con la semilla 43 muestra si el resultado se sostiene en otra serie.
+La semilla determina tanto la realización de la serie como la inicialización de las redes. Por esa razón, el efecto del término cuadrático se mide entre las dos primeras configuraciones, que comparten los datos, y la tercera verifica que el sentido del resultado no depende de una realización particular.
 
 \section{Resultados}
 
-La Tabla~\ref{tab:rmse} reúne el error de prueba de los cinco modelos. Con la semilla 2026, el término cuadrático solo modifica a SARIMAX. NARX, NAR, Holt-Winters y el ingenuo estacional dan exactamente las mismas cifras que el cuaderno original, porque ninguno usa ese regresor y la semilla fija los mismos pesos iniciales.
+La Tabla~\ref{tab:rmse} presenta el error de prueba de los cinco modelos. Entre las dos configuraciones con semilla 2026, el término cuadrático solo altera el desempeño de SARIMAX. NARX, NAR, Holt-Winters y el ingenuo estacional reproducen las cifras de la referencia, dado que ninguno emplea ese regresor y la semilla fija la misma inicialización.
 
 \begin{table}[!htb]
     \centering
@@ -83,10 +84,9 @@ La Tabla~\ref{tab:rmse} reúne el error de prueba de los cinco modelos. Con la s
         Ingenuo estacional & 9.036 & 9.036 & 11.267 & 9.543 & 9.543 & 11.420 \\
         \bottomrule
     \end{tabular}
-    \nota{En negrita el menor error de cada columna. El pronóstico a 14 pasos promedia 22 orígenes en prueba y supone conocida la temperatura futura.}
 \end{table}
 
-La Tabla~\ref{tab:sarimax} muestra cómo cambia el ajuste de SARIMAX. El coeficiente del término cuadrático es 0.365 con la semilla 2026 y 0.347 con la 43, y en las dos ejecuciones su intervalo de 95~\% contiene el valor verdadero de 0.35. La varianza de innovación baja de 41.4 a 10.3 y 9.7, cerca de la varianza 9 del ruido que genera la serie, y el criterio de Akaike baja en 1047 puntos con la misma semilla.
+La Tabla~\ref{tab:sarimax} resume las estimaciones de SARIMAX. El coeficiente del término cuadrático es 0.365 con la semilla 2026 y 0.347 con la semilla 43, y en ambos casos su intervalo de confianza de 95~\% contiene el valor del proceso generador, 0.35. La varianza de innovación desciende de 41.4 a 10.3 y 9.7, próxima a la varianza 9 del ruido de la serie, y el criterio de Akaike disminuye en 1047 unidades sobre la misma serie.
 
 \begin{table}[!htb]
     \centering
@@ -109,7 +109,7 @@ La Tabla~\ref{tab:sarimax} muestra cómo cambia el ajuste de SARIMAX. El coefici
     \nota{Entre corchetes, el intervalo de confianza de 95~\%. El criterio de Akaike solo es comparable entre ajustes de la misma serie.}
 \end{table}
 
-La Tabla~\ref{tab:dm} muestra la prueba de Diebold y Mariano sobre el error a un paso. La comparación entre SARIMAX y NARX cambia de signo con el término cuadrático, y la de Holt-Winters frente a SARIMAX pasa de no significativa a significativa a favor de SARIMAX.
+La Tabla~\ref{tab:dm} reporta la prueba de Diebold y Mariano sobre el error a un paso. Con el término cuadrático, el estadístico de SARIMAX frente a NARX cambia de signo, y la comparación entre Holt-Winters y SARIMAX, no significativa en la referencia, resulta significativa a favor de SARIMAX.
 
 \begin{table}[!htb]
     \centering
@@ -127,7 +127,7 @@ La Tabla~\ref{tab:dm} muestra la prueba de Diebold y Mariano sobre el error a un
     \nota{Un estadístico positivo favorece al segundo modelo del par y uno negativo al primero. Nivel de significancia de 5~\%.}
 \end{table}
 
-La Figura~\ref{fig:dispersion} muestra la curvatura que el término cuadrático representa, y la Figura~\ref{fig:horizonte} el error por horizonte con la semilla 43.
+La Figura~\ref{fig:dispersion} presenta la curvatura que modela el término cuadrático, y la Figura~\ref{fig:horizonte} el error por horizonte con la semilla 43.
 
 \begin{figure}[!htb]
     \centering
@@ -147,31 +147,31 @@ La Figura~\ref{fig:dispersion} muestra la curvatura que el término cuadrático 
 
 \section{Análisis}
 
-\subsection{Dónde estaba la brecha}
+\subsection{Origen de la diferencia entre modelos}
 
-Sin el término cuadrático, SARIMAX no tiene cómo representar la parábola de la Figura~\ref{fig:dispersion}, y esa parte de la demanda pasa a los errores. Como la temperatura cambia despacio, ese error es persistente, y la parte autorregresiva lo absorbe con coeficientes de 1.603 y $-0.617$, cuyo polinomio tiene una raíz cercana a la unidad. La varianza de innovación de 41.4 es cuatro veces la que deja el modelo con el término cuadrático. La brecha con NARX era la parte no lineal que el modelo lineal no recibía como regresor. Cuando la recibe, la estima con un error de menos de 0.02 respecto al valor verdadero y la varianza de innovación queda cerca de la del ruido que genera la serie.
+Sin el término cuadrático, SARIMAX no dispone de un regresor que represente la curvatura de la Figura~\ref{fig:dispersion}, y esa componente de la demanda se traslada al error. Como la temperatura varía lentamente, el error resultante es persistente y la parte autorregresiva lo absorbe con coeficientes de 1.603 y $-0.617$, cuyo polinomio tiene una raíz próxima a la unidad. La varianza de innovación de 41.4 cuadruplica la del modelo con el término cuadrático. La ventaja de NARX en la referencia corresponde, entonces, a la componente no lineal ausente de los regresores de SARIMAX. Al incorporarla, el coeficiente estimado difiere del valor del proceso en menos de 0.02 y la varianza de innovación se aproxima a la del ruido de la serie.
 
-\subsection{El coeficiente lineal y el efecto retardado}
+\subsection{Coeficiente lineal y efecto retardado}
 
-El proceso no tiene término lineal en $x_t$, y aun así su coeficiente sale distinto de cero en los tres ajustes. Es compatible con que recoja parte del efecto retardado $3\tanh(x_{t-1}-20)$, que SARIMAX no recibe, a través de la correlación entre la temperatura de un día y la del anterior. Esa parte no representada es pequeña frente a la parábola, y los residuos de SARIMAX quedan sin autocorrelación según Ljung y Box en las tres ejecuciones.
+El proceso generador no contiene un término lineal en $x_t$, y sin embargo su coeficiente resulta distinto de cero en los tres ajustes. Este resultado es compatible con que el coeficiente recoja parte del efecto retardado $3\tanh(x_{t-1}-20)$, ausente de los regresores, a través de la correlación entre temperaturas de días consecutivos. Esa componente es menor que la cuadrática, y la prueba de Ljung y Box no detecta autocorrelación en los residuos de SARIMAX en ninguna configuración.
 
-\subsection{Por qué SARIMAX supera a NARX}
+\subsection{Comparación con NARX}
 
-NARX tiene que aprender la parábola y el efecto retardado a partir de 17 entradas, con 229 parámetros y entre 46 y 104 segundos de entrenamiento según la ejecución, frente a unos 2 segundos de SARIMAX. Con la forma correcta del regresor, el modelo lineal parte de la estructura verdadera y la red no tiene ventaja que aprovechar. Los residuos de NARX en prueba conservan autocorrelación en el retardo 14 con la semilla 2026 ($p=0.0018$), señal de estructura que la red no extrae.
+NARX estima la componente cuadrática y el efecto retardado a partir de 17 entradas, con 229 parámetros y entre 46 y 104 segundos de entrenamiento, frente a cerca de 2 segundos de SARIMAX. Cuando el modelo lineal incorpora la forma funcional del proceso, la flexibilidad de la red deja de aportar ventaja. Los residuos de NARX en prueba conservan autocorrelación en el retardo 14 con la semilla 2026 ($p=0.0018$), lo que indica estructura no capturada por la red.
 
 \subsection{Pronóstico a varios pasos}
 
-El error de SARIMAX casi no crece de uno a 14 pasos (Figura~\ref{fig:horizonte}), porque la parte que depende de la temperatura recibe su valor futuro en cada paso y solo la parte autorregresiva se pronostica sin datos. NARX, en cambio, alimenta sus propias predicciones como retardos de la salida y su error sube de 4.08 a 4.97 con la semilla 2026 y de 5.00 a 6.03 con la 43. Por eso la ventaja de SARIMAX es mayor a 14 pasos que a uno. El supuesto de temperatura futura conocida es el mismo para los dos modelos con exógena.
+El error de SARIMAX se mantiene casi constante entre uno y 14 pasos (Figura~\ref{fig:horizonte}), porque la componente explicada por la temperatura recibe su valor futuro en cada paso y solo la parte autorregresiva se proyecta sin observaciones. NARX, en lazo cerrado, utiliza sus propias predicciones como retardos de la salida, y su error aumenta de 4.08 a 4.97 con la semilla 2026 y de 5.00 a 6.03 con la semilla 43. En consecuencia, la ventaja de SARIMAX es mayor a 14 pasos que a un paso. Ambos modelos con exógena operan bajo el mismo supuesto de temperatura futura conocida.
 
 \section{Conclusiones}
 
-La ingeniería de variables no solo cierra la brecha entre SARIMAX y NARX, la invierte. Con el regresor cuadrático SARIMAX estima el coeficiente verdadero del proceso, deja residuos sin autocorrelación y supera a NARX a uno y a 14 pasos, con una diferencia significativa según Diebold y Mariano en las dos semillas (Tablas~\ref{tab:rmse} a \ref{tab:dm}).
+La ingeniería de variables no solo reduce la diferencia entre SARIMAX y NARX, sino que la invierte. Con el regresor cuadrático, SARIMAX recupera el coeficiente del proceso generador, produce residuos sin autocorrelación y supera a NARX a uno y a 14 pasos, con diferencias significativas según Diebold y Mariano en ambas semillas (Tablas~\ref{tab:rmse} a \ref{tab:dm}).
 
-La ventaja de la red venía de una sola no linealidad que el modelo clásico no recibía. Cuando la forma de esa no linealidad se conoce, el modelo lineal con el regresor correcto es más preciso, más barato y más fácil de interpretar. La red conserva su utilidad cuando esa forma no se conoce o es más compleja que la que se puede construir a mano.
+La ventaja de la red en la referencia provenía de una única no linealidad ausente de los regresores del modelo clásico. Cuando su forma es conocida, el modelo lineal con el regresor adecuado ofrece mayor precisión, menor costo computacional y parámetros interpretables. La red conserva su utilidad cuando la forma de la no linealidad es desconocida o demasiado compleja para especificarla de manera explícita.
 
 \section{Declaración de uso de inteligencia artificial}
 
-En este trabajo se usó Claude, asistente de inteligencia artificial de Anthropic, en tres tareas. La primera fue la redacción de partes del texto a partir de los resultados obtenidos. La segunda fue la revisión de la consistencia del documento, para que cada concepto se defina una vez y se use con el mismo sentido en todas las secciones. La tercera fue la preparación de las tablas y la selección de las gráficas a partir de las salidas del cuaderno. La elaboración de los procedimientos, las modificaciones al código fuente y la maquetación estructural del documento corresponden al autor. Los resultados se verificaron comprobando que el cuaderno entregado difiere del original solo en el bloque 0, ejecutándolo completo sin errores y comparando cada cifra del informe con la salida que la produce.
+Se usó Claude como apoyo en la redacción, la revisión de consistencia entre conceptos y la preparación de tablas y gráficas. Los procedimientos, las modificaciones al código fuente y la estructura del documento son del autor, quien verificó cada cifra con las salidas del cuaderno.
 
 \section{Referencias}
 
