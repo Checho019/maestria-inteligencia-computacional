@@ -1,0 +1,35 @@
+{
+  "dataset": "beijing",
+  "objetivo": "PM2.5",
+  "exogenas": [
+    "TEMP",
+    "DEWP",
+    "PRES",
+    "WSPM"
+  ],
+  "frecuencia": "D",
+  "S": 7,
+  "horizonte": 24,
+  "pliegues": 5,
+  "ventana": "expandible",
+  "hiperparametros": {
+    "Ingenuo estacional": {},
+    "Cl\u00e1sico": {
+      "order": [
+        1,
+        0,
+        1
+      ],
+      "seasonal_order": [
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    "Neuronal": {
+      "dy": 1,
+      "neuronas": 8
+    }
+  }
+}
