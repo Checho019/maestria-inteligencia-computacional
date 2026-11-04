@@ -1,0 +1,188 @@
+\documentclass[11pt,letterpaper]{article}
+\input{preambulo_st}
+\usepackage{xurl}
+\hypersetup{pdftitle={Series de tiempo. Taller 1, término cuadrático en SARIMAX}, pdfauthor={Sergio Santiago Duarte Rojas}}
+\lhead{Series de tiempo, Taller 1}
+
+\begin{document}
+
+\begin{titlepage}
+    \centering
+    \vspace*{2cm}
+    {\LARGE \bfseries Series de tiempo. Taller 1\\[4pt] Métodos clásicos frente a redes NAR y NARX con el término cuadrático de la temperatura\par}
+    \vspace{0.5cm}
+    {\large Informe del subgrupo 1\par}
+    \vspace{2cm}
+    \begin{tabular}{ll}
+        \textbf{Asignatura:} & \nombreAsignatura \\
+        \textbf{Docente:}    & \nombreDocente \\
+        \textbf{Estudiante:} & \nombreEstudiante \\
+        \textbf{Código:}     & \codigoEstudiante \\
+        \textbf{Fecha:}      & 3 de noviembre de 2026 \\
+    \end{tabular}
+    \vfill
+    Universidad Distrital Francisco José de Caldas
+\end{titlepage}
+
+\tableofcontents
+\newpage
+
+\section{Introducción}
+
+Con la temperatura y su cuadrado como variables exógenas, SARIMAX pasa de ser superado por NARX a superarlo. En prueba su raíz del error cuadrático medio a un paso baja de 5.32 a 3.26 con la misma serie del cuaderno original, mientras NARX se queda en 4.08, y la prueba de Diebold y Mariano cambia de signo y queda significativa a favor de SARIMAX. Con la semilla 43, que genera otra realización de la serie, el resultado se mantiene y la diferencia se amplía. El modelo lineal llega a ese error con 9 parámetros, frente a 229 de la red.
+
+El experimento corresponde al subgrupo 1 de la sección 11 del cuaderno, que pregunta si la ingeniería de variables cierra la brecha entre SARIMAX y NARX y qué dice Diebold y Mariano. Del cuaderno solo se modificó el bloque 0. Este informe se limita a lo que cambia con esa modificación y a por qué cambia.
+
+\section{Marco teórico (resumen)}
+
+La demanda del cuaderno sigue un proceso conocido que incluye el término $\kappa\,(x_t-18)^2$ con $\kappa=0.35$, más un efecto retardado $3\tanh(x_{t-1}-20)$ y un ruido AR(1) con innovaciones de varianza $\sigma^2=9$. SARIMAX es lineal en sus regresores exógenos (Box et al., 2015). Con solo $x_t$ como regresor, la parábola queda fuera de la parte exógena y pasa a los errores. Si además recibe $(x_t-18)^2$, la parábola es una combinación lineal de sus regresores y su coeficiente estima $\kappa$ directamente.
+
+NARX aprende la relación no lineal de los retardos de la salida y de la exógena con una red neuronal, sin que se le indique su forma (Leontaritis y Billings, 1985). La comparación entre modelos usa la prueba de Diebold y Mariano (1995) con la corrección de Harvey et al. (1997). Con pérdida cuadrática, un estadístico positivo favorece al segundo modelo de cada par. La prueba de Ljung y Box (1978) indica si los residuos conservan autocorrelación.
+
+\section{Metodología}
+
+El cuaderno se ejecutó completo dos veces con el cambio del subgrupo, una con la semilla original y otra con la semilla 43, que es la versión entregada (Tabla~\ref{tab:parametros}). El cuaderno usa statsmodels (Seabold y Perktold, 2010) para los modelos clásicos y TensorFlow para las redes. El resto del cuaderno, incluidos los órdenes de SARIMAX, la arquitectura de las redes y la partición de 766 días de entrenamiento, 164 de validación y 165 de prueba, quedó igual.
+
+\begin{table}[!htb]
+    \centering
+    \caption{Parámetros del bloque 0 que se modificaron}
+    \label{tab:parametros}
+    \footnotesize
+    \begin{tabular}{l c c l}
+        \toprule
+        \textbf{Parámetro} & \textbf{Original} & \textbf{Usado} & \textbf{Efecto} \\
+        \midrule
+        \texttt{EXOG\_CUADRATICA} & \texttt{False} & \texttt{True} & SARIMAX recibe $x_t$ y $(x_t-18)^2$ \\
+        \texttt{SEMILLA} & 2026 & 43 & otra realización de la serie y otra inicialización de las redes \\
+        \bottomrule
+    \end{tabular}
+\end{table}
+
+La semilla también genera los datos, así que el efecto del término cuadrático se aísla comparando la ejecución original del cuaderno con la del cambio sobre la misma semilla 2026. La ejecución con la semilla 43 muestra si el resultado se sostiene en otra serie.
+
+\section{Resultados}
+
+La Tabla~\ref{tab:rmse} reúne el error de prueba de los cinco modelos. Con la semilla 2026, el término cuadrático solo modifica a SARIMAX. NARX, NAR, Holt-Winters y el ingenuo estacional dan exactamente las mismas cifras que el cuaderno original, porque ninguno usa ese regresor y la semilla fija los mismos pesos iniciales.
+
+\begin{table}[!htb]
+    \centering
+    \caption{Raíz del error cuadrático medio en prueba}
+    \label{tab:rmse}
+    \scriptsize
+    \setlength{\tabcolsep}{5pt}
+    \begin{tabular}{l S[table-format=2.3] S[table-format=2.3] S[table-format=2.3] S[table-format=2.3] S[table-format=2.3] S[table-format=2.3]}
+        \toprule
+        & \multicolumn{3}{c}{\textbf{A un paso}} & \multicolumn{3}{c}{\textbf{A 14 pasos, lazo cerrado}} \\
+        \cmidrule(lr){2-4}\cmidrule(lr){5-7}
+        \textbf{Modelo} & {2026, original} & {2026, con $x^2$} & {43, con $x^2$} & {2026, original} & {2026, con $x^2$} & {43, con $x^2$} \\
+        \midrule
+        SARIMAX & 5.319 & \bfseries 3.260 & \bfseries 3.440 & 5.262 & \bfseries 3.296 & \bfseries 3.479 \\
+        NARX & \bfseries 4.076 & 4.076 & 4.995 & \bfseries 4.966 & 4.966 & 6.027 \\
+        NAR & 6.107 & 6.107 & 6.940 & 7.650 & 7.650 & 9.925 \\
+        Holt-Winters & 5.399 & 5.399 & 6.564 & 8.882 & 8.882 & 11.165 \\
+        Ingenuo estacional & 9.036 & 9.036 & 11.267 & 9.543 & 9.543 & 11.420 \\
+        \bottomrule
+    \end{tabular}
+    \nota{En negrita el menor error de cada columna. El pronóstico a 14 pasos promedia 22 orígenes en prueba y supone conocida la temperatura futura.}
+\end{table}
+
+La Tabla~\ref{tab:sarimax} muestra cómo cambia el ajuste de SARIMAX. El coeficiente del término cuadrático es 0.365 con la semilla 2026 y 0.347 con la 43, y en las dos ejecuciones su intervalo de 95~\% contiene el valor verdadero de 0.35. La varianza de innovación baja de 41.4 a 10.3 y 9.7, cerca de la varianza 9 del ruido que genera la serie, y el criterio de Akaike baja en 1047 puntos con la misma semilla.
+
+\begin{table}[!htb]
+    \centering
+    \caption{Estimaciones de SARIMAX$(2,0,1)(1,1,1)_7$ en el entrenamiento}
+    \label{tab:sarimax}
+    \scriptsize
+    \begin{tabular}{l c c c c}
+        \toprule
+        \textbf{Estimación} & \textbf{2026, original} & \textbf{2026, con $x^2$} & \textbf{43, con $x^2$} & \textbf{Proceso generador} \\
+        \midrule
+        Coeficiente de $x_t$ & 0.434 [0.276, 0.592] & 0.406 [0.307, 0.505] & 0.242 [0.141, 0.343] & sin término lineal \\
+        Coeficiente de $(x_t-18)^2$ & no se incluye & 0.365 [0.350, 0.380] & 0.347 [0.330, 0.363] & 0.35 \\
+        AR, retardos 1 y 2 & 1.603 y $-0.617$ & $-0.307$ y 0.532 & $-0.025$ y 0.318 & \\
+        Varianza de innovación & 41.4 & 10.3 & 9.7 & 9 \\
+        Criterio de Akaike & 5016.0 & 3968.7 & 3930.9 & \\
+        Ljung-Box, retardo 14, valor $p$ & 0.423 & 0.713 & 0.378 & \\
+        Parámetros & 8 & 9 & 9 & \\
+        \bottomrule
+    \end{tabular}
+    \nota{Entre corchetes, el intervalo de confianza de 95~\%. El criterio de Akaike solo es comparable entre ajustes de la misma serie.}
+\end{table}
+
+La Tabla~\ref{tab:dm} muestra la prueba de Diebold y Mariano sobre el error a un paso. La comparación entre SARIMAX y NARX cambia de signo con el término cuadrático, y la de Holt-Winters frente a SARIMAX pasa de no significativa a significativa a favor de SARIMAX.
+
+\begin{table}[!htb]
+    \centering
+    \caption{Prueba de Diebold y Mariano con la corrección de Harvey et al. (1997), error a un paso en prueba}
+    \label{tab:dm}
+    \footnotesize
+    \begin{tabular}{l c c c}
+        \toprule
+        \textbf{Comparación} & \textbf{2026, original} & \textbf{2026, con $x^2$} & \textbf{43, con $x^2$} \\
+        \midrule
+        SARIMAX frente a NARX & 3.083 ($p=0.0024$) & $-2.826$ ($p=0.0053$) & $-4.334$ ($p<0.0001$) \\
+        Holt-Winters frente a SARIMAX & 0.524 ($p=0.6009$) & 5.736 ($p<0.0001$) & 5.212 ($p<0.0001$) \\
+        \bottomrule
+    \end{tabular}
+    \nota{Un estadístico positivo favorece al segundo modelo del par y uno negativo al primero. Nivel de significancia de 5~\%.}
+\end{table}
+
+La Figura~\ref{fig:dispersion} muestra la curvatura que el término cuadrático representa, y la Figura~\ref{fig:horizonte} el error por horizonte con la semilla 43.
+
+\begin{figure}[!htb]
+    \centering
+    \caption{Demanda sin estacionalidad frente a la temperatura en el entrenamiento, semilla 43}
+    \label{fig:dispersion}
+    \includegraphics[width=7.2cm]{fig01_demanda_temperatura.png}
+    \nota{Gráfica generada por el cuaderno del curso. La demanda está centrada y sin la componente estacional de la descomposición STL.}
+\end{figure}
+
+\begin{figure}[!htb]
+    \centering
+    \caption{Raíz del error cuadrático medio por horizonte en lazo cerrado, semilla 43}
+    \label{fig:horizonte}
+    \includegraphics[width=15cm]{fig02_rmse_horizonte.png}
+    \nota{Gráfica generada por el cuaderno del curso. SARIMAX, en verde, incluye el término cuadrático.}
+\end{figure}
+
+\section{Análisis}
+
+\subsection{Dónde estaba la brecha}
+
+Sin el término cuadrático, SARIMAX no tiene cómo representar la parábola de la Figura~\ref{fig:dispersion}, y esa parte de la demanda pasa a los errores. Como la temperatura cambia despacio, ese error es persistente, y la parte autorregresiva lo absorbe con coeficientes de 1.603 y $-0.617$, cuyo polinomio tiene una raíz cercana a la unidad. La varianza de innovación de 41.4 es cuatro veces la que deja el modelo con el término cuadrático. La brecha con NARX era la parte no lineal que el modelo lineal no recibía como regresor. Cuando la recibe, la estima con un error de menos de 0.02 respecto al valor verdadero y la varianza de innovación queda cerca de la del ruido que genera la serie.
+
+\subsection{El coeficiente lineal y el efecto retardado}
+
+El proceso no tiene término lineal en $x_t$, y aun así su coeficiente sale distinto de cero en los tres ajustes. Es compatible con que recoja parte del efecto retardado $3\tanh(x_{t-1}-20)$, que SARIMAX no recibe, a través de la correlación entre la temperatura de un día y la del anterior. Esa parte no representada es pequeña frente a la parábola, y los residuos de SARIMAX quedan sin autocorrelación según Ljung y Box en las tres ejecuciones.
+
+\subsection{Por qué SARIMAX supera a NARX}
+
+NARX tiene que aprender la parábola y el efecto retardado a partir de 17 entradas, con 229 parámetros y entre 46 y 104 segundos de entrenamiento según la ejecución, frente a unos 2 segundos de SARIMAX. Con la forma correcta del regresor, el modelo lineal parte de la estructura verdadera y la red no tiene ventaja que aprovechar. Los residuos de NARX en prueba conservan autocorrelación en el retardo 14 con la semilla 2026 ($p=0.0018$), señal de estructura que la red no extrae.
+
+\subsection{Pronóstico a varios pasos}
+
+El error de SARIMAX casi no crece de uno a 14 pasos (Figura~\ref{fig:horizonte}), porque la parte que depende de la temperatura recibe su valor futuro en cada paso y solo la parte autorregresiva se pronostica sin datos. NARX, en cambio, alimenta sus propias predicciones como retardos de la salida y su error sube de 4.08 a 4.97 con la semilla 2026 y de 5.00 a 6.03 con la 43. Por eso la ventaja de SARIMAX es mayor a 14 pasos que a uno. El supuesto de temperatura futura conocida es el mismo para los dos modelos con exógena.
+
+\section{Conclusiones}
+
+La ingeniería de variables no solo cierra la brecha entre SARIMAX y NARX, la invierte. Con el regresor cuadrático SARIMAX estima el coeficiente verdadero del proceso, deja residuos sin autocorrelación y supera a NARX a uno y a 14 pasos, con una diferencia significativa según Diebold y Mariano en las dos semillas (Tablas~\ref{tab:rmse} a \ref{tab:dm}).
+
+La ventaja de la red venía de una sola no linealidad que el modelo clásico no recibía. Cuando la forma de esa no linealidad se conoce, el modelo lineal con el regresor correcto es más preciso, más barato y más fácil de interpretar. La red conserva su utilidad cuando esa forma no se conoce o es más compleja que la que se puede construir a mano.
+
+\section{Declaración de uso de inteligencia artificial}
+
+En este trabajo se usó Claude, asistente de inteligencia artificial de Anthropic, en tres tareas. La primera fue la redacción de partes del texto a partir de los resultados obtenidos. La segunda fue la revisión de la consistencia del documento, para que cada concepto se defina una vez y se use con el mismo sentido en todas las secciones. La tercera fue la preparación de las tablas y la selección de las gráficas a partir de las salidas del cuaderno. La elaboración de los procedimientos, las modificaciones al código fuente y la maquetación estructural del documento corresponden al autor. Los resultados se verificaron comprobando que el cuaderno entregado difiere del original solo en el bloque 0, ejecutándolo completo sin errores y comparando cada cifra del informe con la salida que la produce.
+
+\section{Referencias}
+
+\begin{itemize}
+    \setlength{\itemsep}{2pt}
+    \item[] Box, G. E. P., Jenkins, G. M., Reinsel, G. C., \& Ljung, G. M. (2015). \textit{Time series analysis: Forecasting and control} (5.ª ed.). Wiley.
+    \item[] Diebold, F. X., \& Mariano, R. S. (1995). Comparing predictive accuracy. \textit{Journal of Business \& Economic Statistics, 13}(3), 253--263. \url{https://doi.org/10.1080/07350015.1995.10524599}
+    \item[] Harvey, D., Leybourne, S., \& Newbold, P. (1997). Testing the equality of prediction mean squared errors. \textit{International Journal of Forecasting, 13}(2), 281--291. \url{https://doi.org/10.1016/S0169-2070(96)00719-4}
+    \item[] Leontaritis, I. J., \& Billings, S. A. (1985). Input-output parametric models for non-linear systems Part I: Deterministic non-linear systems. \textit{International Journal of Control, 41}(2), 303--328. \url{https://doi.org/10.1080/00207178508961129}
+    \item[] Ljung, G. M., \& Box, G. E. P. (1978). On a measure of lack of fit in time series models. \textit{Biometrika, 65}(2), 297--303. \url{https://doi.org/10.1093/biomet/65.2.297}
+    \item[] Seabold, S., \& Perktold, J. (2010). statsmodels: Econometric and statistical modeling with Python. En \textit{Proceedings of the 9th Python in Science Conference} (pp. 92--96). \url{https://doi.org/10.25080/Majora-92bf1922-011}
+\end{itemize}
+
+\end{document}

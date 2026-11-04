@@ -137,3 +137,11 @@ Actividad 4/3 Taller propuesto/fcm_matlab_grupos.csv
 
 # Series de tiempo. Material del profesor
 Series de tiempo/material/
+
+# Series de tiempo. Salidas de LaTeX
+Series de tiempo/**/informe/*.aux
+Series de tiempo/**/informe/*.log
+Series de tiempo/**/informe/*.out
+Series de tiempo/**/informe/*.fls
+Series de tiempo/**/informe/*.fdb_latexmk
+Series de tiempo/**/informe/*.toc
