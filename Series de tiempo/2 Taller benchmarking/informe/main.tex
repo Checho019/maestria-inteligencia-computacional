@@ -31,7 +31,9 @@
 
 \section{Introducción}
 
-Este informe compara un ingenuo estacional, un modelo autorregresivo integrado de media móvil estacional con regresores exógenos (SARIMAX) y una red autorregresiva no lineal con entradas exógenas (NARX) en el pronóstico a 24 días de la concentración media diaria de PM2.5 de la estación Aotizhongxin, con temperatura, punto de rocío, presión y velocidad del viento como exógenas. Los hiperparámetros se eligieron por validación cruzada de origen móvil dentro del bloque de desarrollo, y la prueba externa se evaluó una sola vez al final. En la prueba externa la raíz del error cuadrático medio fue de 96.2 para el ingenuo, 70.2 para SARIMAX y 44.0 para NARX, y la diferencia entre SARIMAX y NARX es significativa ($p=0.003$). La ventaja de la red proviene de su uso de la meteorología, porque sin exógenas los dos modelos alcanzan el mismo error en desarrollo.
+Se pronosticó a 24 días la concentración media diaria de PM2.5 en la estación Aotizhongxin de Beijing. En la prueba externa, la red autorregresiva no lineal con entradas exógenas (NARX) obtuvo una raíz del error cuadrático medio de 44.0, frente a 70.2 del modelo autorregresivo integrado de media móvil estacional con regresores exógenos (SARIMAX) y 96.2 del ingenuo estacional. La diferencia entre NARX y SARIMAX es significativa ($p=0.003$).
+
+El análisis busca de dónde proviene esa ventaja. Sin temperatura, punto de rocío, presión y velocidad del viento, los dos modelos quedan casi iguales en desarrollo, así que la explicación está en el uso de la meteorología. Los hiperparámetros se eligieron por validación cruzada de origen móvil dentro del bloque de desarrollo. La prueba externa se evaluó una sola vez, al final.
 
 \section{Marco teórico (resumen)}
 
@@ -68,6 +70,7 @@ Los datos son los registros horarios de la estación Aotizhongxin entre el 1 de 
 \end{table}
 
 \subsection{Diagnóstico y decisiones de diseño}
+\label{sec:diseno}
 
 En el bloque de desarrollo las pruebas de Dickey-Fuller aumentada (ADF, $p<0.001$) y de Kwiat\-kowski-Phillips-Schmidt-Shin (KPSS, $p\ge0.10$) coinciden en que la serie es estacionaria en nivel, por lo que no se diferencia ($d=D=0$). La fuerza de la estacionalidad semanal es baja ($F_S=0.071$), igual que la de la tendencia ($F_T=0.200$). Entre las exógenas, la velocidad del viento es la de mayor correlación con PM2.5 ($r=-0.38$). La serie tiene una cola derecha extensa, con días por encima de 400~\textmu g/m$^3$, y ambos modelos trabajan sobre $\log(1+y)$ con la corrección de sesgo de la transformación inversa.
 
@@ -127,7 +130,7 @@ La selección fijó SARIMAX $(1,0,1)$ sin parte estacional y NARX con $d_y=1$ y 
         NARX $d_y=1$, 8 neuronas & 40.07 & 28.81 & 80.0 & 0.404 & 44.02 & 28.75 & 53.5 & 0.403 \\
         \bottomrule
     \end{tabular}
-    \nota{RMSE, raíz del error cuadrático medio. MAE, error absoluto medio. MAPE, error porcentual absoluto medio, en porcentaje. MASE, error absoluto medio escalado con el error del ingenuo estacional en el bloque de desarrollo. La red final usa la semilla 2026 del cuaderno.}
+    \nota{RMSE, raíz del error cuadrático medio. MAE, error absoluto medio. MAPE, error porcentual absoluto medio, en porcentaje. MASE, error absoluto medio escalado con el error del ingenuo estacional en el bloque de desarrollo. La red final usa la semilla 2026 del cuaderno. En el cuaderno, SARIMAX y NARX conservan los nombres Clásico y Neuronal de la plantilla.}
 \end{table}
 
 \begin{figure}[!htb]
@@ -174,9 +177,11 @@ En la Figura~\ref{fig:horizonte}, los máximos en $h=15$ y $h=18$ son comunes a 
 
 \section{Conclusiones}
 
-En esta serie la estacionalidad semanal es baja y la información predictiva está en la meteorología. Elegir modelo es elegir cómo se usan las exógenas. NARX con un retardo de la salida y ocho neuronas supera a SARIMAX en la validación cruzada y en la prueba externa con diferencia significativa (Tabla~\ref{tab:benchmark}), y mantiene su error fuera del periodo de desarrollo, mientras que SARIMAX acumula errores persistentes por estación (Figura~\ref{fig:residuos}). Sin exógenas ambos modelos se igualan (Tabla~\ref{tab:diseno}).
+La estacionalidad semanal de esta serie es baja, y la información predictiva está en la meteorología. Por eso, en este caso, elegir modelo es sobre todo elegir cómo usar las exógenas. Sin ellas, SARIMAX y NARX quedan casi iguales (Tabla~\ref{tab:diseno}). Con ellas, NARX con un retardo de la salida y ocho neuronas supera a SARIMAX en la validación cruzada y en la prueba externa, con diferencia significativa (Tabla~\ref{tab:benchmark}).
 
-La validación cruzada descartó órdenes que el criterio de Akaike favorecía y que producen pronósticos inestables a 24 días (Figura~\ref{fig:sensibilidad}). En la red, la variabilidad entre semillas impide ordenar las mejores combinaciones, aunque no altera la ventaja frente a SARIMAX. El alcance operativo de estas cifras se discute en la Sección~\ref{sec:origen}.
+Fuera del periodo de desarrollo el contraste aumenta. La red mantiene su error, mientras que SARIMAX acumula errores persistentes según la estación (Figura~\ref{fig:residuos}).
+
+Dos resultados tienen que ver con el método. El orden que favorecía el criterio de Akaike produce pronósticos inestables a 24 días, y la validación cruzada lo descartó (Sección~\ref{sec:diseno}). En la red, la variabilidad entre semillas no permite ordenar las mejores combinaciones, aunque no cambia la ventaja frente a SARIMAX. El alcance operativo de estas cifras se discute en la Sección~\ref{sec:origen}.
 
 \section{Declaración de uso de inteligencia artificial}
 
