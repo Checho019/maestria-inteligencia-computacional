@@ -33,5 +33,6 @@ for a, p, tit, xl, yl, vmax in ((ax[0], pc, "SARIMAX", "parte estacional", "orde
                    color="white" if (vmax is None and v > p.values.mean()) or (vmax and v > 52) else "black")
     fig.colorbar(im, ax=a, fraction=0.046, pad=0.04, label="RMSE medio")
 plt.tight_layout()
+os.makedirs(os.path.join(AQUI, "figuras"), exist_ok=True)
 plt.savefig(os.path.join(AQUI, "figuras", "fig01_sensibilidad.png"), dpi=200)
 print("listo")

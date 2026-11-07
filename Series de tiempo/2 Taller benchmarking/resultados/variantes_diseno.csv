@@ -1,0 +1,6 @@
+,"SARIMAX (1,0,1)","NARX dy=3, 8 neuronas"
+Diseño adoptado,49.95465039181568,38.844935941997235
+Sin exógenas,57.77311032718618,57.11034278844569
+Sin logaritmo,51.8335204594686,43.77557283540766
+Sin corrección de sesgo,50.78644437653507,
+Solo exógenas contemporáneas (dx=0),,41.66482790702809

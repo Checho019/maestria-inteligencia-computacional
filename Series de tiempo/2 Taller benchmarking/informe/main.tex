@@ -20,7 +20,7 @@
         \textbf{Docente:}    & \nombreDocente \\
         \textbf{Estudiante:} & \nombreEstudiante \\
         \textbf{Código:}     & \codigoEstudiante \\
-        \textbf{Fecha:}      & 4 de noviembre de 2026 \\
+        \textbf{Fecha:}      & 11 de noviembre de 2026 \\
     \end{tabular}
     \vfill
     Universidad Distrital Francisco José de Caldas
@@ -31,13 +31,13 @@
 
 \section{Introducción}
 
-Este informe compara un ingenuo estacional, un SARIMAX y una red NARX en el pronóstico a 24 días de la concentración media diaria de PM2.5 de la estación Aotizhongxin, con temperatura, punto de rocío, presión y velocidad del viento como exógenas. Los hiperparámetros se eligieron por validación cruzada de origen móvil dentro del bloque de desarrollo, y la prueba externa se evaluó una sola vez al final. En la prueba externa la raíz del error cuadrático medio fue de 96.2 para el ingenuo, 70.2 para SARIMAX y 44.0 para NARX, y la diferencia entre SARIMAX y NARX es significativa ($p=0.003$). La ventaja de la red proviene de su uso de la meteorología, porque sin exógenas los dos modelos alcanzan el mismo error en desarrollo.
+Este informe compara un ingenuo estacional, un modelo autorregresivo integrado de media móvil estacional con regresores exógenos (SARIMAX) y una red autorregresiva no lineal con entradas exógenas (NARX) en el pronóstico a 24 días de la concentración media diaria de PM2.5 de la estación Aotizhongxin, con temperatura, punto de rocío, presión y velocidad del viento como exógenas. Los hiperparámetros se eligieron por validación cruzada de origen móvil dentro del bloque de desarrollo, y la prueba externa se evaluó una sola vez al final. En la prueba externa la raíz del error cuadrático medio fue de 96.2 para el ingenuo, 70.2 para SARIMAX y 44.0 para NARX, y la diferencia entre SARIMAX y NARX es significativa ($p=0.003$). La ventaja de la red proviene de su uso de la meteorología, porque sin exógenas los dos modelos alcanzan el mismo error en desarrollo.
 
 \section{Marco teórico (resumen)}
 
 SARIMAX combina una estructura ARIMA estacional con una regresión lineal sobre variables exógenas (Box et al., 2015). Su pronóstico a varios pasos converge, al alejarse del origen, a la media condicionada por las exógenas, y su efecto sobre la serie es lineal en la escala en que se modela. La red NARX aproxima la relación entre los retardos de la salida y de las exógenas con un perceptrón multicapa (Leontaritis y Billings, 1985). En lazo cerrado cada predicción entra como retardo de la siguiente. El error se propaga así a lo largo del horizonte, más cuanto mayor es el peso que la red da a los retardos de la salida.
 
-Cuando el modelo se ajusta sobre $z=\log(1+y)$ con error aproximadamente normal, $\exp(\hat z)$ estima la mediana y no la media. La transformación inversa $\exp(\hat z+\hat\sigma^2/2)-1$ corrige ese sesgo. La fuerza de la tendencia $F_T$ y de la estacionalidad $F_S$ se calcula a partir de la descomposición STL y toma valores entre 0 y 1 (Hyndman y Athanasopoulos, 2021). La validación cruzada de origen móvil entrena con la historia anterior a cada origen y evalúa el bloque siguiente, lo que respeta el orden temporal (Bergmeir y Benítez, 2012). La prueba de Diebold y Mariano (1995) con la corrección de Harvey et al. (1997) compara la pérdida cuadrática de dos modelos, y un estadístico positivo favorece al segundo del par. La prueba de Ljung y Box (1978) evalúa la autocorrelación remanente en los residuos.
+Cuando el modelo se ajusta sobre $z=\log(1+y)$ con error aproximadamente normal, $\exp(\hat z)$ estima la mediana y no la media. La transformación inversa $\exp(\hat z+\hat\sigma^2/2)-1$ corrige ese sesgo. La fuerza de la tendencia $F_T$ y de la estacionalidad $F_S$ se calcula a partir de la descomposición estacional y de tendencia por regresión local (STL) y toma valores entre 0 y 1 (Hyndman y Athanasopoulos, 2021). La validación cruzada de origen móvil entrena con la historia anterior a cada origen y evalúa el bloque siguiente, lo que respeta el orden temporal (Bergmeir y Benítez, 2012). La prueba de Diebold y Mariano (1995) con la corrección de Harvey et al. (1997) compara la pérdida cuadrática de dos modelos, y un estadístico positivo favorece al segundo del par. La prueba de Ljung y Box (1978) evalúa la autocorrelación remanente en los residuos.
 
 \section{Metodología}
 
@@ -69,7 +69,7 @@ Los datos son los registros horarios de la estación Aotizhongxin entre el 1 de 
 
 \subsection{Diagnóstico y decisiones de diseño}
 
-En el bloque de desarrollo las pruebas ADF ($p<0.001$) y KPSS ($p\ge0.10$) coinciden en que la serie es estacionaria en nivel, por lo que no se diferencia ($d=D=0$). La fuerza de la estacionalidad semanal es baja ($F_S=0.071$), igual que la de la tendencia ($F_T=0.200$). Entre las exógenas, la velocidad del viento es la de mayor correlación con PM2.5 ($r=-0.38$). La serie tiene una cola derecha extensa, con días por encima de 400~\textmu g/m$^3$, y ambos modelos trabajan sobre $\log(1+y)$ con la corrección de sesgo de la transformación inversa.
+En el bloque de desarrollo las pruebas de Dickey-Fuller aumentada (ADF, $p<0.001$) y de Kwiat\-kowski-Phillips-Schmidt-Shin (KPSS, $p\ge0.10$) coinciden en que la serie es estacionaria en nivel, por lo que no se diferencia ($d=D=0$). La fuerza de la estacionalidad semanal es baja ($F_S=0.071$), igual que la de la tendencia ($F_T=0.200$). Entre las exógenas, la velocidad del viento es la de mayor correlación con PM2.5 ($r=-0.38$). La serie tiene una cola derecha extensa, con días por encima de 400~\textmu g/m$^3$, y ambos modelos trabajan sobre $\log(1+y)$ con la corrección de sesgo de la transformación inversa.
 
 Antes de definir las rejillas se compararon variantes de diseño con la misma validación cruzada (Tabla~\ref{tab:diseno}). En SARIMAX el criterio de Akaike favorece el orden $(3,0,0)$, pero ese orden produce un error medio de 92.9 en la validación cruzada, por pronósticos inestables, y se descartó como punto de partida.
 
@@ -89,14 +89,14 @@ Antes de definir las rejillas se compararon variantes de diseño con la misma va
         Solo exógenas contemporáneas ($d_x=0$) & \textendash & 41.66 \\
         \bottomrule
     \end{tabular}
-    \nota{El diseño adoptado usa el logaritmo, las cuatro exógenas y la corrección de sesgo. Cinco pliegues de origen móvil dentro del bloque de desarrollo, horizonte de 24 días. NARX con semilla 2026.}
+    \nota{El diseño adoptado usa el logaritmo, las cuatro exógenas y la corrección de sesgo. Cinco pliegues de origen móvil dentro del bloque de desarrollo, horizonte de 24 días. NARX con semilla 2026. Cifras de la sección 13 del cuaderno.}
 \end{table}
 
 \subsection{Modelos, rejillas y selección}
 
 El modelo clásico es un SARIMAX con constante sobre $\log(1+y)$ y las cuatro exógenas como regresores, ajustado con statsmodels (Seabold y Perktold, 2010). La red NARX recibe $\log(1+y)$ en los retardos $1,\dots,d_y$ y las exógenas en $t$ y $t-1$ ($d_x=1$), estandarizadas con la media y la desviación del entrenamiento de cada pliegue. Tiene una capa oculta $\tanh$, regularización $L_2=10^{-4}$ y optimizador Adam, con parada temprana (paciencia de 30 épocas) sobre el 15~\% final del entrenamiento del pliegue. La varianza de los residuos de ese tramo alimenta la corrección de sesgo. El pronóstico se construye en lazo cerrado.
 
-Las rejillas cruzan tres órdenes no estacionales $\{(1,0,0),(1,0,1),(2,0,1)\}$ con tres partes estacionales $\{\text{ninguna},(1,0,0)_7,(1,0,1)_7\}$ en SARIMAX, y $d_y\in\{1,3,7\}$ con $\{4,8,16\}$ neuronas y las semillas 1, 2 y 3 en NARX. Cada combinación se evalúa en cinco pliegues de ventana expandible con orígenes en el 40~\% final del desarrollo y horizonte de 24 días. Se elige la combinación de menor error medio, y en la red ese error se promedia sobre las tres semillas. Los modelos elegidos se evalúan después en 12 orígenes de la prueba externa.
+Las rejillas cruzan tres órdenes no estacionales $\{(1,0,0),(1,0,1),(2,0,1)\}$ con tres partes estacionales $\{\text{ninguna},(1,0,0)_7,(1,0,1)_7\}$ en SARIMAX, y $d_y\in\{1,3,7\}$ con $\{4,8,16\}$ neuronas y las semillas 1, 2 y 3 en NARX. Cada combinación se evalúa en cinco pliegues de ventana expandible con orígenes en el 40~\% final del desarrollo y horizonte de 24 días. Se elige la combinación de menor error medio, y en la red ese error se promedia sobre las tres semillas. Los modelos elegidos se evalúan después en 12 orígenes de la prueba externa. Las dos particiones y los modelos elegidos, ajustados sobre el desarrollo, acompañan al cuaderno.
 
 \section{Resultados}
 
@@ -127,7 +127,7 @@ La selección fijó SARIMAX $(1,0,1)$ sin parte estacional y NARX con $d_y=1$ y 
         NARX $d_y=1$, 8 neuronas & 40.07 & 28.81 & 80.0 & 0.404 & 44.02 & 28.75 & 53.5 & 0.403 \\
         \bottomrule
     \end{tabular}
-    \nota{MAPE en porcentaje. MASE escalado con el error del ingenuo estacional en el bloque de desarrollo. La red final usa la semilla 2026 del cuaderno.}
+    \nota{RMSE, raíz del error cuadrático medio. MAE, error absoluto medio. MAPE, error porcentual absoluto medio, en porcentaje. MASE, error absoluto medio escalado con el error del ingenuo estacional en el bloque de desarrollo. La red final usa la semilla 2026 del cuaderno.}
 \end{table}
 
 \begin{figure}[!htb]
@@ -152,20 +152,21 @@ En la prueba de Diebold y Mariano a 24 pasos, NARX supera a SARIMAX (DM*$=2.98$,
 \section{Análisis}
 
 \subsection{Origen de la ventaja de la red}
+\label{sec:origen}
 
-Sin exógenas, SARIMAX y NARX obtienen 57.8 y 57.1 en la validación cruzada (Tabla~\ref{tab:diseno}). Con la sola historia de PM2.5 ninguna estructura saca ventaja. Con las mismas cuatro exógenas, SARIMAX baja a 50.0 y la red a 38.8. La diferencia está en el uso de la meteorología. En SARIMAX el efecto de cada variable es un coeficiente constante sobre el logaritmo, y en la red depende del valor de las demás entradas. El retardo de un día en las exógenas reduce el error de la red de 41.7 a 38.8. El tiempo del día anterior pesa sobre la concentración de hoy, como documentan Zhang et al. (2017) para esta red de estaciones. El logaritmo también favorece más a la red (de 43.8 a 38.8) que a SARIMAX (de 51.8 a 50.0), porque reduce el rango de la variable de salida que la capa $\tanh$ debe cubrir.
+Sin exógenas, SARIMAX y NARX obtienen 57.8 y 57.1 en la validación cruzada (Tabla~\ref{tab:diseno}). La red elegida, con $d_y=1$ y 8 neuronas, queda sin exógenas entre 55.4 y 57.0 según la semilla. Con la sola historia de PM2.5 ninguna estructura saca ventaja. Con las mismas cuatro exógenas, SARIMAX baja a 50.0 y la red a 38.8. La diferencia está en el uso de la meteorología. En SARIMAX el efecto de cada variable es un coeficiente constante sobre el logaritmo, y en la red depende del valor de las demás entradas. El retardo de un día en las exógenas reduce el error de la red de 41.7 a 38.8. El tiempo del día anterior pesa sobre la concentración de hoy, como documentan Zhang et al. (2017) para esta red de estaciones. El logaritmo también favorece más a la red (de 43.8 a 38.8) que a SARIMAX (de 51.8 a 50.0), porque reduce el rango de la variable de salida que la capa $\tanh$ debe cubrir.
 
-El mismo hecho explica por qué $d_y=1$ resultó el mejor número de retardos. En lazo cerrado, con un solo retardo de la salida, el pronóstico se apoya en la meteorología futura después de pocos pasos, y el error de NARX por horizonte no crece de forma sostenida (Figura~\ref{fig:horizonte}). Esto también señala la principal reserva del estudio (criterio C8). El cuaderno supone conocida la meteorología de los 24 días siguientes. En operación, esas entradas provendrían de un pronóstico meteorológico con error propio, que crece con el horizonte y afectaría más a la red, cuya ventaja depende de ellas. Las cifras de la prueba son una cota optimista.
+El mismo hecho explica por qué $d_y=1$ resultó el mejor número de retardos. En lazo cerrado, con un solo retardo de la salida, el pronóstico se apoya en la meteorología futura después de pocos pasos, y el error de NARX por horizonte no crece de forma sostenida (Figura~\ref{fig:horizonte}). Esto también señala la principal reserva del estudio (criterio C8). El cuaderno supone conocida la meteorología de los 24 días siguientes. En operación, esas entradas provendrían de un pronóstico meteorológico con error propio, que crece con el horizonte y afectaría más a la red, cuya ventaja depende de ellas. Las cifras de la prueba corresponden a meteorología observada.
 
 \subsection{Sensibilidad de los hiperparámetros}
 
 La superficie de SARIMAX es plana, con errores entre 50.0 y 53.1 en ocho de las nueve combinaciones (Figura~\ref{fig:sensibilidad}). La parte estacional no mejora el ajuste, porque $(1,0,1)$ con $(1,0,1)_7$ obtiene 50.1 frente a 50.0 sin ella, coherente con $F_S=0.071$. La combinación $(2,0,1)$ con $(1,0,0)_7$ alcanza 129.0 con una desviación entre pliegues de 152.7, señal de que la predicción diverge en alguno de los pliegues. Lo mismo ocurrió con el orden $(3,0,0)$ que eligió el criterio de Akaike. Un buen ajuste dentro de la muestra no garantizó un pronóstico estable a 24 días, y la validación cruzada lo detectó.
 
-En la red, $d_y$ es el factor dominante. Con un retardo el error medio queda entre 35.5 y 37.8, y con siete entre 40.6 y 43.2. El número de neuronas interactúa con los retardos. Con $d_y=1$ y $d_y=3$, pasar de 4 a 16 neuronas reduce el error, y con $d_y=7$ lo aumenta, porque más entradas y más neuronas elevan la varianza del estimador sin que los retardos lejanos aporten información, dada la estacionalidad semanal débil. La desviación entre semillas va de 0.1 a 2.8. La red final, entrenada con la semilla 2026 del cuaderno, obtiene 40.1 en la validación cruzada frente a la media de 35.5 de las tres semillas de la rejilla. Esa dispersión es mayor que la diferencia entre las tres mejores combinaciones (35.5, 36.2 y 36.5), cuyo orden no queda establecido, pero es menor que la distancia de cerca de diez unidades o más que separa cualquier configuración de NARX con $d_y\le3$ del mejor SARIMAX.
+En la red, $d_y$ es el factor dominante. Con un retardo el error medio queda entre 35.5 y 37.8, y con siete entre 40.6 y 43.2. El número de neuronas interactúa con los retardos. Con $d_y=1$ y $d_y=3$, pasar de 4 a 16 neuronas reduce el error, y con $d_y=7$ lo aumenta, porque más entradas y más neuronas elevan la varianza del estimador sin que los retardos lejanos aporten información, dada la estacionalidad semanal baja. La desviación entre semillas va de 0.1 a 2.8. La red final, entrenada con la semilla 2026 del cuaderno, obtiene 40.1 en la validación cruzada frente a la media de 35.5 de las tres semillas de la rejilla. Esa dispersión es mayor que la diferencia entre las tres mejores combinaciones (35.5, 36.2 y 36.5), cuyo orden no queda establecido, pero es menor que la distancia de cerca de diez unidades o más que separa cualquier configuración de NARX con $d_y\le3$ del mejor SARIMAX.
 
 \subsection{Prueba externa y residuos}
 
-SARIMAX empeora de 51.5 en la validación cruzada a 70.2 en la prueba, un aumento del 36~\%, mientras que NARX pasa de 40.1 a 44.0 y conserva el mismo error absoluto medio (28.8). Los residuos de SARIMAX son negativos en la primera mitad de la prueba, que corresponde a los meses de verano y otoño de 2016 con concentraciones bajas, y grandes y positivos en los episodios del invierno siguiente (Figura~\ref{fig:residuos}). Su autocorrelación se mantiene entre 0.25 y 0.5 hasta el retardo 40. El modelo sobrestima los periodos limpios y subestima los episodios, y ese error persistente explica también su MAPE de 110.6~\%, que penaliza la sobrestimación en niveles bajos, frente al 53.5~\% de la red.
+SARIMAX empeora de 51.5 en la validación cruzada a 70.2 en la prueba, un aumento del 36~\%, mientras que NARX pasa de 40.1 a 44.0 y conserva el mismo error absoluto medio (28.8). Los residuos de SARIMAX son negativos en la primera mitad de la prueba, que corresponde a los meses de verano y otoño de 2016 con concentraciones bajas, y grandes y positivos en los episodios del invierno siguiente (Figura~\ref{fig:residuos}). Su autocorrelación se mantiene entre 0.25 y 0.5 hasta el retardo 40. El modelo sobrestima los periodos limpios y subestima los episodios, y ese error persistente explica también su error porcentual absoluto medio de 110.6~\%, que penaliza la sobrestimación en niveles bajos, frente al 53.5~\% de la red.
 
 Los residuos de NARX solo muestran autocorrelación significativa en los tres primeros retardos. Con pronósticos a 24 pasos desde un mismo origen esa dependencia corta es esperable, porque los errores de horizontes consecutivos comparten la información disponible en el origen. Por eso Ljung y Box rechaza en los tres modelos. La comparación útil es la magnitud del estadístico, cuatro veces mayor en SARIMAX que en NARX. La misma persistencia explica que la diferencia entre el ingenuo y SARIMAX no resulte significativa pese a 96.2 frente a 70.2, ya que la prueba de Diebold y Mariano con horizonte 24 estima la varianza de largo plazo con 23 autocovarianzas y los errores autocorrelacionados la inflan.
 
@@ -173,9 +174,9 @@ En la Figura~\ref{fig:horizonte}, los máximos en $h=15$ y $h=18$ son comunes a 
 
 \section{Conclusiones}
 
-En esta serie la estacionalidad semanal es débil y la información predictiva está en la meteorología. Elegir modelo es elegir cómo se usan las exógenas. NARX con un retardo de la salida y ocho neuronas supera a SARIMAX en la validación cruzada y en la prueba externa con diferencia significativa, y mantiene su error fuera del periodo de desarrollo, mientras que SARIMAX acumula errores persistentes por estación. Sin exógenas ambos modelos se igualan.
+En esta serie la estacionalidad semanal es baja y la información predictiva está en la meteorología. Elegir modelo es elegir cómo se usan las exógenas. NARX con un retardo de la salida y ocho neuronas supera a SARIMAX en la validación cruzada y en la prueba externa con diferencia significativa (Tabla~\ref{tab:benchmark}), y mantiene su error fuera del periodo de desarrollo, mientras que SARIMAX acumula errores persistentes por estación (Figura~\ref{fig:residuos}). Sin exógenas ambos modelos se igualan (Tabla~\ref{tab:diseno}).
 
-La validación cruzada descartó órdenes que el criterio de Akaike favorecía y que producen pronósticos inestables a 24 días. En la red, la variabilidad entre semillas impide ordenar las mejores combinaciones, aunque no altera la ventaja frente a SARIMAX. El supuesto de meteorología futura conocida hace de los resultados una cota optimista para un uso operativo.
+La validación cruzada descartó órdenes que el criterio de Akaike favorecía y que producen pronósticos inestables a 24 días (Figura~\ref{fig:sensibilidad}). En la red, la variabilidad entre semillas impide ordenar las mejores combinaciones, aunque no altera la ventaja frente a SARIMAX. El alcance operativo de estas cifras se discute en la Sección~\ref{sec:origen}.
 
 \section{Declaración de uso de inteligencia artificial}
 
