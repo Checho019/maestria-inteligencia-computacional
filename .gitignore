@@ -146,3 +146,8 @@ Series de tiempo/**/informe/*.fls
 Series de tiempo/**/informe/*.fdb_latexmk
 Series de tiempo/**/informe/*.toc
 Series de tiempo/**/datos/
+
+# ---------------------------------------------------------------
+# Proyecto final, vive en un repositorio privado aparte
+# ---------------------------------------------------------------
+Proyecto final/
