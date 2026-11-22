@@ -69,9 +69,13 @@ class GraficaConvergencia(FigureCanvasQTAgg):
         """Con escala logarítmica se ve el avance del mejor cerca de un óptimo en 0.
         Solo se ofrece para funciones no negativas (Rastrigin y Himmelblau)."""
         self.ejes.clear()
+        # Límites iniciales fijos mientras no hay datos, el ajuste automático se
+        # enciende al final para que siga a las curvas
         if logaritmica:
             self.ejes.set_ylim(tolerancia / 10, 100)
             self.ejes.set_yscale("log")
+        else:
+            self.ejes.set_ylim(objetivo.f_optimo - 1, objetivo.f_optimo + 1)
         for nombre, color, ancho in (("Peor", COLOR_PEOR, 1.0), ("Media", COLOR_MEDIA, 1.2),
                                      ("Mejor", COLOR_MEJOR, 1.8)):
             self.lineas[nombre], = self.ejes.plot([], [], color=color, lw=ancho, label=nombre)
@@ -88,6 +92,7 @@ class GraficaConvergencia(FigureCanvasQTAgg):
         self.ejes.set_title(f"Convergencia ({objetivo.tipo.lower()})", fontsize=10)
         self.ejes.grid(alpha=0.3)
         self.ejes.legend(loc="best", fontsize=8)
+        self.ejes.set_autoscaley_on(True)
         self.draw_idle()
 
     def actualizar(self, estado):

@@ -26,6 +26,7 @@ class Estado:
     peor: list
     mejor_x: np.ndarray         # mejor individuo encontrado hasta ahora
     mejor_f: float
+    P: np.ndarray | None = None  # población en bits
 
 
 @dataclass
@@ -96,7 +97,7 @@ def ejecutar(cfg, al_generar=None, detener=None):
 
         if al_generar is not None:
             t = time.perf_counter()
-            al_generar(Estado(generacion, X, f, mejor, media, peor, mejor_x, mejor_f))
+            al_generar(Estado(generacion, X, f, mejor, media, peor, mejor_x, mejor_f, P))
             tiempo_dibujo += time.perf_counter() - t
 
         # Criterios de parada, gana el primero que se cumpla

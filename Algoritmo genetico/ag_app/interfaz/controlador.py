@@ -17,14 +17,14 @@ from funciones.objetivo import FUNCIONES
 
 
 class HiloAG(QThread):
-    """Ejecuta las corridas fuera del hilo de la interfaz para que no se congele."""
+    """Ejecuta el AG fuera del hilo de la interfaz para que la ventana no se congele."""
 
     corrida_terminada = Signal(int, object)
     fallo = Signal(str)
 
-    def __init__(self, cfg, corridas, pausa_ms):
+    def __init__(self, cfg, ejecuciones, pausa_ms):
         super().__init__()
-        self.cfg, self.corridas, self.pausa = cfg, corridas, pausa_ms / 1000
+        self.cfg, self.ejecuciones, self.pausa = cfg, ejecuciones, pausa_ms / 1000
         self._detener = False
         self._candado = threading.Lock()
         self._ultimo = None
@@ -48,7 +48,7 @@ class HiloAG(QThread):
 
     def run(self):
         try:
-            for r in range(self.corridas):
+            for r in range(self.ejecuciones):
                 if self._detener:
                     break
                 self._corrida = r
@@ -108,7 +108,7 @@ class Controlador(QObject):
         self._preparar_convergencia()
 
     def _preparar_convergencia(self, *_):
-        """Prepara la curva de convergencia y, si ya hay una corrida, la vuelve a dibujar."""
+        """Prepara la curva de convergencia y, si ya hay una ejecución, la vuelve a dibujar."""
         v = self.v
         vigente = self.cfg is not None and self.cfg.funcion == v.funcion.currentText()
         cfg = self.cfg if vigente else Configuracion(funcion=v.funcion.currentText())
@@ -170,7 +170,7 @@ class Controlador(QObject):
     # ----- Lectura y validación de las entradas -----
 
     def _leer(self):
-        """Arma la configuración desde los campos. Devuelve (cfg, corridas, pausa)
+        """Arma la configuración desde los campos. Devuelve (cfg, ejecuciones, pausa)
         y la lista de errores con mensajes claros."""
         v, errores = self.v, []
 
@@ -213,20 +213,20 @@ class Controlador(QObject):
             else:
                 a, b = cfg.objetivo.dominio
                 cfg.L = bits_por_precision(a, b, eps)
-        corridas = numero(v.corridas, "El número de corridas", int)
+        ejecuciones = numero(v.ejecuciones, "El número de ejecuciones", int)
         pausa = numero(v.pausa, "La pausa por generación", int)
         if not errores:
             errores += validar(cfg)
-            if not 1 <= corridas <= 100:
-                errores.append(f"El número de corridas debe estar entre 1 y 100 (se recibió {corridas}).")
+            if not 1 <= ejecuciones <= 100:
+                errores.append(f"El número de ejecuciones debe estar entre 1 y 100 (se recibió {ejecuciones}).")
             if not 0 <= pausa <= 2000:
                 errores.append(f"La pausa debe estar entre 0 y 2000 ms (se recibió {pausa}).")
-        return (cfg, corridas, pausa), errores
+        return (cfg, ejecuciones, pausa), errores
 
     # ----- Ejecución -----
 
     def iniciar(self):
-        (cfg, corridas, pausa), errores = self._leer()
+        (cfg, ejecuciones, pausa), errores = self._leer()
         if errores:
             QMessageBox.warning(self.v, "Revise los parámetros", "\n".join(errores))
             return
@@ -239,8 +239,8 @@ class Controlador(QObject):
         v.progreso.setRange(0, cfg.T)
         v.progreso.setValue(0)
         self._bloquear(True)
-        self.corridas = corridas
-        self.hilo = HiloAG(cfg, corridas, pausa)
+        self.ejecuciones = ejecuciones
+        self.hilo = HiloAG(cfg, ejecuciones, pausa)
         self.hilo.corrida_terminada.connect(self._corrida_terminada)
         self.hilo.fallo.connect(self._fallo)
         self.hilo.finished.connect(self._terminado)
@@ -249,9 +249,9 @@ class Controlador(QObject):
         v.statusBar().showMessage(f"Ejecutando {cfg.funcion} con {cfg.seleccion}, {cfg.cruce} y {cfg.mutacion}")
 
     def _bloquear(self, ejecutando):
-        """Mientras corre el AG solo queda activo el botón Detener."""
+        """Mientras el AG está en marcha solo queda activo el botón Detener."""
         v = self.v
-        for widget in v.grupos_configuracion + [v.corridas, v.pausa, v.iniciar, v.escala_log,
+        for widget in v.grupos_configuracion + [v.ejecuciones, v.pausa, v.iniciar, v.escala_log,
                                                 v.exportar_csv, v.guardar_figuras]:
             widget.setEnabled(not ejecutando)
         v.detener.setEnabled(ejecutando)
@@ -266,13 +266,13 @@ class Controlador(QObject):
         ultimo = self.hilo.tomar_ultimo()
         if ultimo is None:
             return
-        corrida, estado = ultimo
+        ejecucion, estado = ultimo
         v = self.v
         v.niveles.actualizar(estado)
         v.convergencia.actualizar(estado)
         v.progreso.setValue(estado.generacion)
         v.etiqueta_progreso.setText(
-            f"Corrida {corrida + 1} de {self.corridas} (semilla {self.cfg.semilla + corrida}), "
+            f"Ejecución {ejecucion + 1} de {self.ejecuciones} (semilla {self.cfg.semilla + ejecucion}), "
             f"generación {estado.generacion} de {self.cfg.T}")
 
     def _corrida_terminada(self, r, res):
@@ -306,7 +306,7 @@ class Controlador(QObject):
             exito = np.mean(errores < self.cfg.tolerancia) * 100
             desviacion = finales.std(ddof=1) if finales.size > 1 else 0.0
             v.resumen.setText(
-                f"{len(finales)} corridas. Mejor valor final {finales.mean():.6f} ± {desviacion:.6f} "
+                f"{len(finales)} ejecuciones. Mejor valor final {finales.mean():.6f} ± {desviacion:.6f} "
                 f"(media ± DE), error medio {errores.mean():.2e}, éxito {exito:.0f} % "
                 f"con error menor que {self.cfg.tolerancia:g}.")
         v.statusBar().showMessage("Ejecución terminada", 5000)
@@ -328,7 +328,7 @@ class Controlador(QObject):
         try:
             with open(ruta, "w", newline="", encoding="utf-8") as archivo:
                 escritor = csv.writer(archivo)
-                escritor.writerow(["corrida", "semilla", "f_mejor", "error", "generacion_mejor",
+                escritor.writerow(["ejecucion", "semilla", "f_mejor", "error", "generacion_mejor",
                                    "generaciones", "tiempo_s", "motivo", "x_mejor"])
                 for r, res in enumerate(self.resultados):
                     escritor.writerow([r + 1, self.cfg.semilla + r, res.mejor_f, res.error,
@@ -337,7 +337,7 @@ class Controlador(QObject):
             historia = ruta.with_name(ruta.stem + "_historia.csv")
             with open(historia, "w", newline="", encoding="utf-8") as archivo:
                 escritor = csv.writer(archivo)
-                escritor.writerow(["corrida", "semilla", "generacion", "mejor", "media", "peor"])
+                escritor.writerow(["ejecucion", "semilla", "generacion", "mejor", "media", "peor"])
                 for r, res in enumerate(self.resultados):
                     for g, fila in enumerate(zip(res.mejor, res.media, res.peor)):
                         escritor.writerow([r + 1, self.cfg.semilla + r, g, *fila])

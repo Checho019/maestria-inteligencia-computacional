@@ -37,7 +37,7 @@ AYUDA = {
     "tolerancia": "Tolerancia del error respecto al óptimo conocido.",
     "parar_estancamiento": "Detener cuando la mejor aptitud no mejore en G generaciones seguidas.",
     "G": "Generaciones seguidas sin mejora antes de detener.",
-    "corridas": "Número de corridas. Cada una usa la semilla siguiente (semilla, semilla + 1, ...).",
+    "ejecuciones": "Número de ejecuciones. Cada una usa la semilla siguiente (semilla, semilla + 1, ...).",
     "pausa": "Pausa entre generaciones para seguir la animación. No cuenta en el tiempo de ejecución.",
     "escala_log": "Curva de convergencia en escala logarítmica, útil cerca de un óptimo en 0. Solo para Rastrigin y Himmelblau, que no toman valores negativos.",
 }
@@ -197,7 +197,7 @@ class VentanaPrincipal(QMainWindow):
 
     def _grupo_ejecucion(self):
         grupo, forma = QGroupBox("Ejecución"), QFormLayout()
-        self.corridas = self._campo("corridas", "1")
+        self.ejecuciones = self._campo("ejecuciones", "1")
         self.pausa = self._campo("pausa", "20")
         self.iniciar = QPushButton("Iniciar")
         self.detener = QPushButton("Detener")
@@ -205,7 +205,7 @@ class VentanaPrincipal(QMainWindow):
         botones = QHBoxLayout()
         botones.addWidget(self.iniciar)
         botones.addWidget(self.detener)
-        forma.addRow("Número de corridas", self.corridas)
+        forma.addRow("Número de ejecuciones", self.ejecuciones)
         forma.addRow("Pausa por generación (ms)", self.pausa)
         forma.addRow(botones)
         grupo.setLayout(forma)
@@ -231,11 +231,11 @@ class VentanaPrincipal(QMainWindow):
         rejilla.setColumnStretch(1, 1)
 
         self.tabla = QTableWidget(0, 5)
-        self.tabla.setHorizontalHeaderLabels(["Semilla", "f(x*)", "Error", "Gen. del mejor", "Tiempo (ms)"])
+        self.tabla.setHorizontalHeaderLabels(["Semilla", "f(x*)", "Error", "Gen. mejor", "Tiempo (ms)"])
         self.tabla.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
         self.tabla.verticalHeader().setVisible(False)
         self.tabla.setEditTriggers(QAbstractItemView.NoEditTriggers)
-        self.resumen = QLabel("Con varias corridas aquí aparecen la media y la desviación estándar del mejor valor final.")
+        self.resumen = QLabel("Con varias ejecuciones aquí aparecen la media y la desviación estándar del mejor valor final.")
         self.resumen.setWordWrap(True)
         self.exportar_csv = QPushButton("Exportar CSV")
         self.guardar_figuras = QPushButton("Guardar figuras")
