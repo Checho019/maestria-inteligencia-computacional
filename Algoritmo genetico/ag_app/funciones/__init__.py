@@ -1,0 +1,1 @@
+"""Funciones objetivo de prueba."""

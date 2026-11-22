@@ -147,6 +147,14 @@ Series de tiempo/**/informe/*.fdb_latexmk
 Series de tiempo/**/informe/*.toc
 Series de tiempo/**/datos/
 
+# Algoritmo genético. Material del profesor y salidas de LaTeX
+Algoritmo genetico/material/
+Algoritmo genetico/informe/*.aux
+Algoritmo genetico/informe/*.log
+Algoritmo genetico/informe/*.out
+Algoritmo genetico/informe/*.fls
+Algoritmo genetico/informe/*.fdb_latexmk
+
 # ---------------------------------------------------------------
 # Proyecto final, vive en un repositorio privado aparte
 # ---------------------------------------------------------------
