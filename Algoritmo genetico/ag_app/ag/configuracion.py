@@ -7,7 +7,8 @@ ejecutar sin cambiar nada.
 import math
 from dataclasses import dataclass
 
-from funciones.objetivo import FUNCIONES
+from funciones import personalizada
+from funciones.objetivo import FUNCIONES, PERSONALIZADA
 from . import cruce, mutacion, seleccion
 
 
@@ -33,10 +34,26 @@ class Configuracion:
     tolerancia: float = 1e-3
     parar_por_estancamiento: bool = False
     G: int = 30                     # generaciones sin mejora
+    # Solo para la función personalizada
+    expresion: str = "x1**2 + x2**2"
+    a: float = -5.0
+    b: float = 5.0
+    maximizar: bool = False
+    optimo: float | None = None     # valor óptimo si se conoce
 
     @property
     def objetivo(self):
+        """FuncionObjetivo elegida. La personalizada lanza ValueError si la
+        expresión no es válida."""
+        if self.funcion == PERSONALIZADA:
+            return personalizada.crear(self.expresion, float(self.a), float(self.b),
+                                       bool(self.maximizar), self.optimo, int(self.n))
         return FUNCIONES[self.funcion]
+
+    @property
+    def f_optimo(self):
+        """Valor óptimo con las variables de esta configuración, o None."""
+        return self.objetivo.valor_optimo(self.n_variables)
 
     @property
     def n_variables(self):
@@ -59,10 +76,26 @@ def validar(cfg):
         if not (minimo <= valor <= maximo):
             errores.append(f"{nombre} debe estar entre {minimo} y {maximo} (se recibió {valor}).")
 
-    if cfg.funcion not in FUNCIONES:
+    if cfg.funcion not in FUNCIONES and cfg.funcion != PERSONALIZADA:
         errores.append(f"La función {cfg.funcion} no existe.")
         return errores
-    if cfg.objetivo.n_fijo is None:
+    if cfg.funcion == PERSONALIZADA:
+        if not (math.isfinite(cfg.a) and math.isfinite(cfg.b) and cfg.a < cfg.b):
+            errores.append("El dominio debe cumplir a < b con números finitos.")
+            return errores
+        if cfg.optimo is not None and not math.isfinite(cfg.optimo):
+            errores.append("El óptimo conocido debe ser un número finito o quedar vacío.")
+        if not 2 <= cfg.n <= 50:
+            errores.append(f"El número de variables n debe estar entre 2 y 50 (se recibió {cfg.n}).")
+            return errores
+        try:
+            cfg.objetivo
+        except ValueError as error:
+            errores.append(str(error))
+            return errores
+        if cfg.parar_por_error and cfg.optimo is None:
+            errores.append("Sin óptimo conocido no se puede usar el criterio de error al óptimo.")
+    elif cfg.objetivo.n_fijo is None:
         rango("El número de variables n", cfg.n, 2, 50)
     rango("Los bits por variable L", cfg.L, 2, 32)
     rango("El tamaño de población N", cfg.N, 2, 1000)

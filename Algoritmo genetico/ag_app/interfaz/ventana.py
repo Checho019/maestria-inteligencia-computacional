@@ -10,12 +10,17 @@ from PySide6.QtWidgets import (
 )
 
 from ag import cruce, mutacion, seleccion
-from funciones.objetivo import FUNCIONES
+from funciones.objetivo import FUNCIONES, PERSONALIZADA
 from .graficas import GraficaConvergencia, GraficaNiveles
 
 AYUDA = {
-    "funcion": "Función objetivo. Al elegirla se cargan su tipo, su dominio y su óptimo conocido.",
-    "n": "Número de variables. Solo Rastrigin lo admite libre (2 para ver las curvas de nivel, 10 en el experimento E1).",
+    "funcion": "Función objetivo. Rastrigin, Himmelblau y Peaks son las de la tarea, las siguientes vienen de GEATbx y Personalizada permite escribir una. Al elegirla se cargan su tipo, su dominio y su óptimo conocido.",
+    "n": "Número de variables, libre en Rastrigin, Esfera, Rosenbrock, Ackley, Griewank, Schwefel y la personalizada (2 para ver las curvas de nivel, 10 en el experimento E1).",
+    "expresion": "Expresión de x1, ..., xn (x e y valen por x1 y x2). Admite + − * / ** ^, números y sin, cos, tan, exp, log, log10, sqrt, abs, tanh, arctan, pi y e. Ejemplo: x1**2 + 10*sin(x2).",
+    "tipo_personalizada": "Si la función personalizada se minimiza o se maximiza.",
+    "a": "Límite inferior del dominio, igual para todas las variables.",
+    "b": "Límite superior del dominio, igual para todas las variables.",
+    "optimo_personalizada": "Valor óptimo si se conoce. Sin él no se calcula el error ni se puede usar la parada por error.",
     "modo_L": "Fijar L directamente o calcularlo a partir de la precisión ε con L = ⌈log2((b − a)/ε + 1)⌉.",
     "L": "Bits por variable. Con L pequeño el AG no puede acercarse al óptimo más que la resolución, con L grande el cromosoma crece y la búsqueda es más lenta.",
     "eps": "Precisión deseada ε. La resolución de la codificación es (b − a)/(2^L − 1).",
@@ -39,7 +44,7 @@ AYUDA = {
     "G": "Generaciones seguidas sin mejora antes de detener.",
     "ejecuciones": "Número de ejecuciones. Cada una usa la semilla siguiente (semilla, semilla + 1, ...).",
     "pausa": "Pausa entre generaciones para seguir la animación. No cuenta en el tiempo de ejecución.",
-    "escala_log": "Curva de convergencia en escala logarítmica, útil cerca de un óptimo en 0. Solo para Rastrigin y Himmelblau, que no toman valores negativos.",
+    "escala_log": "Curva de convergencia en escala logarítmica, útil cerca de un óptimo en 0. Solo para las funciones que no toman valores negativos y tienen mínimo 0.",
 }
 
 
@@ -105,17 +110,33 @@ class VentanaPrincipal(QMainWindow):
 
     def _grupo_problema(self):
         grupo, forma = QGroupBox("Problema"), QFormLayout()
-        self.funcion = self._combo("funcion", list(FUNCIONES))
+        self.funcion = self._combo("funcion", list(FUNCIONES) + [PERSONALIZADA])
+        self.funcion.insertSeparator(3)     # las tres de la tarea van primero
+        self.funcion.insertSeparator(len(FUNCIONES) + 1)
         self.tipo = QLabel()
         self.n = self._campo("n", "2")
         self.dominio = QLabel()
         self.optimo = QLabel()
         self.optimo.setWordWrap(True)
+        # Campos de la función personalizada
+        self.expresion = QLineEdit("x1**2 + x2**2")
+        self.expresion.setToolTip(AYUDA["expresion"])
+        self.tipo_personalizada = self._combo("tipo_personalizada", ["Minimizar", "Maximizar"])
+        self.a = self._campo("a", "-5")
+        self.b = self._campo("b", "5")
+        self.optimo_personalizada = self._campo("optimo_personalizada", "")
+        self.optimo_personalizada.setPlaceholderText("desconocido")
         forma.addRow("Función", self.funcion)
+        forma.addRow("f(x1, ..., xn) =", self.expresion)
         forma.addRow("Tipo", self.tipo)
+        forma.addRow("Tipo de problema", self.tipo_personalizada)
         forma.addRow("Variables n", self.n)
         forma.addRow("Dominio", self.dominio)
+        forma.addRow("Límite inferior a", self.a)
+        forma.addRow("Límite superior b", self.b)
         forma.addRow("Óptimo", self.optimo)
+        forma.addRow("Valor óptimo (opcional)", self.optimo_personalizada)
+        self.forma_problema = forma
         grupo.setLayout(forma)
         return grupo
 

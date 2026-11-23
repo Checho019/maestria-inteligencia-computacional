@@ -4,12 +4,17 @@ Entrega de la tarea de algoritmos genéticos de Inteligencia Computacional Aplic
 
 | Carpeta o archivo | Contenido |
 |---|---|
+| `AlgoritmoGenetico.exe` | La aplicación lista para usar en Windows, sin instalar nada |
 | `Informe algoritmo genetico Duarte.pdf` | Informe en formato IEEE |
-| `ag_app/` | Aplicación (motor del AG e interfaz en PySide6). Su `README.md` explica la instalación y la ejecución |
+| `ag_app/` | Código fuente de la aplicación (motor del AG e interfaz en PySide6). Su `README.md` explica la instalación y la ejecución |
 | `experimentos/` | Guiones de los experimentos E1, E2 y E3 y sus resultados en CSV |
 | `informe/` | Fuente LaTeX del informe, figuras y guion de las capturas de la interfaz |
 
 ## Ejecutar la aplicación
+
+En Windows basta con abrir `AlgoritmoGenetico.exe` con doble clic. La primera vez tarda unos 10 segundos en abrir porque descomprime sus bibliotecas. Si Windows muestra el aviso de SmartScreen, se elige "Más información" y "Ejecutar de todas formas", porque el ejecutable no está firmado.
+
+En cualquier sistema con Python 3.10 o posterior:
 
 ```bash
 cd ag_app
@@ -23,9 +28,9 @@ Los experimentos usan el mismo motor que la aplicación, con las semillas 1 a 10
 
 ```bash
 cd experimentos
-pip install pandas
+pip install -r ../ag_app/requirements.txt pandas scipy
 python ejecutar_experimentos.py
 python analizar_resultados.py
 ```
 
-`ejecutar_experimentos.py` escribe `resultados/ejecuciones.csv` (una fila por ejecución) y `resultados/curvas.csv` (mejor, media, peor y diversidad por generación). `analizar_resultados.py` calcula las métricas de la tabla del informe (`resultados/metricas.csv`), revisa las ejecuciones sin éxito (`resultados/estancamientos.csv`) y regenera la figura de convergencia, la tabla y las cifras que cita el informe en `informe/`. Las capturas de la interfaz se regeneran con `python capturar_interfaz.py` desde `informe/`.
+`ejecutar_experimentos.py` escribe `resultados/ejecuciones.csv` (una fila por ejecución) y `resultados/curvas.csv` (mejor, media, peor y diversidad por generación). `analizar_resultados.py` calcula las métricas de la tabla del informe (`resultados/metricas.csv`), las pruebas estadísticas, revisa las ejecuciones sin éxito (`resultados/estancamientos.csv`) y regenera la figura de convergencia, la tabla y las cifras que cita el informe en `informe/`. Las capturas de la interfaz se regeneran con `python capturar_interfaz.py` desde `informe/`.

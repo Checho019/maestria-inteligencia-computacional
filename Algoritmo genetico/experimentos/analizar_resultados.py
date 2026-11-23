@@ -227,7 +227,7 @@ def macros(ejecuciones, curvas, atascos):
 
 def figura_convergencia(curvas):
     """Error del mejor (promedio de las 10 ejecuciones) y diversidad por generación."""
-    fig, ejes = plt.subplots(2, 3, figsize=(7.2, 2.9), sharex=True, layout="constrained")
+    fig, ejes = plt.subplots(2, 3, figsize=(7.2, 2.75), sharex=True, layout="constrained")
     for j, exp in enumerate(["E1", "E2", "E3"]):
         datos = curvas[curvas["experimento"] == exp]
         for color, (variante, g) in zip(COLORES, datos.groupby("variante", sort=False)):

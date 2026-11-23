@@ -22,19 +22,21 @@ class GraficaNiveles(FigureCanvasQTAgg):
 
     def preparar(self, objetivo, n):
         """Dibuja el fondo una sola vez por función. Con más de 2 variables se
-        muestra el corte en x1 y x2 con las demás en 0."""
+        muestra el corte en x1 y x2 con las demás en el valor `corte` de la
+        función (su coordenada óptima, o el centro del dominio si no se conoce)."""
         self.ejes.clear()
         a, b = objetivo.dominio
         malla = np.linspace(a, b, 250)
         X1, X2 = np.meshgrid(malla, malla)
-        puntos = np.zeros((X1.size, n))
+        puntos = np.full((X1.size, n), objetivo.corte)
         puntos[:, 0], puntos[:, 1] = X1.ravel(), X2.ravel()
         Z = objetivo.f(puntos).reshape(X1.shape)
         self.ejes.contourf(X1, X2, Z, levels=30, cmap="viridis", alpha=0.85)
         self.ejes.contour(X1, X2, Z, levels=15, colors="k", linewidths=0.3, alpha=0.5)
-        optimos = np.array(objetivo.x_optimos)
-        self.ejes.plot(optimos[:, 0], optimos[:, 1], "x", color="white", ms=9, mew=2,
-                       label="Óptimo conocido")
+        if objetivo.x_optimos:
+            optimos = np.array(objetivo.x_optimos)
+            self.ejes.plot(optimos[:, 0], optimos[:, 1], "x", color="white", ms=9, mew=2,
+                           label="Óptimo conocido")
         self.poblacion, = self.ejes.plot([], [], "o", color="white", mec="k", ms=5,
                                          label="Población")
         self.mejor, = self.ejes.plot([], [], "*", color=COLOR_MEJOR, mec="k", ms=16,
@@ -43,7 +45,7 @@ class GraficaNiveles(FigureCanvasQTAgg):
         self.ejes.set_ylim(a, b)
         self.ejes.set_xlabel("$x_1$")
         self.ejes.set_ylabel("$x_2$")
-        corte = f", corte con $x_3$ a $x_{{{n}}}$ en 0" if n > 2 else ""
+        corte = f" ($x_3..x_{{{n}}}={objetivo.corte:g}$)" if n > 2 else ""
         self.ejes.set_title(f"{objetivo.nombre}{corte}", fontsize=10)
         self.ejes.legend(loc="upper right", fontsize=8, framealpha=0.8)
         self.draw_idle()
@@ -65,24 +67,26 @@ class GraficaConvergencia(FigureCanvasQTAgg):
         self.ejes = self.figura.add_subplot()
         self.lineas = {}
 
-    def preparar(self, objetivo, T, logaritmica=False, tolerancia=1e-3):
+    def preparar(self, objetivo, T, logaritmica=False, tolerancia=1e-3, f_optimo=None):
         """Con escala logarítmica se ve el avance del mejor cerca de un óptimo en 0.
-        Solo se ofrece para funciones no negativas (Rastrigin y Himmelblau)."""
+        Solo se ofrece para funciones no negativas con mínimo 0. Sin óptimo
+        conocido (función personalizada) no se dibuja la línea de referencia."""
         self.ejes.clear()
         # Límites iniciales fijos mientras no hay datos, el ajuste automático se
         # enciende al final para que siga a las curvas
+        centro = 0.0 if f_optimo is None else f_optimo
         if logaritmica:
             self.ejes.set_ylim(tolerancia / 10, 100)
             self.ejes.set_yscale("log")
         else:
-            self.ejes.set_ylim(objetivo.f_optimo - 1, objetivo.f_optimo + 1)
+            self.ejes.set_ylim(centro - 1, centro + 1)
         for nombre, color, ancho in (("Peor", COLOR_PEOR, 1.0), ("Media", COLOR_MEDIA, 1.2),
                                      ("Mejor", COLOR_MEJOR, 1.8)):
             self.lineas[nombre], = self.ejes.plot([], [], color=color, lw=ancho, label=nombre)
-        if not logaritmica:
-            self.ejes.axhline(objetivo.f_optimo, color=COLOR_OPTIMO, ls="--", lw=1.2,
-                              label=f"Óptimo ({objetivo.f_optimo:.4f})")
-        else:
+        if f_optimo is not None and not logaritmica:
+            self.ejes.axhline(f_optimo, color=COLOR_OPTIMO, ls="--", lw=1.2,
+                              label=f"Óptimo ({f_optimo:.4f})")
+        elif f_optimo is not None:
             # El óptimo es 0 y no cabe en escala logarítmica, se marca la tolerancia
             self.ejes.axhline(tolerancia, color=COLOR_OPTIMO, ls="--", lw=1.2,
                               label=f"Óptimo 0 más la tolerancia ({tolerancia:g})")

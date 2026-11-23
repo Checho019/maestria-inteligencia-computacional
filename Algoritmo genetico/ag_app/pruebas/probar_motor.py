@@ -5,10 +5,11 @@ Uso, desde la carpeta ag_app: python -m pruebas.probar_motor
 
 import numpy as np
 
-from ag import Configuracion, ejecutar
+from ag import Configuracion, ejecutar, validar
 from ag import cruce, mutacion, seleccion
 from ag.codificacion import bits_por_precision, decodificar
-from funciones.objetivo import FUNCIONES
+from funciones import personalizada
+from funciones.objetivo import FUNCIONES, PERSONALIZADA
 
 
 class RngFijo:
@@ -84,11 +85,32 @@ class RngInversion:
 
 assert texto(mutacion.inversion_segmento(RngInversion(), h, 0.2)) == "10101110"
 
-# Sección 7, cada función vale su óptimo en su óptimo
+# Sección 7 y GEATbx, cada función vale su óptimo en su óptimo (con 2 y con 5
+# variables en las de n libre)
 for nombre, obj in FUNCIONES.items():
     for punto in obj.x_optimos:
         valor = obj.f(np.array([punto]))[0]
-        assert abs(valor - obj.f_optimo) < 1e-5, (nombre, punto, valor)
+        assert abs(valor - obj.valor_optimo(2)) < 1e-5, (nombre, punto, valor)
+        if obj.n_fijo is None:
+            valor = obj.f(np.full((1, 5), punto[0]))[0]
+            assert abs(valor - obj.valor_optimo(5)) < 1e-5, (nombre, valor)
+
+# Función personalizada, se aceptan expresiones válidas y se rechazan las demás
+f = personalizada.crear("x1**2 + 10*sin(y)", -5.0, 5.0, False, None, 2)
+assert abs(f.f(np.array([[1.0, 0.0]]))[0] - 1.0) < 1e-12
+for mala in ("__import__('os')", "x1.real", "x3 + 1", "open(1)", "log(x1)", "9**9**9",
+             "x1 if x2 else 0", "[x1]", "", "lambda: 1"):
+    try:
+        personalizada.crear(mala, -5.0, 5.0, False, None, 2)
+    except ValueError:
+        continue
+    raise AssertionError(f"Se aceptó la expresión {mala!r}")
+res = ejecutar(Configuracion(funcion=PERSONALIZADA, expresion="-(x1 - 1)^2 - (x2 + 2)^2",
+                             a=-5, b=5, maximizar=True, optimo=0.0, n=2))
+assert res.error < 1e-3 and np.allclose(res.mejor_x, [1, -2], atol=0.05), res
+res = ejecutar(Configuracion(funcion=PERSONALIZADA, parar_por_error=False, T=30))
+assert np.isnan(res.error) and res.generacion_tolerancia is None
+assert validar(Configuracion(funcion=PERSONALIZADA, optimo=None))  # pide óptimo para parar por error
 
 # Reproducibilidad, la misma semilla da exactamente el mismo resultado
 cfg = Configuracion(funcion="Himmelblau", parar_por_error=False)
@@ -108,5 +130,5 @@ for nombre in FUNCIONES:
 print("Todas las comprobaciones pasaron.")
 for nombre in FUNCIONES:
     res = ejecutar(Configuracion(funcion=nombre))
-    print(f"{nombre:10s} f(x*) = {res.mejor_f:.6f}  error = {res.error:.2e}  "
+    print(f"{nombre:19s} f(x*) = {res.mejor_f:.6f}  error = {res.error:.2e}  "
           f"generaciones = {res.generaciones}  {res.motivo}  {res.tiempo * 1000:.0f} ms")

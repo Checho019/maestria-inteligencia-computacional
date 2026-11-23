@@ -58,6 +58,7 @@ def ejecutar(cfg, al_generar=None, detener=None):
 
     rng = np.random.default_rng(cfg.semilla)
     objetivo = cfg.objetivo
+    f_optimo = cfg.f_optimo         # None si no se conoce, el error queda en NaN
     n, L, N = cfg.n_variables, cfg.L, cfg.N
     a, b = objetivo.dominio
     inferior, superior = np.full(n, a), np.full(n, b)
@@ -93,7 +94,7 @@ def ejecutar(cfg, al_generar=None, detener=None):
         if generacion == 0 or signo * f[i_mejor] > signo * mejor_f:
             mejor_f, mejor_x = f[i_mejor], X[i_mejor].copy()
             mejor_cromosoma, generacion_mejor = P[i_mejor].copy(), generacion
-        error = abs(mejor_f - objetivo.f_optimo)
+        error = abs(mejor_f - f_optimo) if f_optimo is not None else math.nan
 
         if al_generar is not None:
             t = time.perf_counter()
@@ -133,8 +134,11 @@ def ejecutar(cfg, al_generar=None, detener=None):
         generacion += 1
 
     acumular = np.maximum.accumulate if objetivo.maximizar else np.minimum.accumulate
-    errores_mejor = np.abs(acumular(np.array(mejor)) - objetivo.f_optimo)
-    bajo_tolerancia = np.flatnonzero(errores_mejor < cfg.tolerancia)
+    if f_optimo is None:
+        bajo_tolerancia = np.array([], dtype=int)
+    else:
+        errores_mejor = np.abs(acumular(np.array(mejor)) - f_optimo)
+        bajo_tolerancia = np.flatnonzero(errores_mejor < cfg.tolerancia)
     return Resultado(
         mejor_cromosoma=mejor_cromosoma,
         mejor_x=mejor_x,
