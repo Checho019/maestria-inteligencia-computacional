@@ -1,75 +1,21 @@
-"""Controlador. Valida las entradas, lanza el motor en un hilo aparte y pasa cada
-generación a las gráficas (sección 9 de la guía)."""
+"""Controlador. Conecta la vista con el motor: mantiene el panel al día, lanza el
+AG en un hilo y pasa cada generación a las gráficas (sección 9 de la guía)."""
 
-import csv
-import math
-import threading
 import time
-from dataclasses import replace
 from pathlib import Path
 
-import numpy as np
-from PySide6.QtCore import QObject, QThread, QTimer, Signal
-from PySide6.QtWidgets import QFileDialog, QMessageBox, QTableWidgetItem
+from PySide6.QtCore import QObject, QTimer
+from PySide6.QtWidgets import QFileDialog, QMessageBox
 
-from ag import Configuracion, Estado, ejecutar, validar
-from ag.codificacion import bits_por_precision, cadena
-from ag.configuracion import verbo
-from funciones import personalizada
+from ag import Configuracion, Estado
 from funciones.objetivo import FUNCIONES, PERSONALIZADA
+from . import formulario, resultados
+from .hilo import HiloAG
 
 
-class HiloAG(QThread):
-    """Ejecuta el AG fuera del hilo de la interfaz para que la ventana no se congele."""
-
-    ejecucion_terminada = Signal(int, object)
-    fallo = Signal(str)
-
-    def __init__(self, cfg, ejecuciones, pausa_ms):
-        super().__init__()
-        self.cfg, self.ejecuciones, self.pausa = cfg, ejecuciones, pausa_ms / 1000
-        self._detener = False
-        self._continuar = threading.Event()   # sin marcar mientras está en pausa
-        self._continuar.set()
-        self._candado = threading.Lock()
-        self._ultimo = None
-        self._ejecucion = 0
-
-    def pedir_detener(self):
-        self._detener = True
-        self._continuar.set()               # una ejecución en pausa también se detiene
-
-    def pausar(self, en_pausa):
-        if en_pausa:
-            self._continuar.clear()
-        else:
-            self._continuar.set()
-
-    def tomar_ultimo(self):
-        with self._candado:
-            ultimo, self._ultimo = self._ultimo, None
-        return ultimo
-
-    def _al_generar(self, estado):
-        copia = Estado(estado.generacion, estado.X, estado.f, list(estado.mejor),
-                       list(estado.media), list(estado.peor), estado.mejor_x, estado.mejor_f)
-        with self._candado:
-            self._ultimo = (self._ejecucion, copia)
-        if self.pausa:
-            time.sleep(self.pausa)
-        self._continuar.wait()
-
-    def run(self):
-        try:
-            for r in range(self.ejecuciones):
-                if self._detener:
-                    break
-                self._ejecucion = r
-                cfg = replace(self.cfg, semilla=self.cfg.semilla + r)
-                resultado = ejecutar(cfg, self._al_generar, lambda: self._detener)
-                self.ejecucion_terminada.emit(r, resultado)
-        except Exception as error:
-            self.fallo.emit(str(error))
+def _estado_final(res):
+    """Estado con la historia completa de un resultado, para redibujar la convergencia."""
+    return Estado(res.generaciones, None, None, res.mejor, res.media, res.peor, res.mejor_x, res.mejor_f)
 
 
 class Controlador(QObject):
@@ -81,12 +27,10 @@ class Controlador(QObject):
         self.cfg = None
         self._vista_niveles = None
         self._ultima_convergencia = 0.0
-        self.temporizador = QTimer(self)
+        self.temporizador = QTimer(self)        # refresco de las gráficas en marcha
         self.temporizador.setInterval(50)
         self.temporizador.timeout.connect(self._refrescar)
-        # El fondo de las curvas de nivel se redibuja 300 ms después de la última
-        # tecla, para que escribir en los campos no trabe la ventana
-        self.espera_vista = QTimer(self)
+        self.espera_vista = QTimer(self)        # redibujo del fondo tras la última tecla
         self.espera_vista.setSingleShot(True)
         self.espera_vista.setInterval(300)
         self.espera_vista.timeout.connect(self._redibujar_niveles)
@@ -94,10 +38,10 @@ class Controlador(QObject):
         v = ventana
         v.funcion.currentTextChanged.connect(self._cambiar_funcion)
         for campo in (v.n, v.L, v.eps, v.expresion, v.a, v.b, v.optimo_personalizada):
-            campo.textChanged.connect(self._actualizar_codificacion)
-        v.tipo_personalizada.currentTextChanged.connect(self._actualizar_codificacion)
-        v.modo_L.currentTextChanged.connect(self._actualizar_codificacion)
-        v.pm_auto.toggled.connect(self._actualizar_codificacion)
+            campo.textChanged.connect(self._actualizar_panel)
+        for combo in (v.tipo_personalizada, v.modo_L):
+            combo.currentTextChanged.connect(self._actualizar_panel)
+        v.pm_auto.toggled.connect(self._actualizar_panel)
         for combo in (v.seleccion, v.cruce, v.mutacion):
             combo.currentTextChanged.connect(self._mostrar_parametros)
         v.escala_log.toggled.connect(self._preparar_convergencia)
@@ -105,8 +49,8 @@ class Controlador(QObject):
         v.parar_estancamiento.toggled.connect(v.G.setEnabled)
         v.G.setEnabled(False)
         v.iniciar.clicked.connect(self.iniciar)
-        v.detener.clicked.connect(self.detener)
         v.pausar.toggled.connect(self.pausar)
+        v.detener.clicked.connect(self.detener)
         v.exportar_csv.clicked.connect(self.exportar_csv)
         v.guardar_figuras.clicked.connect(self.guardar_figuras)
         v.al_cerrar = self.cerrar
@@ -114,12 +58,11 @@ class Controlador(QObject):
         self._cambiar_funcion(v.funcion.currentText())
         self._mostrar_parametros()
 
-    # ----- Reacciones de la interfaz -----
+    # ----- Panel de parámetros -----
 
     def _cambiar_funcion(self, nombre):
-        v = self.v
+        v, forma = self.v, self.v.forma_problema
         propia = nombre == PERSONALIZADA
-        forma = v.forma_problema
         for widget in (v.expresion, v.tipo_personalizada, v.a, v.b, v.optimo_personalizada):
             forma.setRowVisible(widget, propia)
         for widget in (v.tipo, v.dominio):
@@ -128,103 +71,21 @@ class Controlador(QObject):
             v.n.setEnabled(True)
         else:
             obj = FUNCIONES[nombre]
-            v.tipo.setText(obj.tipo)
             a, b = obj.dominio
+            v.tipo.setText(obj.tipo)
             v.dominio.setText(f"[{a:g}, {b:g}] en cada variable")
             v.n.setEnabled(obj.n_fijo is None)
             if obj.n_fijo is not None:
                 v.n.setText(str(obj.n_fijo))
         if self.cfg is not None and self.cfg.funcion != nombre:
             self._limpiar_resultados()
-        self._actualizar_codificacion()
+        self._actualizar_panel()
 
-    def _numero_opcional(self, campo):
-        texto = campo.text().strip().replace(",", ".")
-        if not texto:
-            return None
-        valor = float(texto)
-        if not math.isfinite(valor):
-            raise ValueError
-        return valor
-
-    def _objetivo_actual(self):
-        """Función elegida y un mensaje de error si la personalizada no es válida."""
+    def _actualizar_panel(self, *_):
+        """Óptimo, L, longitud y Pm según la función y los campos de codificación."""
         v = self.v
-        nombre = v.funcion.currentText()
-        if nombre != PERSONALIZADA:
-            return FUNCIONES[nombre], ""
-        try:
-            n = int(v.n.text())
-        except ValueError:
-            return None, "El número de variables n debe ser un entero entre 2 y 50."
-        try:
-            a, b = float(v.a.text().replace(",", ".")), float(v.b.text().replace(",", "."))
-        except ValueError:
-            return None, "Los límites a y b deben ser números."
-        try:
-            optimo = self._numero_opcional(v.optimo_personalizada)
-        except ValueError:
-            return None, "El valor óptimo debe ser un número o quedar vacío."
-        try:
-            if not (math.isfinite(a) and math.isfinite(b) and a < b and 2 <= n <= 50):
-                return None, "Revise el dominio (a < b) y el número de variables (2 a 50)."
-            return personalizada.crear(v.expresion.text(), a, b,
-                                       v.tipo_personalizada.currentText() == "Maximizar",
-                                       optimo, n), ""
-        except ValueError as error:
-            return None, str(error) or "Revise los números del dominio y del óptimo."
-
-    def _limpiar_resultados(self):
-        """Borra los resultados de otra función para que no se lean con la nueva."""
-        v = self.v
-        self.cfg, self.resultados = None, []
-        for etiqueta in v.resultados.values():
-            etiqueta.setText("—")
-        v.tabla.setRowCount(0)
-        v.resumen.setText("")
-        v.progreso.setValue(0)
-        v.etiqueta_progreso.setText("Listo para ejecutar")
-
-    def _preparar_convergencia(self, *_):
-        """Prepara la curva de convergencia y, si ya hay una ejecución, la vuelve a dibujar."""
-        v = self.v
-        vigente = self.cfg is not None and self.cfg.funcion == v.funcion.currentText()
-        if vigente:
-            obj, n, T, tolerancia = self.cfg.objetivo, self.cfg.n_variables, self.cfg.T, self.cfg.tolerancia
-        else:
-            obj, _ = self._objetivo_actual()
-            if obj is None:
-                return
-            n, T, tolerancia = self._n_actual() or 2, Configuracion.T, Configuracion.tolerancia
-        logaritmica = v.escala_log.isChecked() and obj.permite_log
-        v.convergencia.preparar(obj, T, logaritmica, tolerancia, obj.valor_optimo(n))
-        if vigente and self.resultados and self.hilo is None:
-            res = self.resultados[-1]
-            v.convergencia.actualizar(Estado(res.generaciones, None, None, res.mejor,
-                                             res.media, res.peor, res.mejor_x, res.mejor_f))
-
-    def _n_actual(self):
-        nombre = self.v.funcion.currentText()
-        try:
-            fijo = FUNCIONES[nombre].n_fijo if nombre in FUNCIONES else None
-            return fijo or int(self.v.n.text())
-        except ValueError:
-            return None
-
-    def _L_actual(self, obj):
-        v = self.v
-        try:
-            if v.modo_L.currentText() == "Bits por variable":
-                return int(v.L.text())
-            a, b = obj.dominio
-            return bits_por_precision(a, b, float(v.eps.text()))
-        except (ValueError, ZeroDivisionError, OverflowError):
-            return None
-
-    def _actualizar_codificacion(self, *_):
-        v = self.v
-        obj, mensaje = self._objetivo_actual()
-        n = self._n_actual()
+        obj, mensaje = formulario.objetivo_elegido(v)
+        n = formulario.n_elegido(v)
         por_bits = v.modo_L.currentText() == "Bits por variable"
         v.forma_codificacion.setRowVisible(v.L, por_bits)
         v.forma_codificacion.setRowVisible(v.eps, not por_bits)
@@ -242,14 +103,14 @@ class Controlador(QObject):
             v.optimo.setText(f"f = {valor:g} en {obj.x_optimo_texto(n or 2)}")
         else:
             v.optimo.setText(f"f = {valor:g} (ubicación desconocida)")
-        # Sin óptimo conocido no hay error que medir ni parada por error
+        # Sin óptimo conocido no hay error que medir
         v.parar_error.setEnabled(valor is not None)
         if valor is None:
             v.parar_error.setChecked(False)
         v.escala_log.setEnabled(obj.permite_log)
         if not obj.permite_log:
             v.escala_log.setChecked(False)
-        L = self._L_actual(obj)
+        L = formulario.bits_elegidos(v, obj)
         if n and L and L > 0:
             a, b = obj.dominio
             v.L_calculado.setText(f"{L} bits, resolución {(b - a) / (2**L - 1):.2e}")
@@ -261,23 +122,16 @@ class Controlador(QObject):
             v.longitud.setText("—")
         self.espera_vista.start()
 
-    def _redibujar_niveles(self):
-        """Redibuja el fondo de las curvas de nivel y la convergencia vacía si
-        cambiaron la función, su definición o n."""
-        if self.hilo is not None and self.hilo.isRunning():
-            return
-        obj, _ = self._objetivo_actual()
-        n = self._n_actual()
-        if obj is None:
-            return
-        vista = self._vista(obj, n)
-        if vista != self._vista_niveles:
-            # Una ejecución anterior no corresponde a la función o al n nuevos
-            if self._vista_niveles is not None and self.resultados:
-                self._limpiar_resultados()
-            self._vista_niveles = vista
-            self.v.niveles.preparar(obj, vista[-1])
-            self._preparar_convergencia()
+    def _mostrar_parametros(self, *_):
+        """Cada operador muestra solo sus parámetros."""
+        v, forma = self.v, self.v.forma_operadores
+        bit_flip = v.mutacion.currentText() == "Bit-flip por bit"
+        forma.setRowVisible(v.k, v.seleccion.currentText() == "Torneo")
+        forma.setRowVisible(v.s, v.seleccion.currentText() == "Ranking lineal")
+        forma.setRowVisible(v.p0, v.cruce.currentText() == "Uniforme")
+        forma.setRowVisible(v.pm_auto, bit_flip)
+        forma.setRowVisible(v.pm, bit_flip)
+        forma.setRowVisible(v.pmi, not bit_flip)
 
     @staticmethod
     def _vista(obj, n):
@@ -285,120 +139,62 @@ class Controlador(QObject):
         n = n if n and 2 <= n <= 50 else 2
         return (obj.nombre, obj.expresion, obj.dominio, obj.maximizar, obj.f_optimo, n)
 
-    def _mostrar_parametros(self, *_):
-        v, forma = self.v, self.v.forma_operadores
-        forma.setRowVisible(v.k, v.seleccion.currentText() == "Torneo")
-        forma.setRowVisible(v.s, v.seleccion.currentText() == "Ranking lineal")
-        forma.setRowVisible(v.p0, v.cruce.currentText() == "Uniforme")
-        bit_flip = v.mutacion.currentText() == "Bit-flip por bit"
-        forma.setRowVisible(v.pm_auto, bit_flip)
-        forma.setRowVisible(v.pm, bit_flip)
-        forma.setRowVisible(v.pmi, not bit_flip)
+    def _redibujar_niveles(self):
+        """Redibuja el fondo si cambiaron la función, su definición o n."""
+        if self.hilo is not None and self.hilo.isRunning():
+            return
+        obj, _ = formulario.objetivo_elegido(self.v)
+        if obj is None:
+            return
+        vista = self._vista(obj, formulario.n_elegido(self.v))
+        if vista == self._vista_niveles:
+            return
+        if self._vista_niveles is not None and self.resultados:
+            self._limpiar_resultados()          # ya no corresponden a lo que se ve
+        self._vista_niveles = vista
+        self.v.niveles.preparar(obj, vista[-1])
+        self._preparar_convergencia()
 
-    # ----- Lectura y validación de las entradas -----
-
-    def _leer(self):
-        """Arma la configuración desde los campos. Devuelve (cfg, ejecuciones, pausa)
-        y la lista de errores con mensajes claros."""
-        v, errores, ilegibles = self.v, [], []
-
-        defecto = Configuracion()
-
-        def numero(campo, nombre, tipo, clave=None):
-            """Lee un campo. Si no es un número finito anota el error y devuelve el
-            valor por defecto, para no generar errores de rango en cadena."""
-            texto = campo.text().strip().replace(",", ".")
-            try:
-                valor = tipo(texto)
-                if math.isfinite(valor):
-                    return valor
-            except ValueError:
-                pass
-            clase = "un número entero" if tipo is int else "un número finito"
-            errores.append(f"{nombre} {verbo(nombre)} ser {clase} (se recibió \"{campo.text()}\").")
-            ilegibles.append(nombre)
-            return getattr(defecto, clave) if clave else tipo(1)
-
-        def si(activo, campo, nombre, tipo, clave):
-            """Solo se leen los campos visibles o activos, los demás toman su valor
-            por defecto para que un texto olvidado en ellos no bloquee la ejecución."""
-            return numero(campo, nombre, tipo, clave) if activo else getattr(defecto, clave)
-
-        seleccion, cruce, mutacion = v.seleccion.currentText(), v.cruce.currentText(), v.mutacion.currentText()
-        bit_flip = mutacion == "Bit-flip por bit"
-        cfg = Configuracion(
-            funcion=v.funcion.currentText(),
-            n=numero(v.n, "El número de variables n", int, "n"),
-            N=numero(v.N, "El tamaño de población N", int, "N"),
-            T=numero(v.T, "Las generaciones T", int, "T"),
-            pc=numero(v.pc, "La probabilidad de cruce Pc", float, "pc"),
-            elites=numero(v.elites, "El número de élites e", int, "elites"),
-            semilla=numero(v.semilla, "La semilla", int, "semilla"),
-            seleccion=seleccion,
-            k=si(seleccion == "Torneo", v.k, "El tamaño del torneo k", int, "k"),
-            s=si(seleccion == "Ranking lineal", v.s, "La presión selectiva s", float, "s"),
-            cruce=cruce,
-            p0=si(cruce == "Uniforme", v.p0, "La probabilidad de intercambio p0", float, "p0"),
-            mutacion=mutacion,
-            pm=None if v.pm_auto.isChecked() or not bit_flip
-            else numero(v.pm, "La probabilidad de mutación por bit Pm", float),
-            pmi=si(not bit_flip, v.pmi, "La probabilidad de mutación por individuo Pmi", float, "pmi"),
-            parar_por_error=v.parar_error.isChecked(),
-            tolerancia=si(v.parar_error.isChecked(), v.tolerancia, "La tolerancia del error", float, "tolerancia"),
-            parar_por_estancamiento=v.parar_estancamiento.isChecked(),
-            G=si(v.parar_estancamiento.isChecked(), v.G, "Las generaciones sin mejora G", int, "G"),
-        )
-        if cfg.funcion == PERSONALIZADA:
-            cfg.expresion = v.expresion.text()
-            cfg.a = numero(v.a, "El límite inferior a", float, "a")
-            cfg.b = numero(v.b, "El límite superior b", float, "b")
-            cfg.maximizar = v.tipo_personalizada.currentText() == "Maximizar"
-            cfg.optimo = (None if not v.optimo_personalizada.text().strip()
-                          else numero(v.optimo_personalizada, "El valor óptimo", float))
-        if v.modo_L.currentText() == "Bits por variable":
-            cfg.L = numero(v.L, "Los bits por variable L", int, "L")
+    def _preparar_convergencia(self, *_):
+        """Prepara la convergencia y, si hay una ejecución de esta función, la redibuja."""
+        v = self.v
+        vigente = self.cfg is not None and self.cfg.funcion == v.funcion.currentText()
+        if vigente:
+            obj, n, T, tolerancia = self.cfg.objetivo, self.cfg.n_variables, self.cfg.T, self.cfg.tolerancia
         else:
-            eps = numero(v.eps, "La precisión ε", float)
-            a, b = (cfg.a, cfg.b) if cfg.funcion == PERSONALIZADA else cfg.objetivo.dominio
-            if eps <= 0:
-                errores.append("La precisión ε debe ser mayor que 0.")
-            elif "La precisión ε" not in ilegibles and a < b:
-                try:
-                    cfg.L = bits_por_precision(a, b, eps)
-                except (OverflowError, ValueError):
-                    errores.append(f"La precisión ε = {eps:g} es demasiado pequeña.")
-        ejecuciones = numero(v.ejecuciones, "El número de ejecuciones", int)
-        pausa = numero(v.pausa, "La pausa por generación", int)
-        # Los rangos se revisan también cuando otro campo no se pudo leer, sin
-        # repetir el mensaje de los campos ilegibles
-        errores += [e for e in validar(cfg) if not any(e.startswith(n) for n in ilegibles)]
-        if "El número de ejecuciones" not in ilegibles and not 1 <= ejecuciones <= 100:
-            errores.append(f"El número de ejecuciones debe estar entre 1 y 100 (se recibió {ejecuciones}).")
-        if "La pausa por generación" not in ilegibles and not 0 <= pausa <= 2000:
-            errores.append(f"La pausa debe estar entre 0 y 2000 ms (se recibió {pausa}).")
-        return (cfg, ejecuciones, pausa), errores
+            obj, _ = formulario.objetivo_elegido(v)
+            if obj is None:
+                return
+            n, T, tolerancia = formulario.n_elegido(v) or 2, Configuracion.T, Configuracion.tolerancia
+        v.convergencia.preparar(obj, T, v.escala_log.isChecked() and obj.permite_log,
+                                tolerancia, obj.valor_optimo(n))
+        if vigente and self.resultados and self.hilo is None:
+            v.convergencia.actualizar(_estado_final(self.resultados[-1]))
+
+    def _limpiar_resultados(self):
+        self.cfg, self.resultados = None, []
+        resultados.limpiar(self.v)
+        self.v.progreso.setValue(0)
+        self.v.etiqueta_progreso.setText("Listo para ejecutar")
 
     # ----- Ejecución -----
 
     def iniciar(self):
-        (cfg, ejecuciones, pausa), errores = self._leer()
+        (cfg, ejecuciones, pausa), errores = formulario.leer(self.v)
         if errores:
             QMessageBox.warning(self.v, "Revise los parámetros", "\n".join(errores))
             return
         v = self.v
-        self.cfg, self.resultados = cfg, []
-        # El fondo queda definido por esta ejecución, así el redibujo diferido no
-        # la confunde con un cambio de función y no borra sus resultados
+        self.cfg, self.resultados, self.ejecuciones = cfg, [], ejecuciones
+        # El fondo queda fijado por esta ejecución, así el redibujo diferido no borra sus resultados
         self.espera_vista.stop()
         self._vista_niveles = self._vista(cfg.objetivo, cfg.n_variables)
         v.niveles.preparar(cfg.objetivo, cfg.n_variables)
         self._preparar_convergencia()
-        v.tabla.setRowCount(0)
-        v.resumen.setText("")
+        resultados.limpiar(v)
         v.progreso.setRange(0, cfg.T)
         v.progreso.setValue(0)
         self._bloquear(True)
-        self.ejecuciones = ejecuciones
         self.hilo = HiloAG(cfg, ejecuciones, pausa)
         self.hilo.ejecucion_terminada.connect(self._ejecucion_terminada)
         self.hilo.fallo.connect(self._fallo)
@@ -408,7 +204,7 @@ class Controlador(QObject):
         v.statusBar().showMessage(f"Ejecutando {cfg.funcion} con {cfg.seleccion}, {cfg.cruce} y {cfg.mutacion}")
 
     def _bloquear(self, ejecutando):
-        """Mientras el AG está en marcha solo queda activo el botón Detener."""
+        """En marcha solo quedan activos Pausar y Detener."""
         v = self.v
         for widget in v.grupos_configuracion + [v.ejecuciones, v.pausa, v.iniciar, v.escala_log,
                                                 v.exportar_csv, v.guardar_figuras]:
@@ -417,23 +213,20 @@ class Controlador(QObject):
         v.pausar.setEnabled(ejecutando)
         if not ejecutando:
             v.pausar.setChecked(False)
-            # Vuelve a aplicar lo que depende de la función (eje logarítmico, parada por error)
-            self._actualizar_codificacion()
-
-    def detener(self):
-        if self.hilo is not None:
-            self.hilo.pedir_detener()
+            self._actualizar_panel()            # reaplica lo que depende de la función
 
     def pausar(self, en_pausa):
-        """Pausa o reanuda la ejecución en curso sin perder el estado."""
         self.v.pausar.setText("Reanudar" if en_pausa else "Pausar")
         if self.hilo is not None:
             self.hilo.pausar(en_pausa)
             self.v.statusBar().showMessage("En pausa" if en_pausa else "Ejecutando")
 
+    def detener(self):
+        if self.hilo is not None:
+            self.hilo.pedir_detener()
+
     def cerrar(self):
-        """Al cerrar la ventana durante una ejecución, la detiene y espera al hilo
-        para que el proceso termine limpio."""
+        """Detiene una ejecución en curso al cerrar la ventana y espera al hilo."""
         if self.hilo is not None:
             self.hilo.pedir_detener()
             self.hilo.wait(5000)
@@ -448,8 +241,7 @@ class Controlador(QObject):
         ejecucion, estado = ultimo
         v = self.v
         v.niveles.actualizar(estado)
-        # La convergencia redibuja toda la figura, así que se limita a unas cinco
-        # veces por segundo para no quitarle procesador al AG
+        # La convergencia redibuja toda la figura, se limita a cinco veces por segundo
         ahora = time.perf_counter()
         if forzar or ahora - self._ultima_convergencia > 0.2:
             v.convergencia.actualizar(estado)
@@ -462,53 +254,17 @@ class Controlador(QObject):
     def _ejecucion_terminada(self, r, res):
         self._refrescar(forzar=True)
         self.resultados.append(res)
-        v, cfg = self.v, self.cfg
-        # La curva completa sale del resultado, por si la última generación llegó
-        # entre dos refrescos de la convergencia
-        v.convergencia.actualizar(Estado(res.generaciones, None, None, res.mejor, res.media,
-                                         res.peor, res.mejor_x, res.mejor_f))
-        v.resultados["Mejor cromosoma"].setText(cadena(res.mejor_cromosoma, cfg.L))
-        v.resultados["x*"].setText("(" + ", ".join(f"{x:.6f}" for x in res.mejor_x) + ")")
-        v.resultados["f(x*)"].setText(f"{res.mejor_f:.8f}")
-        conocido = not math.isnan(res.error)
-        v.resultados["Error al óptimo"].setText(f"{res.error:.3e}" if conocido else "— (óptimo desconocido)")
-        v.resultados["Generación del mejor"].setText(str(res.generacion_mejor))
-        v.resultados["Generaciones ejecutadas"].setText(str(res.generaciones))
-        v.resultados["Tiempo de ejecución"].setText(f"{res.tiempo * 1000:.1f} ms")
-        v.resultados["Motivo de parada"].setText(res.motivo)
-        fila = v.tabla.rowCount()
-        v.tabla.insertRow(fila)
-        valores = [cfg.semilla + r, f"{res.mejor_f:.6f}", f"{res.error:.2e}" if conocido else "—",
-                   res.generacion_mejor, f"{res.tiempo * 1000:.1f}"]
-        for columna, valor in enumerate(valores):
-            v.tabla.setItem(fila, columna, QTableWidgetItem(str(valor)))
-        v.tabla.scrollToBottom()
+        self.v.convergencia.actualizar(_estado_final(res))
+        resultados.mostrar(self.v, self.cfg, r, res)
 
     def _terminado(self):
         self.temporizador.stop()
         self._refrescar()
         v = self.v
         self._bloquear(False)
-        # La ejecución detenida a mitad de camino no entra en el resumen
-        completas = [r for r in self.resultados if r.motivo != "Detenido por el usuario"]
-        detenidas = len(self.resultados) - len(completas)
-        if not detenidas:
+        if all(r.motivo != resultados.DETENIDA for r in self.resultados):
             v.progreso.setValue(v.progreso.maximum())   # también si paró antes de T
-        nota = " La ejecución detenida no entra en el resumen." if detenidas else ""
-        if completas:
-            finales = np.array([r.mejor_f for r in completas])
-            errores = np.array([r.error for r in completas])
-            exito = np.mean(errores < self.cfg.tolerancia) * 100
-            desviacion = finales.std(ddof=1) if finales.size > 1 else 0.0
-            cuantas = "1 ejecución completa" if len(finales) == 1 else f"{len(finales)} ejecuciones completas"
-            texto = (f"{cuantas}. Mejor valor final {finales.mean():.6f} ± "
-                     f"{desviacion:.6f} (media ± DE)")
-            if not np.isnan(errores).any():
-                texto += (f", error medio {errores.mean():.2e}, éxito {exito:.0f} % "
-                          f"con error menor que {self.cfg.tolerancia:g}")
-            v.resumen.setText(texto + "." + nota)
-        elif detenidas:
-            v.resumen.setText("La ejecución se detuvo antes de terminar, no hay resumen.")
+        v.resumen.setText(resultados.resumen(self.resultados, self.cfg.tolerancia))
         v.statusBar().showMessage("Ejecución terminada", 5000)
         self.hilo = None
 
@@ -524,27 +280,12 @@ class Controlador(QObject):
         ruta, _ = QFileDialog.getSaveFileName(self.v, "Exportar resultados", "resultados_ag.csv", "CSV (*.csv)")
         if not ruta:
             return
-        ruta = Path(ruta)
         try:
-            with open(ruta, "w", newline="", encoding="utf-8") as archivo:
-                escritor = csv.writer(archivo)
-                escritor.writerow(["ejecucion", "semilla", "f_mejor", "error", "generacion_mejor",
-                                   "generaciones", "tiempo_s", "motivo", "x_mejor"])
-                for r, res in enumerate(self.resultados):
-                    escritor.writerow([r + 1, self.cfg.semilla + r, res.mejor_f, res.error,
-                                       res.generacion_mejor, res.generaciones, res.tiempo,
-                                       res.motivo, " ".join(map(str, res.mejor_x))])
-            historia = ruta.with_name(ruta.stem + "_historia.csv")
-            with open(historia, "w", newline="", encoding="utf-8") as archivo:
-                escritor = csv.writer(archivo)
-                escritor.writerow(["ejecucion", "semilla", "generacion", "mejor", "media", "peor"])
-                for r, res in enumerate(self.resultados):
-                    for g, fila in enumerate(zip(res.mejor, res.media, res.peor)):
-                        escritor.writerow([r + 1, self.cfg.semilla + r, g, *fila])
+            historia = resultados.escribir_csv(Path(ruta), self.resultados, self.cfg.semilla)
         except OSError as error:
             QMessageBox.critical(self.v, "No se pudo guardar", str(error))
             return
-        self.v.statusBar().showMessage(f"Guardados {ruta.name} y {historia.name}", 5000)
+        self.v.statusBar().showMessage(f"Guardados {Path(ruta).name} y {historia.name}", 5000)
 
     def guardar_figuras(self):
         carpeta = QFileDialog.getExistingDirectory(self.v, "Carpeta para las figuras")

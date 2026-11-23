@@ -22,7 +22,7 @@ def main():
     app = QApplication(sys.argv)
     sys.excepthook = mostrar_error
     ventana = VentanaPrincipal()
-    controlador = Controlador(ventana)
+    ventana.controlador = Controlador(ventana)
     ventana.show()
     sys.exit(app.exec())
 

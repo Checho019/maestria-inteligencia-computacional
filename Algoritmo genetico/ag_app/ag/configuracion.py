@@ -83,7 +83,7 @@ def validar(cfg):
         if not (minimo <= valor <= maximo):
             errores.append(f"{nombre} {verbo(nombre)} estar entre {minimo} y {maximo} (se recibió {valor}).")
 
-    # Los parámetros enteros tienen que serlo también cuando se usa el motor sin la interfaz
+    # Enteros también al usar el motor sin la interfaz
     for nombre, valor in (("El número de variables n", cfg.n), ("Los bits por variable L", cfg.L),
                           ("El tamaño de población N", cfg.N), ("Las generaciones T", cfg.T),
                           ("El número de élites e", cfg.elites), ("La semilla", cfg.semilla),

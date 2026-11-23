@@ -2,3 +2,5 @@
 
 from .configuracion import Configuracion, validar
 from .motor import Estado, Resultado, ejecutar
+
+__all__ = ["Configuracion", "validar", "Estado", "Resultado", "ejecutar"]

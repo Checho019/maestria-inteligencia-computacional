@@ -50,16 +50,12 @@ def revisar(expresion, n):
             if not (isinstance(nodo.func, ast.Name) and callable(PERMITIDAS.get(nodo.func.id))):
                 raise ValueError("Solo se permiten las funciones " + ", ".join(
                     k for k, v in PERMITIDAS.items() if callable(v)) + ".")
-            # Un segundo argumento de NumPy sería el arreglo de salida y
-            # sobrescribiría una variable
-            if len(nodo.args) != 1 or nodo.keywords:
+            if len(nodo.args) != 1 or nodo.keywords:    # un 2.º argumento sería la salida de NumPy
                 raise ValueError(f"La función {nodo.func.id} recibe un solo argumento.")
         if isinstance(nodo, ast.Constant):
             if isinstance(nodo.value, bool) or not isinstance(nodo.value, (int, float)):
                 raise ValueError("La expresión solo admite números.")
-            # Con números reales una potencia enorme desborda al instante en vez de
-            # calcular un entero gigante y congelar la aplicación
-            nodo.value = float(nodo.value)
+            nodo.value = float(nodo.value)  # 9**9**9 desborda en vez de congelar
     try:
         return compile(arbol, "<expresion>", "eval")
     except (RecursionError, MemoryError):

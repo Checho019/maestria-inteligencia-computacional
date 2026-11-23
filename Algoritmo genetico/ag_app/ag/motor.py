@@ -6,6 +6,7 @@ interfaz solo le pasa un aviso por generación y una función para detenerlo.
 
 import math
 import time
+from functools import partial
 from dataclasses import dataclass, field
 
 import numpy as np
@@ -58,46 +59,30 @@ def ejecutar(cfg, al_generar=None, detener=None):
 
     rng = np.random.default_rng(cfg.semilla)
     objetivo = cfg.objetivo
-    f_optimo = cfg.f_optimo         # None si no se conoce, el error queda en NaN
-    n, L, N = cfg.n_variables, cfg.L, cfg.N
+    f_optimo = cfg.f_optimo             # None si no se conoce, el error queda en NaN
     a, b = objetivo.dominio
-    inferior, superior = np.full(n, a), np.full(n, b)
+    inferior, superior = np.full(cfg.n_variables, a), np.full(cfg.n_variables, b)
     signo = 1.0 if objetivo.maximizar else -1.0
-
-    seleccionar = seleccion.METODOS[cfg.seleccion]
-    param_sel = {"Torneo": {"k": cfg.k}, "Ranking lineal": {"s": cfg.s}}.get(cfg.seleccion, {})
-    cruzar = cruce.METODOS[cfg.cruce]
-    param_cruce = {"p0": cfg.p0} if cfg.cruce == "Uniforme" else {}
-    mutar = mutacion.METODOS[cfg.mutacion]
-    param_mut = {"pm": cfg.pm_efectiva} if cfg.mutacion == "Bit-flip por bit" else {"pmi": cfg.pmi}
-
-    hijos_por_generacion = N - cfg.elites
-    parejas = math.ceil(hijos_por_generacion / 2)
+    operadores = _operadores(cfg)
 
     inicio = time.perf_counter()
     tiempo_dibujo = 0.0
     mejor, media, peor = [], [], []
-
-    P = poblacion_inicial(rng, N, cfg.longitud)
+    mejor_f = mejor_x = mejor_cromosoma = None      # mejor hallado hasta ahora
+    generacion_mejor = 0
+    P = poblacion_inicial(rng, cfg.N, cfg.longitud)
     generacion = 0
-    motivo = f"Se alcanzaron las {cfg.T} generaciones"
     while True:
-        X = decodificar(P, inferior, superior, L)
+        X = decodificar(P, inferior, superior, cfg.L)
         f = objetivo.f(X)
-        aptitud = signo * f
-        finitos = np.isfinite(aptitud)
-        if not finitos.all():
-            # Una función personalizada puede dar inf o NaN justo en un punto de la
-            # rejilla. Ese individuo pasa a ser el peor para que no gane la selección
-            peor_finito = aptitud[finitos].min() if finitos.any() else 0.0
-            aptitud = np.where(finitos, aptitud, peor_finito - 1.0)
+        aptitud, finitos = _aptitud(signo * f)
 
-        # Registro de la generación, en la escala original de f y solo con valores finitos
+        # Registro en la escala original de f, solo con valores finitos
         i_mejor = aptitud.argmax()
         mejor.append(f[i_mejor])
         media.append(f[finitos].mean() if finitos.any() else np.nan)
         peor.append(f[np.where(finitos, aptitud, np.inf).argmin()] if finitos.any() else np.nan)
-        if generacion == 0 or signo * f[i_mejor] > signo * mejor_f:
+        if mejor_f is None or signo * f[i_mejor] > signo * mejor_f:
             mejor_f, mejor_x = f[i_mejor], X[i_mejor].copy()
             mejor_cromosoma, generacion_mejor = P[i_mejor].copy(), generacion
         error = abs(mejor_f - f_optimo) if f_optimo is not None else math.nan
@@ -107,44 +92,12 @@ def ejecutar(cfg, al_generar=None, detener=None):
             al_generar(Estado(generacion, X, f, mejor, media, peor, mejor_x, mejor_f, P))
             tiempo_dibujo += time.perf_counter() - t
 
-        # Criterios de parada, gana el primero que se cumpla
-        if detener is not None and detener():
-            motivo = "Detenido por el usuario"
+        motivo = _motivo_parada(cfg, generacion, generacion_mejor, error, detener)
+        if motivo:
             break
-        if cfg.parar_por_error and error < cfg.tolerancia:
-            motivo = f"Error menor que {cfg.tolerancia:g}"
-            break
-        if cfg.parar_por_estancamiento and generacion - generacion_mejor >= cfg.G:
-            motivo = f"Sin mejora en {cfg.G} generaciones"
-            break
-        if generacion >= cfg.T:
-            break
-
-        # Elitismo, los e mejores pasan intactos
-        elite = P[np.argsort(-aptitud, kind="stable")[:cfg.elites]]
-
-        # Selección de 2 padres por pareja
-        padres = seleccionar(rng, aptitud, 2 * parejas, **param_sel)
-        P1, P2 = P[padres[0::2]], P[padres[1::2]]
-
-        # Cruce con probabilidad Pc, si no los hijos son copias de los padres
-        H1, H2 = cruzar(rng, P1, P2, **param_cruce)
-        cruzan = (rng.random(parejas) < cfg.pc)[:, None]
-        H = np.empty((2 * parejas, cfg.longitud), dtype=P.dtype)
-        H[0::2] = np.where(cruzan, H1, P1)
-        H[1::2] = np.where(cruzan, H2, P2)
-
-        # Mutación de los hijos y reemplazo generacional
-        H = mutar(rng, H[:hijos_por_generacion], **param_mut)
-        P = np.vstack([elite, H])
+        P = _nueva_generacion(rng, P, aptitud, cfg, operadores)
         generacion += 1
 
-    acumular = np.maximum.accumulate if objetivo.maximizar else np.minimum.accumulate
-    if f_optimo is None:
-        bajo_tolerancia = np.array([], dtype=int)
-    else:
-        errores_mejor = np.abs(acumular(np.array(mejor)) - f_optimo)
-        bajo_tolerancia = np.flatnonzero(errores_mejor < cfg.tolerancia)
     return Resultado(
         mejor_cromosoma=mejor_cromosoma,
         mejor_x=mejor_x,
@@ -154,8 +107,67 @@ def ejecutar(cfg, al_generar=None, detener=None):
         generaciones=generacion,
         tiempo=time.perf_counter() - inicio - tiempo_dibujo,
         motivo=motivo,
-        generacion_tolerancia=int(bajo_tolerancia[0]) if bajo_tolerancia.size else None,
+        generacion_tolerancia=_generacion_tolerancia(mejor, f_optimo, objetivo.maximizar, cfg.tolerancia),
         mejor=list(map(float, mejor)),
         media=list(map(float, media)),
         peor=list(map(float, peor)),
     )
+
+
+def _operadores(cfg):
+    """Los tres operadores elegidos con sus parámetros ya fijados."""
+    param_sel = {"Torneo": {"k": cfg.k}, "Ranking lineal": {"s": cfg.s}}.get(cfg.seleccion, {})
+    param_cruce = {"p0": cfg.p0} if cfg.cruce == "Uniforme" else {}
+    param_mut = {"pm": cfg.pm_efectiva} if cfg.mutacion == "Bit-flip por bit" else {"pmi": cfg.pmi}
+    return (partial(seleccion.METODOS[cfg.seleccion], **param_sel),
+            partial(cruce.METODOS[cfg.cruce], **param_cruce),
+            partial(mutacion.METODOS[cfg.mutacion], **param_mut))
+
+
+def _aptitud(aptitud):
+    """Un valor inf o NaN (posible en una función personalizada) pasa a ser el peor
+    individuo para que no gane la selección."""
+    finitos = np.isfinite(aptitud)
+    if not finitos.all():
+        peor_finito = aptitud[finitos].min() if finitos.any() else 0.0
+        aptitud = np.where(finitos, aptitud, peor_finito - 1.0)
+    return aptitud, finitos
+
+
+def _motivo_parada(cfg, generacion, generacion_mejor, error, detener):
+    """Texto del criterio que detiene la ejecución, o None. Gana el primero."""
+    if detener is not None and detener():
+        return "Detenido por el usuario"
+    if cfg.parar_por_error and error < cfg.tolerancia:
+        return f"Error menor que {cfg.tolerancia:g}"
+    if cfg.parar_por_estancamiento and generacion - generacion_mejor >= cfg.G:
+        return f"Sin mejora en {cfg.G} generaciones"
+    if generacion >= cfg.T:
+        return f"Se alcanzaron las {cfg.T} generaciones"
+    return None
+
+
+def _nueva_generacion(rng, P, aptitud, cfg, operadores):
+    """Elitismo, selección de 2 padres por pareja, cruce con probabilidad Pc,
+    mutación y reemplazo generacional."""
+    seleccionar, cruzar, mutar = operadores
+    hijos = cfg.N - cfg.elites
+    parejas = math.ceil(hijos / 2)
+    elite = P[np.argsort(-aptitud, kind="stable")[:cfg.elites]]
+    padres = seleccionar(rng, aptitud, 2 * parejas)
+    P1, P2 = P[padres[0::2]], P[padres[1::2]]
+    H1, H2 = cruzar(rng, P1, P2)
+    cruzan = (rng.random(parejas) < cfg.pc)[:, None]    # si no cruzan, copian a los padres
+    H = np.empty((2 * parejas, cfg.longitud), dtype=P.dtype)
+    H[0::2] = np.where(cruzan, H1, P1)
+    H[1::2] = np.where(cruzan, H2, P2)
+    return np.vstack([elite, mutar(rng, H[:hijos])])
+
+
+def _generacion_tolerancia(mejor, f_optimo, maximizar, tolerancia):
+    """Primera generación en que el mejor hallado queda a menos de la tolerancia."""
+    if f_optimo is None:
+        return None
+    acumular = np.maximum.accumulate if maximizar else np.minimum.accumulate
+    bajo = np.flatnonzero(np.abs(acumular(np.array(mejor)) - f_optimo) < tolerancia)
+    return int(bajo[0]) if bajo.size else None

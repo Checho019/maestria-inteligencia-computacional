@@ -19,9 +19,7 @@ class GraficaNiveles(FigureCanvasQTAgg):
         self.ejes = self.figura.add_subplot()
         self.poblacion = None
         self.mejor = None
-        # El fondo (curvas de nivel) se guarda tras cada dibujo completo y en cada
-        # generación solo se vuelven a pintar la población y el mejor (blitting)
-        self.fondo = None
+        self.fondo = None       # curvas de nivel guardadas, en cada generación se repinta solo la población
         self.mpl_connect("draw_event", self._al_dibujar)
 
     def _al_dibujar(self, _evento):
@@ -100,12 +98,10 @@ class GraficaConvergencia(FigureCanvasQTAgg):
         self.lineas = {}
 
     def preparar(self, objetivo, T, logaritmica=False, tolerancia=1e-3, f_optimo=None):
-        """Con escala logarítmica se ve el avance del mejor cerca de un óptimo en 0.
-        Solo se ofrece para funciones no negativas con mínimo 0. Sin óptimo
-        conocido (función personalizada) no se dibuja la línea de referencia."""
+        """La escala logarítmica solo se ofrece para funciones con mínimo 0. Sin
+        óptimo conocido no se dibuja la línea de referencia."""
         self.ejes.clear()
-        # Límites iniciales fijos mientras no hay datos, el ajuste automático se
-        # enciende al final para que siga a las curvas
+        # Límites fijos mientras no hay datos, el ajuste automático se enciende al final
         centro = 0.0 if f_optimo is None else f_optimo
         if logaritmica:
             self.ejes.set_ylim(tolerancia / 10, 100)
@@ -119,7 +115,7 @@ class GraficaConvergencia(FigureCanvasQTAgg):
             self.ejes.axhline(f_optimo, color=COLOR_OPTIMO, ls="--", lw=1.2,
                               label=f"Óptimo ({f_optimo:.4f})")
         elif f_optimo is not None:
-            # El óptimo es 0 y no cabe en escala logarítmica, se marca la tolerancia
+            # El 0 no cabe en escala logarítmica, se marca la tolerancia
             self.ejes.axhline(tolerancia, color=COLOR_OPTIMO, ls="--", lw=1.2,
                               label=f"Óptimo 0 más la tolerancia ({tolerancia:g})")
         self.ejes.set_xlim(0, max(T, 1))
