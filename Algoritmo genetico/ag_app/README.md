@@ -33,7 +33,7 @@ Al elegir Personalizada se escribe f como expresión de x1, ..., xn (x e y valen
 | Carpeta o archivo | Contenido |
 |---|---|
 | `main.py` | Arranque de la interfaz |
-| `interfaz/` | Vista (`ventana.py`), controlador con el hilo de ejecución (`controlador.py`) y gráficas de Matplotlib (`graficas.py`) |
+| `interfaz/` | Vista (`ventana.py`), controlador que conecta la vista con el motor (`controlador.py`), lectura y validación de los campos (`formulario.py`), hilo del AG (`hilo.py`), resultados y CSV (`resultados.py`) y gráficas de Matplotlib (`graficas.py`) |
 | `ag/` | Motor del AG, independiente de la interfaz. `codificacion.py`, `seleccion.py` (ruleta, torneo y ranking lineal), `cruce.py` (un punto, dos puntos y uniforme), `mutacion.py` (bit-flip, un bit e inversión de segmento), `configuracion.py` (parámetros y validación) y `motor.py` (ciclo generacional, elitismo y criterios de parada) |
 | `funciones/objetivo.py` | Las diez funciones de prueba con su tipo, dominio y óptimo |
 | `funciones/personalizada.py` | Revisión y evaluación de la función escrita por el usuario |
