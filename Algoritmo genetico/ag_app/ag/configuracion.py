@@ -4,6 +4,7 @@ Los valores por defecto son los de la tabla 6.2 de la guía, así que el AG se p
 ejecutar sin cambiar nada.
 """
 
+import math
 from dataclasses import dataclass
 
 from funciones.objetivo import FUNCIONES
@@ -64,7 +65,7 @@ def validar(cfg):
     if cfg.objetivo.n_fijo is None:
         rango("El número de variables n", cfg.n, 2, 50)
     rango("Los bits por variable L", cfg.L, 2, 32)
-    rango("El tamaño de población N", cfg.N, 2, 5000)
+    rango("El tamaño de población N", cfg.N, 2, 1000)
     rango("Las generaciones T", cfg.T, 1, 100000)
     rango("La probabilidad de cruce Pc", cfg.pc, 0.0, 1.0)
     rango("El número de élites e", cfg.elites, 0, cfg.N - 1)
@@ -91,8 +92,8 @@ def validar(cfg):
     else:
         rango("La probabilidad de mutación por individuo Pmi", cfg.pmi, 0.0, 1.0)
 
-    if cfg.parar_por_error and cfg.tolerancia <= 0:
-        errores.append("La tolerancia del error debe ser mayor que 0.")
+    if cfg.parar_por_error and not (math.isfinite(cfg.tolerancia) and cfg.tolerancia > 0):
+        errores.append("La tolerancia del error debe ser un número mayor que 0.")
     if cfg.parar_por_estancamiento:
         rango("Las generaciones sin mejora G", cfg.G, 1, 100000)
     return errores

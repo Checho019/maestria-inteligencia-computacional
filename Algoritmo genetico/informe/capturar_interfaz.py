@@ -23,7 +23,7 @@ app = QApplication(sys.argv)
 app.setFont(QFont("Segoe UI", 9))
 ventana = VentanaPrincipal()
 controlador = Controlador(ventana)
-ventana.resize(1400, 1000)
+ventana.resize(1220, 860)
 ventana.show()
 
 

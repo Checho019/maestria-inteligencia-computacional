@@ -18,7 +18,7 @@ Desde esta carpeta:
 python main.py
 ```
 
-Los valores por defecto son los de la tabla 6.2 de la guía (N = 50, T = 200, L = 16, Pc = 0.8, Pm = 1/ℓ, e = 1, torneo con k = 3, cruce de dos puntos y mutación bit-flip), así que basta con pulsar Iniciar. Cada parámetro explica su efecto al pasar el cursor sobre él. Con varias ejecuciones, cada una usa la semilla siguiente y la tabla de resultados muestra la media y la desviación estándar del mejor valor final. Los botones Exportar CSV y Guardar figuras guardan los resultados y las dos gráficas.
+Los valores por defecto son los de la tabla 6.2 de la guía (N = 50, T = 200, L = 16, Pc = 0.8, Pm = 1/ℓ, e = 1, torneo con k = 3, cruce de dos puntos y mutación bit-flip), así que basta con pulsar Iniciar. Cada parámetro explica su efecto al pasar el cursor sobre él. Con varias ejecuciones, cada una usa la semilla siguiente, la tabla muestra cada ejecución y debajo aparecen la media y la desviación estándar del mejor valor final. Una ejecución detenida con el botón Detener no entra en ese resumen. Los botones Exportar CSV y Guardar figuras guardan los resultados y las dos gráficas.
 
 ## Estructura
 

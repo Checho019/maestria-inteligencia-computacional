@@ -10,6 +10,7 @@ from pathlib import Path
 import matplotlib
 import numpy as np
 import pandas as pd
+from scipy import stats
 
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt  # noqa: E402
@@ -65,13 +66,15 @@ def cromosomas_exitosos(cfg, radio=0.05):
         exitosos.append(np.column_stack([DX.ravel()[ok], DY.ravel()[ok]]))
     D = np.vstack(exitosos).astype(np.int64)
     pesos = 1 << np.arange(L - 1, -1, -1)
-    return np.hstack([(D[:, [0]] & pesos) > 0, (D[:, [1]] & pesos) > 0]).astype(np.uint8)
+    bits = np.hstack([(D[:, [0]] & pesos) > 0, (D[:, [1]] & pesos) > 0]).astype(np.uint8)
+    return bits, D
 
 
 def estancamientos(ejecuciones):
     """Para cada ejecución de E2 y E3 que terminó sin éxito comprueba si el mejor
-    cromosoma es un óptimo local frente a cambiar un solo bit y mide la distancia
-    de Hamming al cromosoma más cercano que cumple la tolerancia."""
+    cromosoma es un óptimo local frente a cambiar un solo bit. Mide la distancia de
+    Hamming al cromosoma con éxito más cercano en bits, y al más cercano en el
+    dominio junto con los pasos de la rejilla que lo separan."""
     filas = []
     sin_exito = ejecuciones[(ejecuciones["experimento"] != "E1") & (ejecuciones["exito"] == 0)]
     for _, fila in sin_exito.iterrows():
@@ -83,22 +86,28 @@ def estancamientos(ejecuciones):
         vecinos = np.tile(res.mejor_cromosoma, (cfg.longitud, 1))
         vecinos[np.arange(cfg.longitud), np.arange(cfg.longitud)] ^= 1
         f_vecinos = obj.f(decodificar(vecinos, [a, a], [b, b], cfg.L))
-        exitosos = cromosomas_exitosos(cfg)
-        hamming = (exitosos != res.mejor_cromosoma).sum(axis=1).min()
+        exitosos, D_exitosos = cromosomas_exitosos(cfg)
+        diferencias = (exitosos != res.mejor_cromosoma).sum(axis=1)
+        pesos = 2 ** np.arange(cfg.L - 1, -1, -1)
+        D_mejor = res.mejor_cromosoma.reshape(2, cfg.L) @ pesos
+        pasos = np.linalg.norm(D_exitosos - D_mejor, axis=1)
+        cercano = pasos.argmin()
         filas.append({"experimento": fila["experimento"], "variante": fila["variante"],
                       "semilla": fila["semilla"], "error": res.error,
                       "optimo_local_un_bit": bool(np.all(signo * f_vecinos <= signo * res.mejor_f)),
-                      "hamming_al_exito": int(hamming)})
+                      "hamming_al_exito": int(diferencias.min()),
+                      "pasos_al_exito_cercano": float(pasos[cercano]),
+                      "hamming_exito_cercano": int(diferencias[cercano])})
     return pd.DataFrame(filas)
 
 
 def tabla_latex(tabla):
     """Filas de la tabla de métricas para el informe."""
-    nombres = {"Bit-flip por bit": "Bit-flip", "Inversión de segmento": "Inversión"}
+    nombres = {}
 
     def cientifico(x, decimales):
-        """Notación científica para los valores menores que 0.01."""
-        if x == 0 or abs(x) >= 0.01:
+        """Notación científica para los valores menores que 0.001."""
+        if x == 0 or abs(x) >= 0.001:
             return f"{x:.{decimales}f}"
         mantisa, exponente = f"{x:.1e}".split("e")
         return f"${mantisa}\\times10^{{{int(exponente)}}}$"
@@ -122,10 +131,59 @@ def tabla_latex(tabla):
     return "\n".join(filas[:-1]) + "\n\\bottomrule\n"
 
 
-def macros(curvas, atascos):
+def macros(ejecuciones, curvas, atascos):
     """Cifras que el informe cita en la prosa."""
     m = {}
+
+    def valor_p(p):
+        if p < 0.001:
+            return "$p<0.001$"
+        return f"$p={p:.2f}$" if p >= 0.01 else f"$p={p:.3f}$"
+
+    def grupo(exp, variante, columna="f_mejor"):
+        filtro = (ejecuciones["experimento"] == exp) & (ejecuciones["variante"] == variante)
+        return ejecuciones.loc[filtro, columna].to_numpy()
+
+    # E1, pruebas sobre el valor final y la diversidad final (diez semillas por variante)
+    finales = [grupo("E1", v) for v in ("Ruleta", "Torneo", "Ranking lineal")]
+    m["EunoKruskalP"] = valor_p(stats.kruskal(*finales).pvalue)
+    m["EunoMannRankingTorneoP"] = valor_p(stats.mannwhitneyu(finales[2], finales[1]).pvalue)
+    m["EunoDivMannP"] = valor_p(stats.mannwhitneyu(grupo("E1", "Torneo", "diversidad_final"),
+                                                   grupo("E1", "Ranking lineal", "diversidad_final")).pvalue)
     e1 = curvas[curvas["experimento"] == "E1"]
+    g25 = e1[e1["generacion"] == 25]
+    torneo25 = g25[g25["variante"] == "Torneo"]["mejor"].to_numpy()
+    for variante, clave in (("Ruleta", "Ruleta"), ("Ranking lineal", "Ranking")):
+        otro = g25[g25["variante"] == variante]["mejor"].to_numpy()
+        m[f"EunoGenVeinticincoTorneo{clave}P"] = valor_p(stats.mannwhitneyu(torneo25, otro).pvalue)
+    ultima = ejecuciones[ejecuciones["experimento"] == "E1"].groupby("variante")["generacion_mejor"].mean()
+    m["EunoUltimaMejoraMin"] = f"{ultima.min():.0f}"
+
+    # E2, a qué óptimo llegan las ejecuciones con y sin éxito, y medianas de generaciones
+    e2 = ejecuciones[ejecuciones["experimento"] == "E2"]
+    exito = e2[e2["exito"] == 1]
+    m["EdosExitos"] = str(len(exito))
+    m["EdosExitosOptimoUno"] = str(int((exito["optimo_himmelblau"] == 1).sum()))
+    m["EdosExitosOptimoCuatro"] = str(int((exito["optimo_himmelblau"] == 4).sum()))
+    m["EdosExitosOptimosDosTres"] = str(int(exito["optimo_himmelblau"].isin([2, 3]).sum()))
+    cerca = e2[e2["optimo_himmelblau"].isin([2, 3])]
+    m["EdosCercaDosTres"] = str(len(cerca))
+    m["EdosCercaDosTresErrorMin"] = f"{cerca['error'].min():.1e}".replace("e-0", "\\times10^{-") + "}"
+    m["EdosCercaDosTresErrorMax"] = f"{cerca['error'].max():.3f}"
+    for variante, clave in (("Un punto", "UnPunto"), ("Dos puntos", "DosPuntos"), ("Uniforme", "Uniforme")):
+        m[f"EdosMediana{clave}"] = f"{np.median(grupo('E2', variante, 'generacion_tolerancia')[~np.isnan(grupo('E2', variante, 'generacion_tolerancia'))]):.0f}"
+
+    # E3, prueba exacta de Fisher sobre la tasa de éxito de bit-flip frente a un bit
+    exitos_bf = int(grupo("E3", "Bit-flip por bit", "exito").sum())
+    exitos_ub = int(grupo("E3", "Un bit", "exito").sum())
+    m["EtresFisherP"] = valor_p(stats.fisher_exact([[exitos_bf, 10 - exitos_bf],
+                                                    [exitos_ub, 10 - exitos_ub]]).pvalue)
+    for exp, clave in (("E2", "Edos"), ("E3", "Etres")):
+        a = atascos[atascos["experimento"] == exp]
+        m[f"{clave}PasosMediana"] = f"{a['pasos_al_exito_cercano'].median():.0f}"
+        m[f"{clave}HammingCercanoMin"] = str(a["hamming_exito_cercano"].min())
+        m[f"{clave}HammingCercanoMax"] = str(a["hamming_exito_cercano"].max())
+
     claves = {"Ruleta": "Ruleta", "Torneo": "Torneo", "Ranking lineal": "Ranking"}
     for g, sufijo, decimales in ((25, "GenVeinticinco", 1), (200, "GenDoscientos", 2)):
         medias = e1[e1["generacion"] == g].groupby("variante")[["mejor", "diversidad"]].mean()
@@ -155,12 +213,21 @@ def macros(curvas, atascos):
     # Con Pm = 1/l y l = 32, probabilidad de que bit-flip cambie dos o más bits de un hijo
     l, pm = 32, 1 / 32
     m["ProbDosBits"] = f"{1 - (1 - pm) ** l - l * pm * (1 - pm) ** (l - 1):.2f}"
+    # Probabilidad de que bit-flip cambie justo un conjunto dado de j bits y ningún otro,
+    # y cuántas veces se espera en una ejecución de (N - e) hijos por 200 generaciones
+    hijos = 49 * 200
+    for j, clave in ((2, "Dos"), (5, "Cinco")):
+        p = pm**j * (1 - pm) ** (l - j)
+        mantisa, exponente = f"{p:.1e}".split("e")
+        m[f"ProbConcretos{clave}"] = f"{mantisa}\\times10^{{{int(exponente)}}}"
+        m[f"EsperadoConcretos{clave}"] = f"{hijos * p:.1g}" if hijos * p >= 0.01 else \
+            f"{(hijos * p):.0e}".replace("e-0", "\\times10^{-") + "}"
     return "".join(f"\\newcommand{{\\{k}}}{{{v}}}\n" for k, v in m.items())
 
 
 def figura_convergencia(curvas):
     """Error del mejor (promedio de las 10 ejecuciones) y diversidad por generación."""
-    fig, ejes = plt.subplots(2, 3, figsize=(7.2, 3.9), sharex=True, layout="constrained")
+    fig, ejes = plt.subplots(2, 3, figsize=(7.2, 2.9), sharex=True, layout="constrained")
     for j, exp in enumerate(["E1", "E2", "E3"]):
         datos = curvas[curvas["experimento"] == exp]
         for color, (variante, g) in zip(COLORES, datos.groupby("variante", sort=False)):
@@ -179,8 +246,8 @@ def figura_convergencia(curvas):
         for eje in ejes[:, j]:
             eje.tick_params(labelsize=7)
             eje.grid(alpha=0.3)
-    ejes[0, 0].set_ylabel("Error medio del mejor", fontsize=8)
-    ejes[1, 0].set_ylabel("Diversidad genotípica", fontsize=8)
+    ejes[0, 0].set_ylabel("Error del mejor", fontsize=8)
+    ejes[1, 0].set_ylabel("Diversidad", fontsize=8)
     fig.savefig(FIGURAS / "convergencia_experimentos.pdf")
     plt.close(fig)
 
@@ -205,7 +272,7 @@ def main():
                hamming_medio=("hamming_al_exito", "mean")).to_string())
     informe = FIGURAS.parent
     (informe / "tabla_metricas.tex").write_text(tabla_latex(tabla), encoding="utf-8")
-    (informe / "cifras.tex").write_text(macros(curvas, atascos), encoding="utf-8")
+    (informe / "cifras.tex").write_text(macros(ejecuciones, curvas, atascos), encoding="utf-8")
     figura_convergencia(curvas)
     print(f"Tabla, cifras y figura guardadas en {informe}")
 

@@ -2,6 +2,7 @@
 generación a las gráficas (sección 9 de la guía)."""
 
 import csv
+import math
 import threading
 import time
 from dataclasses import replace
@@ -19,7 +20,7 @@ from funciones.objetivo import FUNCIONES
 class HiloAG(QThread):
     """Ejecuta el AG fuera del hilo de la interfaz para que la ventana no se congele."""
 
-    corrida_terminada = Signal(int, object)
+    ejecucion_terminada = Signal(int, object)
     fallo = Signal(str)
 
     def __init__(self, cfg, ejecuciones, pausa_ms):
@@ -28,7 +29,7 @@ class HiloAG(QThread):
         self._detener = False
         self._candado = threading.Lock()
         self._ultimo = None
-        self._corrida = 0
+        self._ejecucion = 0
 
     def pedir_detener(self):
         self._detener = True
@@ -42,7 +43,7 @@ class HiloAG(QThread):
         copia = Estado(estado.generacion, estado.X, estado.f, list(estado.mejor),
                        list(estado.media), list(estado.peor), estado.mejor_x, estado.mejor_f)
         with self._candado:
-            self._ultimo = (self._corrida, copia)
+            self._ultimo = (self._ejecucion, copia)
         if self.pausa:
             time.sleep(self.pausa)
 
@@ -51,10 +52,10 @@ class HiloAG(QThread):
             for r in range(self.ejecuciones):
                 if self._detener:
                     break
-                self._corrida = r
+                self._ejecucion = r
                 cfg = replace(self.cfg, semilla=self.cfg.semilla + r)
                 resultado = ejecutar(cfg, self._al_generar, lambda: self._detener)
-                self.corrida_terminada.emit(r, resultado)
+                self.ejecucion_terminada.emit(r, resultado)
         except Exception as error:
             self.fallo.emit(str(error))
 
@@ -66,6 +67,7 @@ class Controlador(QObject):
         self.hilo = None
         self.resultados = []
         self.cfg = None
+        self._vista_niveles = None
         self.temporizador = QTimer(self)
         self.temporizador.setInterval(30)
         self.temporizador.timeout.connect(self._refrescar)
@@ -104,8 +106,21 @@ class Controlador(QObject):
         v.escala_log.setEnabled(not obj.maximizar)
         if obj.maximizar:
             v.escala_log.setChecked(False)
+        if self.cfg is not None and self.cfg.funcion != nombre:
+            self._limpiar_resultados()
         self._actualizar_codificacion()
         self._preparar_convergencia()
+
+    def _limpiar_resultados(self):
+        """Borra los resultados de otra función para que no se lean con la nueva."""
+        v = self.v
+        self.cfg, self.resultados = None, []
+        for etiqueta in v.resultados.values():
+            etiqueta.setText("—")
+        v.tabla.setRowCount(0)
+        v.resumen.setText("")
+        v.progreso.setValue(0)
+        v.etiqueta_progreso.setText("Listo para ejecutar")
 
     def _preparar_convergencia(self, *_):
         """Prepara la curva de convergencia y, si ya hay una ejecución, la vuelve a dibujar."""
@@ -154,8 +169,12 @@ class Controlador(QObject):
             v.L_calculado.setText("—")
             v.longitud.setText("—")
         v.pm.setEnabled(not v.pm_auto.isChecked())
-        if self.hilo is None or not self.hilo.isRunning():
-            v.niveles.preparar(obj, n if n and n >= 2 else 2)
+        # El fondo de las curvas de nivel solo se redibuja si cambian la función o n,
+        # y solo con un n válido, para que escribir en los campos no congele la ventana
+        vista = (obj.nombre, n if n and 2 <= n <= 50 else 2)
+        if vista != self._vista_niveles and (self.hilo is None or not self.hilo.isRunning()):
+            self._vista_niveles = vista
+            v.niveles.preparar(obj, vista[1])
 
     def _mostrar_parametros(self, *_):
         v, forma = self.v, self.v.forma_operadores
@@ -172,55 +191,64 @@ class Controlador(QObject):
     def _leer(self):
         """Arma la configuración desde los campos. Devuelve (cfg, ejecuciones, pausa)
         y la lista de errores con mensajes claros."""
-        v, errores = self.v, []
+        v, errores, ilegibles = self.v, [], []
 
-        def numero(campo, nombre, tipo):
+        defecto = Configuracion()
+
+        def numero(campo, nombre, tipo, clave=None):
+            """Lee un campo. Si no es un número finito anota el error y devuelve el
+            valor por defecto, para no generar errores de rango en cadena."""
             texto = campo.text().strip().replace(",", ".")
             try:
-                return tipo(texto)
+                valor = tipo(texto)
+                if math.isfinite(valor):
+                    return valor
             except ValueError:
-                clase = "un número entero" if tipo is int else "un número"
-                errores.append(f"{nombre} debe ser {clase} (se recibió \"{campo.text()}\").")
-                return tipo(0)
+                pass
+            clase = "un número entero" if tipo is int else "un número finito"
+            errores.append(f"{nombre} debe ser {clase} (se recibió \"{campo.text()}\").")
+            ilegibles.append(nombre)
+            return getattr(defecto, clave) if clave else tipo(1)
 
         cfg = Configuracion(
             funcion=v.funcion.currentText(),
-            n=numero(v.n, "El número de variables n", int),
-            N=numero(v.N, "El tamaño de población N", int),
-            T=numero(v.T, "Las generaciones T", int),
-            pc=numero(v.pc, "La probabilidad de cruce Pc", float),
-            elites=numero(v.elites, "El número de élites e", int),
-            semilla=numero(v.semilla, "La semilla", int),
+            n=numero(v.n, "El número de variables n", int, "n"),
+            N=numero(v.N, "El tamaño de población N", int, "N"),
+            T=numero(v.T, "Las generaciones T", int, "T"),
+            pc=numero(v.pc, "La probabilidad de cruce Pc", float, "pc"),
+            elites=numero(v.elites, "El número de élites e", int, "elites"),
+            semilla=numero(v.semilla, "La semilla", int, "semilla"),
             seleccion=v.seleccion.currentText(),
-            k=numero(v.k, "El tamaño del torneo k", int),
-            s=numero(v.s, "La presión selectiva s", float),
+            k=numero(v.k, "El tamaño del torneo k", int, "k"),
+            s=numero(v.s, "La presión selectiva s", float, "s"),
             cruce=v.cruce.currentText(),
-            p0=numero(v.p0, "La probabilidad de intercambio p0", float),
+            p0=numero(v.p0, "La probabilidad de intercambio p0", float, "p0"),
             mutacion=v.mutacion.currentText(),
-            pm=None if v.pm_auto.isChecked() else numero(v.pm, "La probabilidad Pm", float),
-            pmi=numero(v.pmi, "La probabilidad Pmi", float),
+            pm=None if v.pm_auto.isChecked() else numero(v.pm, "La probabilidad de mutación por bit Pm", float),
+            pmi=numero(v.pmi, "La probabilidad de mutación por individuo Pmi", float, "pmi"),
             parar_por_error=v.parar_error.isChecked(),
-            tolerancia=numero(v.tolerancia, "La tolerancia del error", float),
+            tolerancia=numero(v.tolerancia, "La tolerancia del error", float, "tolerancia"),
             parar_por_estancamiento=v.parar_estancamiento.isChecked(),
-            G=numero(v.G, "Las generaciones sin mejora G", int),
+            G=numero(v.G, "Las generaciones sin mejora G", int, "G"),
         )
         if v.modo_L.currentText() == "Bits por variable":
-            cfg.L = numero(v.L, "Los bits por variable L", int)
+            cfg.L = numero(v.L, "Los bits por variable L", int, "L")
         else:
             eps = numero(v.eps, "La precisión ε", float)
             if eps <= 0:
                 errores.append("La precisión ε debe ser mayor que 0.")
-            else:
+            elif "La precisión ε" not in ilegibles:
                 a, b = cfg.objetivo.dominio
                 cfg.L = bits_por_precision(a, b, eps)
         ejecuciones = numero(v.ejecuciones, "El número de ejecuciones", int)
         pausa = numero(v.pausa, "La pausa por generación", int)
-        if not errores:
-            errores += validar(cfg)
-            if not 1 <= ejecuciones <= 100:
-                errores.append(f"El número de ejecuciones debe estar entre 1 y 100 (se recibió {ejecuciones}).")
-            if not 0 <= pausa <= 2000:
-                errores.append(f"La pausa debe estar entre 0 y 2000 ms (se recibió {pausa}).")
+        # Los rangos se revisan también cuando otro campo no se pudo leer, sin
+        # repetir el mensaje de los campos ilegibles
+        errores += [e for e in validar(cfg) if not any(e.startswith(n) for n in ilegibles)]
+        if "El número de ejecuciones" not in ilegibles and not 1 <= ejecuciones <= 100:
+            errores.append(f"El número de ejecuciones debe estar entre 1 y 100 (se recibió {ejecuciones}).")
+        if "La pausa por generación" not in ilegibles and not 0 <= pausa <= 2000:
+            errores.append(f"La pausa debe estar entre 0 y 2000 ms (se recibió {pausa}).")
         return (cfg, ejecuciones, pausa), errores
 
     # ----- Ejecución -----
@@ -241,7 +269,7 @@ class Controlador(QObject):
         self._bloquear(True)
         self.ejecuciones = ejecuciones
         self.hilo = HiloAG(cfg, ejecuciones, pausa)
-        self.hilo.corrida_terminada.connect(self._corrida_terminada)
+        self.hilo.ejecucion_terminada.connect(self._ejecucion_terminada)
         self.hilo.fallo.connect(self._fallo)
         self.hilo.finished.connect(self._terminado)
         self.hilo.start()
@@ -275,7 +303,7 @@ class Controlador(QObject):
             f"Ejecución {ejecucion + 1} de {self.ejecuciones} (semilla {self.cfg.semilla + ejecucion}), "
             f"generación {estado.generacion} de {self.cfg.T}")
 
-    def _corrida_terminada(self, r, res):
+    def _ejecucion_terminada(self, r, res):
         self._refrescar()
         self.resultados.append(res)
         v, cfg = self.v, self.cfg
@@ -300,15 +328,21 @@ class Controlador(QObject):
         self._refrescar()
         v = self.v
         self._bloquear(False)
-        if self.resultados:
-            finales = np.array([r.mejor_f for r in self.resultados])
-            errores = np.array([r.error for r in self.resultados])
+        # La ejecución detenida a mitad de camino no entra en el resumen
+        completas = [r for r in self.resultados if r.motivo != "Detenido por el usuario"]
+        detenidas = len(self.resultados) - len(completas)
+        nota = " La ejecución detenida no entra en el resumen." if detenidas else ""
+        if completas:
+            finales = np.array([r.mejor_f for r in completas])
+            errores = np.array([r.error for r in completas])
             exito = np.mean(errores < self.cfg.tolerancia) * 100
             desviacion = finales.std(ddof=1) if finales.size > 1 else 0.0
             v.resumen.setText(
-                f"{len(finales)} ejecuciones. Mejor valor final {finales.mean():.6f} ± {desviacion:.6f} "
-                f"(media ± DE), error medio {errores.mean():.2e}, éxito {exito:.0f} % "
-                f"con error menor que {self.cfg.tolerancia:g}.")
+                f"{len(finales)} ejecuciones completas. Mejor valor final {finales.mean():.6f} ± "
+                f"{desviacion:.6f} (media ± DE), error medio {errores.mean():.2e}, éxito {exito:.0f} % "
+                f"con error menor que {self.cfg.tolerancia:g}.{nota}")
+        elif detenidas:
+            v.resumen.setText("La ejecución se detuvo antes de terminar, no hay resumen.")
         v.statusBar().showMessage("Ejecución terminada", 5000)
         self.hilo = None
 
