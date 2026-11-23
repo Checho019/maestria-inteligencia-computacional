@@ -7,6 +7,8 @@ ejecutar sin cambiar nada.
 import math
 from dataclasses import dataclass
 
+import numpy as np
+
 from funciones import personalizada
 from funciones.objetivo import FUNCIONES, PERSONALIZADA
 from . import cruce, mutacion, seleccion
@@ -15,7 +17,7 @@ from . import cruce, mutacion, seleccion
 @dataclass
 class Configuracion:
     funcion: str = "Rastrigin"
-    n: int = 2                      # variables, solo libre en Rastrigin
+    n: int = 2                      # variables, se ignora en las funciones de n fijo
     L: int = 16                     # bits por variable
     N: int = 50                     # tamaño de la población
     T: int = 200                    # generaciones máximas
@@ -68,13 +70,28 @@ class Configuracion:
         return 1 / self.longitud if self.pm is None else self.pm
 
 
+def verbo(nombre):
+    """'deben' para los sujetos en plural ("Los bits...", "Las generaciones...")."""
+    return "deben" if nombre.startswith(("Los ", "Las ")) else "debe"
+
+
 def validar(cfg):
     """Devuelve la lista de errores de la configuración, vacía si es válida."""
     errores = []
 
     def rango(nombre, valor, minimo, maximo):
         if not (minimo <= valor <= maximo):
-            errores.append(f"{nombre} debe estar entre {minimo} y {maximo} (se recibió {valor}).")
+            errores.append(f"{nombre} {verbo(nombre)} estar entre {minimo} y {maximo} (se recibió {valor}).")
+
+    # Los parámetros enteros tienen que serlo también cuando se usa el motor sin la interfaz
+    for nombre, valor in (("El número de variables n", cfg.n), ("Los bits por variable L", cfg.L),
+                          ("El tamaño de población N", cfg.N), ("Las generaciones T", cfg.T),
+                          ("El número de élites e", cfg.elites), ("La semilla", cfg.semilla),
+                          ("El tamaño del torneo k", cfg.k), ("Las generaciones sin mejora G", cfg.G)):
+        if isinstance(valor, bool) or not isinstance(valor, (int, np.integer)):
+            errores.append(f"{nombre} {verbo(nombre)} ser un número entero (se recibió {valor}).")
+    if errores:
+        return errores
 
     if cfg.funcion not in FUNCIONES and cfg.funcion != PERSONALIZADA:
         errores.append(f"La función {cfg.funcion} no existe.")

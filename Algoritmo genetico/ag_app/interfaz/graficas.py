@@ -19,6 +19,19 @@ class GraficaNiveles(FigureCanvasQTAgg):
         self.ejes = self.figura.add_subplot()
         self.poblacion = None
         self.mejor = None
+        # El fondo (curvas de nivel) se guarda tras cada dibujo completo y en cada
+        # generación solo se vuelven a pintar la población y el mejor (blitting)
+        self.fondo = None
+        self.mpl_connect("draw_event", self._al_dibujar)
+
+    def _al_dibujar(self, _evento):
+        self.fondo = self.copy_from_bbox(self.ejes.bbox)
+        self._pintar_poblacion()
+
+    def _pintar_poblacion(self):
+        if self.poblacion is not None:
+            self.ejes.draw_artist(self.poblacion)
+            self.ejes.draw_artist(self.mejor)
 
     def preparar(self, objetivo, n):
         """Dibuja el fondo una sola vez por función. Con más de 2 variables se
@@ -38,24 +51,43 @@ class GraficaNiveles(FigureCanvasQTAgg):
             self.ejes.plot(optimos[:, 0], optimos[:, 1], "x", color="white", ms=9, mew=2,
                            label="Óptimo conocido")
         self.poblacion, = self.ejes.plot([], [], "o", color="white", mec="k", ms=5,
-                                         label="Población")
+                                         label="Población", animated=True)
         self.mejor, = self.ejes.plot([], [], "*", color=COLOR_MEJOR, mec="k", ms=16,
-                                     label="Mejor hallado")
+                                     label="Mejor hallado", animated=True)
         self.ejes.set_xlim(a, b)
         self.ejes.set_ylim(a, b)
         self.ejes.set_xlabel("$x_1$")
         self.ejes.set_ylabel("$x_2$")
+        nombre = f"f = {objetivo.expresion}" if objetivo.expresion else objetivo.nombre
+        if len(nombre) > 45:
+            nombre = nombre[:44] + "…"
         corte = f" ($x_3..x_{{{n}}}={objetivo.corte:g}$)" if n > 2 else ""
-        self.ejes.set_title(f"{objetivo.nombre}{corte}", fontsize=10)
+        self.ejes.set_title(f"{nombre}{corte}", fontsize=10)
         self.ejes.legend(loc="upper right", fontsize=8, framealpha=0.8)
+        self.fondo = None
         self.draw_idle()
 
     def actualizar(self, estado):
         self.poblacion.set_data(estado.X[:, 0], estado.X[:, 1])
         self.mejor.set_data([estado.mejor_x[0]], [estado.mejor_x[1]])
-        self.ejes.set_title(self.ejes.get_title().split(" | ")[0]
-                            + f" | generación {estado.generacion}", fontsize=10)
-        self.draw_idle()
+        if self.fondo is None:
+            self.draw_idle()
+            return
+        self.restore_region(self.fondo)
+        self._pintar_poblacion()
+        self.blit(self.ejes.bbox)
+
+    def guardar(self, ruta, dpi=200):
+        """Guarda la figura con la población, que por el blitting no entra en el
+        dibujo normal."""
+        for artista in (self.poblacion, self.mejor):
+            artista.set_animated(False)
+        try:
+            self.figura.savefig(ruta, dpi=dpi)
+        finally:
+            for artista in (self.poblacion, self.mejor):
+                artista.set_animated(True)
+            self.draw_idle()
 
 
 class GraficaConvergencia(FigureCanvasQTAgg):

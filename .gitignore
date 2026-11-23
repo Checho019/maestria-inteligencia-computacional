@@ -147,8 +147,10 @@ Series de tiempo/**/informe/*.fdb_latexmk
 Series de tiempo/**/informe/*.toc
 Series de tiempo/**/datos/
 
-# Algoritmo genético. Material del profesor y salidas de LaTeX
+# Algoritmo genético. Material del profesor, salidas de LaTeX y la entrega,
+# que trae el ejecutable de 73 MB y se regenera con el guion de empaquetado
 Algoritmo genetico/material/
+Algoritmo genetico/entrega/
 Algoritmo genetico/informe/*.aux
 Algoritmo genetico/informe/*.log
 Algoritmo genetico/informe/*.out

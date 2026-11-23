@@ -23,7 +23,7 @@ app = QApplication(sys.argv)
 app.setFont(QFont("Segoe UI", 9))
 ventana = VentanaPrincipal()
 controlador = Controlador(ventana)
-ventana.resize(1220, 860)
+ventana.resize(1320, 860)
 ventana.show()
 
 
@@ -49,9 +49,4 @@ carpeta.mkdir(exist_ok=True)
 ejecutar(funcion="Himmelblau", seleccion="Ruleta", cruce="Un punto", mutacion="Bit-flip por bit",
          ejecuciones="10", pausa="0", escala_log=True)
 ventana.grab().save(str(carpeta / "interfaz_himmelblau.png"))
-ejecutar(funcion="Peaks", seleccion="Ranking lineal", cruce="Uniforme",
-         mutacion="Inversión de segmento", ejecuciones="1", escala_log=False)
-ventana.grab().save(str(carpeta / "interfaz_peaks.png"))
-operadores = ventana.grupos_configuracion[3]
-operadores.grab().save(str(carpeta / "operadores_peaks.png"))
-print("Capturas guardadas en", carpeta)
+print("Captura guardada en", carpeta)

@@ -18,6 +18,7 @@ PERMITIDAS = {
     "log10": np.log10, "sqrt": np.sqrt, "abs": np.abs, "tanh": np.tanh,
     "arctan": np.arctan, "pi": np.pi, "e": np.e,
 }
+LARGO_MAXIMO = 500
 NODOS = (ast.Expression, ast.BinOp, ast.UnaryOp, ast.Call, ast.Name, ast.Load,
          ast.Constant, ast.Add, ast.Sub, ast.Mult, ast.Div, ast.Pow, ast.Mod,
          ast.USub, ast.UAdd)
@@ -33,26 +34,36 @@ def revisar(expresion, n):
     mensaje para el usuario."""
     if not expresion.strip():
         raise ValueError("Escriba la expresión de la función, por ejemplo x1**2 + x2**2.")
+    if len(expresion) > LARGO_MAXIMO:
+        raise ValueError(f"La expresión supera los {LARGO_MAXIMO} caracteres.")
     try:
         arbol = ast.parse(expresion.replace("^", "**"), mode="eval")
-    except SyntaxError:
-        raise ValueError(f"La expresión \"{expresion}\" no es válida.") from None
+    except (SyntaxError, RecursionError, MemoryError):
+        raise ValueError(f"La expresión \"{expresion[:60]}\" no es válida.") from None
     validas = _variables(n)
     for nodo in ast.walk(arbol):
         if not isinstance(nodo, NODOS):
             raise ValueError(f"La expresión contiene un elemento no permitido ({type(nodo).__name__}).")
         if isinstance(nodo, ast.Name) and nodo.id not in validas and nodo.id not in PERMITIDAS:
             raise ValueError(f"\"{nodo.id}\" no es una variable (x1 a x{n}) ni una función permitida.")
-        if isinstance(nodo, ast.Call) and not (isinstance(nodo.func, ast.Name) and nodo.func.id in PERMITIDAS):
-            raise ValueError("Solo se permiten las funciones " + ", ".join(
-                k for k, v in PERMITIDAS.items() if callable(v)) + ".")
+        if isinstance(nodo, ast.Call):
+            if not (isinstance(nodo.func, ast.Name) and callable(PERMITIDAS.get(nodo.func.id))):
+                raise ValueError("Solo se permiten las funciones " + ", ".join(
+                    k for k, v in PERMITIDAS.items() if callable(v)) + ".")
+            # Un segundo argumento de NumPy sería el arreglo de salida y
+            # sobrescribiría una variable
+            if len(nodo.args) != 1 or nodo.keywords:
+                raise ValueError(f"La función {nodo.func.id} recibe un solo argumento.")
         if isinstance(nodo, ast.Constant):
             if isinstance(nodo.value, bool) or not isinstance(nodo.value, (int, float)):
                 raise ValueError("La expresión solo admite números.")
             # Con números reales una potencia enorme desborda al instante en vez de
             # calcular un entero gigante y congelar la aplicación
             nodo.value = float(nodo.value)
-    return compile(arbol, "<expresion>", "eval")
+    try:
+        return compile(arbol, "<expresion>", "eval")
+    except (RecursionError, MemoryError):
+        raise ValueError("La expresión es demasiado anidada.") from None
 
 
 @lru_cache(maxsize=32)

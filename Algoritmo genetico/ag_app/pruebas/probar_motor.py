@@ -99,7 +99,8 @@ for nombre, obj in FUNCIONES.items():
 f = personalizada.crear("x1**2 + 10*sin(y)", -5.0, 5.0, False, None, 2)
 assert abs(f.f(np.array([[1.0, 0.0]]))[0] - 1.0) < 1e-12
 for mala in ("__import__('os')", "x1.real", "x3 + 1", "open(1)", "log(x1)", "9**9**9",
-             "x1 if x2 else 0", "[x1]", "", "lambda: 1"):
+             "x1 if x2 else 0", "[x1]", "", "lambda: 1", "sin(x1, x2)", "pi(x1)",
+             "-" * 5000 + "x1", "+".join(["x1"] * 10000)):
     try:
         personalizada.crear(mala, -5.0, 5.0, False, None, 2)
     except ValueError:
@@ -111,6 +112,12 @@ assert res.error < 1e-3 and np.allclose(res.mejor_x, [1, -2], atol=0.05), res
 res = ejecutar(Configuracion(funcion=PERSONALIZADA, parar_por_error=False, T=30))
 assert np.isnan(res.error) and res.generacion_tolerancia is None
 assert validar(Configuracion(funcion=PERSONALIZADA, optimo=None))  # pide óptimo para parar por error
+assert validar(Configuracion(n=2.5)) and validar(Configuracion(L=True))  # enteros obligatorios
+
+# Un valor infinito justo en la rejilla no gana la selección ni rompe las curvas
+res = ejecutar(Configuracion(funcion=PERSONALIZADA, expresion="1/(x1-1)", maximizar=True,
+                             parar_por_error=False, seleccion="Ruleta", T=50))
+assert np.isfinite(res.mejor_f) and all(np.isfinite(res.media)), res.mejor_f
 
 # Reproducibilidad, la misma semilla da exactamente el mismo resultado
 cfg = Configuracion(funcion="Himmelblau", parar_por_error=False)

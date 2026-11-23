@@ -85,12 +85,18 @@ def ejecutar(cfg, al_generar=None, detener=None):
         X = decodificar(P, inferior, superior, L)
         f = objetivo.f(X)
         aptitud = signo * f
+        finitos = np.isfinite(aptitud)
+        if not finitos.all():
+            # Una función personalizada puede dar inf o NaN justo en un punto de la
+            # rejilla. Ese individuo pasa a ser el peor para que no gane la selección
+            peor_finito = aptitud[finitos].min() if finitos.any() else 0.0
+            aptitud = np.where(finitos, aptitud, peor_finito - 1.0)
 
-        # Registro de la generación, en la escala original de f
+        # Registro de la generación, en la escala original de f y solo con valores finitos
         i_mejor = aptitud.argmax()
         mejor.append(f[i_mejor])
-        media.append(f.mean())
-        peor.append(f[aptitud.argmin()])
+        media.append(f[finitos].mean() if finitos.any() else np.nan)
+        peor.append(f[np.where(finitos, aptitud, np.inf).argmin()] if finitos.any() else np.nan)
         if generacion == 0 or signo * f[i_mejor] > signo * mejor_f:
             mejor_f, mejor_x = f[i_mejor], X[i_mejor].copy()
             mejor_cromosoma, generacion_mejor = P[i_mejor].copy(), generacion

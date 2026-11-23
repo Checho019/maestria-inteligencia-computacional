@@ -102,7 +102,7 @@ class FuncionObjetivo:
         if self.n_fijo is None:
             c = f"{self.x_optimos[0][0]:g}"
             return f"x = ({c}, ..., {c}) con {n} variables"
-        return " o ".join(f"({x:g}, {y:g})" for x, y in self.x_optimos)
+        return " o ".join(f"({x:.4g}, {y:.4g})" for x, y in self.x_optimos)
 
 
 # Los óptimos de Himmelblau y Peaks se refinaron con Nelder-Mead de SciPy.

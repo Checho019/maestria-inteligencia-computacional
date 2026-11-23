@@ -97,8 +97,26 @@ def estancamientos(ejecuciones):
                       "optimo_local_un_bit": bool(np.all(signo * f_vecinos <= signo * res.mejor_f)),
                       "hamming_al_exito": int(diferencias.min()),
                       "pasos_al_exito_cercano": float(pasos[cercano]),
-                      "hamming_exito_cercano": int(diferencias[cercano])})
+                      "hamming_exito_cercano": int(diferencias[cercano]),
+                      "hamming_azar_mismo_paso": hamming_al_azar(D_exitosos[cercano] - D_mejor, cfg.L)})
     return pd.DataFrame(filas)
+
+
+def hamming_al_azar(desplazamiento, L, muestras=5000):
+    """Referencia para leer la distancia de Hamming. Mediana de los bits que
+    difieren entre pares de puntos de la rejilla tomados al azar con el mismo
+    desplazamiento (en pasos de la rejilla) que el par observado."""
+    rng = np.random.default_rng(0)
+    d = np.asarray(desplazamiento, dtype=np.int64)
+    maximo = 2**L - 1
+    bajo = np.maximum(0, -d)
+    alto = np.minimum(maximo, maximo - d)
+    origen = rng.integers(bajo, alto + 1, size=(muestras, d.size))
+    destino = origen + d
+    distintos = np.zeros(muestras, dtype=np.int64)
+    for k in range(L):
+        distintos += (((origen >> k) & 1) != ((destino >> k) & 1)).sum(axis=1)
+    return float(np.median(distintos))
 
 
 def tabla_latex(tabla):
@@ -156,6 +174,8 @@ def macros(ejecuciones, curvas, atascos):
     for variante, clave in (("Ruleta", "Ruleta"), ("Ranking lineal", "Ranking")):
         otro = g25[g25["variante"] == variante]["mejor"].to_numpy()
         m[f"EunoGenVeinticincoTorneo{clave}P"] = valor_p(stats.mannwhitneyu(torneo25, otro).pvalue)
+    m["EunoKruskalGenVeinticincoP"] = valor_p(stats.kruskal(
+        *[g25[g25["variante"] == v]["mejor"].to_numpy() for v in ("Ruleta", "Torneo", "Ranking lineal")]).pvalue)
     ultima = ejecuciones[ejecuciones["experimento"] == "E1"].groupby("variante")["generacion_mejor"].mean()
     m["EunoUltimaMejoraMin"] = f"{ultima.min():.0f}"
 
@@ -170,8 +190,14 @@ def macros(ejecuciones, curvas, atascos):
     m["EdosCercaDosTres"] = str(len(cerca))
     m["EdosCercaDosTresErrorMin"] = f"{cerca['error'].min():.1e}".replace("e-0", "\\times10^{-") + "}"
     m["EdosCercaDosTresErrorMax"] = f"{cerca['error'].max():.3f}"
-    for variante, clave in (("Un punto", "UnPunto"), ("Dos puntos", "DosPuntos"), ("Uniforme", "Uniforme")):
+    cruces = ("Un punto", "Dos puntos", "Uniforme")
+    for variante, clave in zip(cruces, ("UnPunto", "DosPuntos", "Uniforme")):
         m[f"EdosMediana{clave}"] = f"{np.median(grupo('E2', variante, 'generacion_tolerancia')[~np.isnan(grupo('E2', variante, 'generacion_tolerancia'))]):.0f}"
+    generaciones = [grupo("E2", v, "generacion_tolerancia") for v in cruces]
+    m["EdosKruskalGenP"] = valor_p(stats.kruskal(*[g[~np.isnan(g)] for g in generaciones]).pvalue)
+    m["EdosKruskalDivP"] = valor_p(stats.kruskal(*[grupo("E2", v, "diversidad_final") for v in cruces]).pvalue)
+    m["EtresDivMannP"] = valor_p(stats.mannwhitneyu(grupo("E3", "Bit-flip por bit", "diversidad_final"),
+                                                    grupo("E3", "Un bit", "diversidad_final")).pvalue)
 
     # E3, prueba exacta de Fisher sobre la tasa de éxito de bit-flip frente a un bit
     exitos_bf = int(grupo("E3", "Bit-flip por bit", "exito").sum())
@@ -183,6 +209,8 @@ def macros(ejecuciones, curvas, atascos):
         m[f"{clave}PasosMediana"] = f"{a['pasos_al_exito_cercano'].median():.0f}"
         m[f"{clave}HammingCercanoMin"] = str(a["hamming_exito_cercano"].min())
         m[f"{clave}HammingCercanoMax"] = str(a["hamming_exito_cercano"].max())
+        m[f"{clave}HammingCercanoMediana"] = f"{a['hamming_exito_cercano'].median():.0f}"
+        m[f"{clave}HammingAzarMediana"] = f"{a['hamming_azar_mismo_paso'].median():.0f}"
 
     claves = {"Ruleta": "Ruleta", "Torneo": "Torneo", "Ranking lineal": "Ranking"}
     for g, sufijo, decimales in ((25, "GenVeinticinco", 1), (200, "GenDoscientos", 2)):

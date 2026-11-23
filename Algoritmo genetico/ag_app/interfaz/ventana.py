@@ -44,6 +44,8 @@ AYUDA = {
     "G": "Generaciones seguidas sin mejora antes de detener.",
     "ejecuciones": "Número de ejecuciones. Cada una usa la semilla siguiente (semilla, semilla + 1, ...).",
     "pausa": "Pausa entre generaciones para seguir la animación. No cuenta en el tiempo de ejecución.",
+    "tiempo": "Tiempo de reloj de la ejecución sin las pausas. Incluye el dibujo en vivo de las gráficas, que comparte el procesador con el AG, así que el mismo cálculo tarda menos desde un guion sin interfaz.",
+    "pausar": "Pausa la ejecución en curso y la reanuda desde la misma generación.",
     "escala_log": "Curva de convergencia en escala logarítmica, útil cerca de un óptimo en 0. Solo para las funciones que no toman valores negativos y tienen mínimo 0.",
 }
 
@@ -74,9 +76,13 @@ class VentanaPrincipal(QMainWindow):
         columna = QVBoxLayout(derecha)
         fila = QHBoxLayout()
         self.etiqueta_progreso = QLabel("Listo para ejecutar")
+        self.etiqueta_progreso.setMinimumWidth(360)
         self.progreso = QProgressBar()
         self.escala_log = QCheckBox("Eje y logarítmico")
         self.escala_log.setToolTip(AYUDA["escala_log"])
+        fila.addWidget(self.iniciar)
+        fila.addWidget(self.pausar)
+        fila.addWidget(self.detener)
         fila.addWidget(self.etiqueta_progreso)
         fila.addWidget(self.progreso, 1)
         fila.addWidget(self.escala_log)
@@ -95,6 +101,12 @@ class VentanaPrincipal(QMainWindow):
         divisor.setSizes([410, 990])
         self.setCentralWidget(divisor)
         self.statusBar()
+        self.al_cerrar = None       # el controlador lo fija para detener el AG al cerrar
+
+    def closeEvent(self, evento):
+        if self.al_cerrar is not None:
+            self.al_cerrar()
+        super().closeEvent(evento)
 
     def _campo(self, clave, texto):
         campo = QLineEdit(texto)
@@ -220,15 +232,16 @@ class VentanaPrincipal(QMainWindow):
         grupo, forma = QGroupBox("Ejecución"), QFormLayout()
         self.ejecuciones = self._campo("ejecuciones", "1")
         self.pausa = self._campo("pausa", "20")
+        # Los botones van en la barra superior, siempre a la vista
         self.iniciar = QPushButton("Iniciar")
+        self.pausar = QPushButton("Pausar")
+        self.pausar.setCheckable(True)
+        self.pausar.setEnabled(False)
+        self.pausar.setToolTip(AYUDA["pausar"])
         self.detener = QPushButton("Detener")
         self.detener.setEnabled(False)
-        botones = QHBoxLayout()
-        botones.addWidget(self.iniciar)
-        botones.addWidget(self.detener)
         forma.addRow("Número de ejecuciones", self.ejecuciones)
         forma.addRow("Pausa por generación (ms)", self.pausa)
-        forma.addRow(botones)
         grupo.setLayout(forma)
         return grupo
 
@@ -238,7 +251,7 @@ class VentanaPrincipal(QMainWindow):
         mono = QFont("Consolas", 9)
         self.resultados = {}
         nombres = ["Mejor cromosoma", "x*", "f(x*)", "Error al óptimo",
-                   "Generación del mejor", "Generaciones ejecutadas", "Tiempo",
+                   "Generación del mejor", "Generaciones ejecutadas", "Tiempo de ejecución",
                    "Motivo de parada"]
         for i, nombre in enumerate(nombres):
             etiqueta = QLabel("—")
@@ -246,7 +259,11 @@ class VentanaPrincipal(QMainWindow):
             etiqueta.setWordWrap(True)
             if nombre in ("Mejor cromosoma", "x*"):
                 etiqueta.setFont(mono)
-            rejilla.addWidget(QLabel(f"<b>{nombre}</b>"), i, 0, Qt.AlignTop)
+            titulo = QLabel(f"<b>{nombre}</b>")
+            if nombre == "Tiempo de ejecución":
+                titulo.setToolTip(AYUDA["tiempo"])
+                etiqueta.setToolTip(AYUDA["tiempo"])
+            rejilla.addWidget(titulo, i, 0, Qt.AlignTop)
             rejilla.addWidget(etiqueta, i, 1)
             self.resultados[nombre] = etiqueta
         rejilla.setColumnStretch(1, 1)

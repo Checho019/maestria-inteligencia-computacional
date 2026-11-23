@@ -4,7 +4,7 @@ Aplicación de escritorio en Python con PySide6 que ejecuta un algoritmo genéti
 
 ## Ejecución sin instalar nada
 
-En Windows, `AlgoritmoGenetico.exe` (en la raíz de la entrega) abre la aplicación con doble clic. Tarda unos 10 segundos la primera vez.
+En Windows, `AlgoritmoGenetico/AlgoritmoGenetico.exe` (en la raíz de la entrega) abre la aplicación con doble clic. La carpeta `_internal` que lo acompaña debe quedar junto al ejecutable.
 
 ## Instalación desde el código
 
@@ -22,7 +22,7 @@ Desde esta carpeta:
 python main.py
 ```
 
-Los valores por defecto son los de la tabla 6.2 de la guía (N = 50, T = 200, L = 16, Pc = 0.8, Pm = 1/ℓ, e = 1, torneo con k = 3, cruce de dos puntos y mutación bit-flip), así que basta con pulsar Iniciar. Cada parámetro explica su efecto al pasar el cursor sobre él. Con varias ejecuciones, cada una usa la semilla siguiente, la tabla muestra cada ejecución y debajo aparecen la media y la desviación estándar del mejor valor final. Una ejecución detenida con el botón Detener no entra en ese resumen. Los botones Exportar CSV y Guardar figuras guardan los resultados y las dos gráficas.
+Los valores por defecto son los de la tabla 6.2 de la guía (N = 50, T = 200, L = 16, Pc = 0.8, Pm = 1/ℓ, e = 1, torneo con k = 3, cruce de dos puntos y mutación bit-flip), así que basta con pulsar Iniciar. Los botones Iniciar, Pausar y Detener están sobre las gráficas, y al cerrar la ventana una ejecución en curso se detiene. Cada parámetro explica su efecto al pasar el cursor sobre él. El tiempo de ejecución que se informa es de reloj, sin las pausas, e incluye el dibujo en vivo de las gráficas, de modo que el mismo cálculo tarda menos desde un guion sin interfaz. Con varias ejecuciones, cada una usa la semilla siguiente, la tabla muestra cada ejecución y debajo aparecen la media y la desviación estándar del mejor valor final. Una ejecución detenida con el botón Detener no entra en ese resumen. Los botones Exportar CSV y Guardar figuras guardan los resultados y las dos gráficas.
 
 ## Función personalizada
 
@@ -58,5 +58,5 @@ El ejecutable se genera desde esta carpeta con PyInstaller:
 
 ```bash
 pip install pyinstaller
-pyinstaller main.py --onefile --windowed --name AlgoritmoGenetico --exclude-module scipy --exclude-module pandas --exclude-module tkinter
+pyinstaller main.py --onedir --windowed --name AlgoritmoGenetico --exclude-module scipy --exclude-module pandas --exclude-module tkinter
 ```
