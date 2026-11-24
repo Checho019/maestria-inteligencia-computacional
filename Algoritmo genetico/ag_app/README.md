@@ -4,7 +4,7 @@ Aplicación de escritorio en Python con PySide6 que ejecuta un algoritmo genéti
 
 ## Ejecución sin instalar nada
 
-En Windows, `AlgoritmoGenetico/AlgoritmoGenetico.exe` (en la raíz de la entrega) abre la aplicación con doble clic. La carpeta `_internal` que lo acompaña debe quedar junto al ejecutable.
+En Windows, `AlgoritmoGenetico.exe`, en la raíz de la entrega, abre la aplicación con doble clic. Es un solo archivo y no necesita nada más.
 
 ## Instalación desde el código
 
@@ -58,5 +58,5 @@ El ejecutable se genera desde esta carpeta con PyInstaller:
 
 ```bash
 pip install pyinstaller
-pyinstaller main.py --onedir --windowed --name AlgoritmoGenetico --exclude-module scipy --exclude-module pandas --exclude-module tkinter
+pyinstaller main.py --onefile --windowed --name AlgoritmoGenetico --exclude-module scipy --exclude-module pandas --exclude-module tkinter
 ```

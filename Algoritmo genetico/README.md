@@ -4,15 +4,14 @@ Entrega de la tarea de algoritmos genéticos de Inteligencia Computacional Aplic
 
 | Carpeta o archivo | Contenido |
 |---|---|
-| `AlgoritmoGenetico/` | La aplicación lista para usar en Windows, sin instalar nada. Se abre con `AlgoritmoGenetico.exe` |
-| `Informe algoritmo genetico Duarte.pdf` | Informe en formato IEEE |
+| `AlgoritmoGenetico.exe` | La aplicación lista para usar en Windows, sin instalar nada. Se abre con doble clic |
 | `ag_app/` | Código fuente de la aplicación (motor del AG e interfaz en PySide6). Su `README.md` explica la instalación y la ejecución |
 | `experimentos/` | Guiones de los experimentos E1, E2 y E3 y sus resultados en CSV |
 | `informe/` | Fuente LaTeX del informe, figuras y guion de las capturas de la interfaz |
 
 ## Ejecutar la aplicación
 
-En Windows, después de descomprimir la entrega, basta con abrir `AlgoritmoGenetico/AlgoritmoGenetico.exe` con doble clic. La carpeta `_internal` que lo acompaña trae Python y las bibliotecas, y debe quedar junto al ejecutable. Si Windows muestra el aviso de SmartScreen, se elige "Más información" y "Ejecutar de todas formas", porque el ejecutable no está firmado.
+En Windows, después de descomprimir la entrega, basta con abrir `AlgoritmoGenetico.exe` con doble clic. Es un solo archivo que trae Python y las bibliotecas, y tarda unos segundos en abrir la primera vez porque se descomprime en una carpeta temporal. Si Windows muestra el aviso de SmartScreen, se elige "Más información" y "Ejecutar de todas formas", porque el ejecutable no está firmado.
 
 En cualquier sistema con Python 3.10 o posterior:
 
